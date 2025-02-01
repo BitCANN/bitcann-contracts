@@ -4,18 +4,42 @@ contract DomainFactory(
   bytes domainContractPartialBytecodeHash,
   bytes20 platformPKH
 ) {
-
-  /* Create a Domain
-  *
-  * INFO: This function can be called by anyone, making it highly impossible for anyone to not claim the domain.
-  * If someone doesn't claim then the person interested shall call the claim function and wait for the hearbeat NFT
-  * to be old enough to be burnt and then start an auction.
-  *
-  * Question: What if no one claims the domain and the name is still unknown?
-  * - The name cannot be revealed, someone must reveal the name in order to move forward from this step.
-  *
-  * Question: What if the name is revealed but the domain is not claimed?
-  */
+  /**
+   * Creates a new domain contract and issues NFTs after a successful auction
+   * 
+   * This function finalizes a domain auction by:
+   * - Verifying the auction has ended and the winner's bid is valid
+   * - Creating a new domain contract instance
+   * - Issuing an immutable domain NFT to the auction winner
+   * - Issuing a mutable heartbeat NFT to the domain contract
+   * - Revealing the domain name via OP_RETURN
+   * - Distributing auction fees between platform and miners
+   *
+   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to create
+   * @param name - Domain name being registered
+   *
+   * @inputs
+   * - Input0: Any input from this contract
+   * - Input1: NFT with lockingBytecode of this contract from registry contract
+   * - Input2: First part of auction pair (immutable) containing auctionId + nameHash
+   * - Input3: Second part of auction pair (mutable) containing auctionId + endBlock + winnerLockingBytecode
+   *
+   * @outputs
+   * - Output0: Input0 back to this contract
+   * - Output1: NFT back to registry contract  
+   * - Output2: Domain NFT to auction winner
+   * - Output3: Heartbeat NFT to domain contract
+   * - Output4: OP_RETURN revealing domain name
+   * - Output5: Platform fee (only for first 4 years)
+   *
+   * Requirements:
+   * - Transaction must be at least 2 blocks old
+   * - Auction must have ended (current block > endBlock)
+   * - Name must match stored nameHash
+   * - Domain contract bytecode must match expected hash
+   * - NFTs must have correct categories and capabilities
+   * - Platform fee split 50/50 with miners for first 4 years
+   */
   function call(bytes domainContractPartialBytecode, bytes name){
     // Input0: Any input from this contract.
     // Input1: NFT with lockingBytecode of this contract from registry contract

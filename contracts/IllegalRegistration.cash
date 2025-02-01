@@ -1,11 +1,38 @@
 pragma cashscript ^0.11.0;
 
 contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
-
-  // - Penalise illegal registration
-  // during the registration, if anyone can provide a valid heartbeat NFT from the domain contract then they can
-  // take away the bidder's funds and burn the bid reculting the auction to be cancelled.
-  // Any mutable commitment with te domainCategory is bound to be coming from a domain contract (Excluding activeBytecode)
+  /**
+   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds
+   * 
+   * If someone attempts to register a domain that is already owned and active (has a valid heartbeat NFT),
+   * this function allows anyone to:
+   * - Prove the domain is already owned by providing the heartbeat NFT
+   * - Burn the illegal registration bid NFTs
+   * - Claim the bid funds as a reward
+   * 
+   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to verify ownership
+   * @param name - Name being registered illegally
+   * 
+   * @inputs
+   * - Input0: Any input from this contract
+   * - Input1: NFT with lockingBytecode of this contract from registry contract
+   * - Input2: Registration NFT pair0 (immutable) containing auctionId + nameHash
+   * - Input3: Registration NFT pair1 (mutable) containing auctionId + lockingBytecode
+   * - Input4: Heartbeat NFT proving active domain ownership
+   * 
+   * @outputs
+   * - Output0: Input0 back to this contract
+   * - Output1: NFT back to registry contract
+   * - Output2: Heartbeat NFT back to domain contract
+   * - Output3: Bid funds to caller as reward
+   * 
+   * Requirements:
+   * - Name must match stored nameHash
+   * - Heartbeat must be less than 2 years old (105120 blocks)
+   * - Domain contract bytecode must match expected hash
+   * - Heartbeat NFT must be from valid domain contract
+   * - All NFTs must have correct categories and capabilities
+   */
   function call(bytes domainContractPartialBytecode, bytes name){
     // Input0: Any input from this contract.
     // Input1: NFT with lockingBytecode of this contract from registry contract

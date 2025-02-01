@@ -47,7 +47,7 @@ contract Registry(bytes domainCategory) {
     // Ensure only Pure BCH is used. (Do not allow for any token categoryes, Removes noise and needs less checks)
     require(tx.inputs[1].tokenCategory == 0x00 && tx.outputs[1].tokenCategory == 0x00);
 
-    // Only provide support for blocks and not for MTP to reduce complexity in how locking is used across different contracts.
+    // Only provide support for blocks and not for MTP to reduce complexity in how nLocktime is used across different contracts.
     require(tx.locktime < 500000000);
 
     // With these pre-requisites met, we just need to make sure that all the contracts that are deployed are written and initialized

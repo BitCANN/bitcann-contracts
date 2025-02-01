@@ -2,16 +2,38 @@ pragma cashscript ^0.11.0;
 
 contract InvalidDomain() {
 
-
   // Allowed Characters:
+  // - Lowercase letters (a-z)
+  // - Digits (0-9) 
+  // - Hyphens (-)
 
-  // Lowercase and uppercase letters (a-z)
-  // Digits (0-9)
-  // Hyphens (-)
-
-  // This function makes it possible for anyone to burn the Heartbeat NFT making the domain unusable.
-  // This does not stop the domain from being registered.
-  function call(int characterIndex, bytes name){
+  /**
+   * Proves that a domain name contains invalid characters and burns the associated NFT
+   * 
+   * This function allows anyone to prove that a domain name contains characters outside
+   * the allowed set (lowercase letters, digits, hyphens) and burn the NFT associated 
+   * with that domain, making it unusable. Note that this does not prevent the domain
+   * from being re-registered.
+   *
+   * @param characterIndex - Index of the invalid character in the name
+   * @param name - Full domain name to validate
+   *
+   * @inputs
+   * - Input0: Domain NFT from this contract to be burned
+   *
+   * @outputs  
+   * - Output0: Pure BCH (NFT is burned)
+   *
+   * Requirements:
+   * - Name must be 63 characters or less
+   * - Name must match the stored nameHash
+   * - Name must end in '.sat'
+   * - Character at characterIndex must be invalid (not a-z, 0-9, or hyphen)
+   * - Transaction must have exactly 1 input and 1 output
+   * - Input must be from this contract and have the domain NFT
+   * - Output must burn the NFT by converting to pure BCH
+   */
+  function call(int characterIndex, bytes name) {
     require(name.length <= 63);
     bytes32 nameHashFromParam = hash256(name);
     require(nameHashFromParam == nameHash);
@@ -21,8 +43,7 @@ contract InvalidDomain() {
     
     require(tx.inputs.length == 1);
     require(tx.outputs.length == 1);
-    // This should be the the NFT that is trying to own the dinvalid domain.
-    // fetch the name[0]
+    
     bytes character = name.split(characterIndex)[0];
     int charVal = int(character);
 
