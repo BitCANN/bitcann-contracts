@@ -1,0 +1,114 @@
+{
+  "contractName": "RevealName",
+  "constructorInputs": [
+    {
+      "name": "registryContractScriptHash",
+      "type": "bytes"
+    }
+  ],
+  "abi": [
+    {
+      "name": "call",
+      "inputs": [
+        {
+          "name": "name",
+          "type": "bytes"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_TXINPUTCOUNT OP_5 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_LESSTHANOREQUAL OP_VERIFY OP_0 OP_UTXOBYTECODE OP_EQUALVERIFY OP_1 OP_UTXOTOKENCATEGORY OP_1 OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_1 OP_UTXOVALUE OP_1 OP_OUTPUTVALUE OP_NUMEQUALVERIFY OP_1 OP_UTXOTOKENCOMMITMENT OP_1 OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY OP_2 OP_UTXOTOKENCATEGORY OP_2 OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_UTXOVALUE OP_2 OP_OUTPUTVALUE OP_NUMEQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY 00 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_2 OP_PICK OP_HASH256 OP_EQUALVERIFY OP_3 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_4 OP_SPLIT 20 OP_SPLIT OP_NIP OP_2SWAP OP_EQUALVERIFY OP_TXLOCKTIME OP_ROT OP_BIN2NUM OP_GREATERTHAN OP_VERIFY OP_BIN2NUM OP_0 OP_NUMEQUALVERIFY OP_3 OP_OUTPUTTOKENCOMMITMENT OP_3 OP_UTXOTOKENCOMMITMENT 25 OP_SPLIT OP_DROP OP_1 OP_1 OP_NUM2BIN OP_CAT OP_EQUALVERIFY OP_4 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY OP_4 OP_OUTPUTBYTECODE 6a OP_ROT OP_SIZE OP_DUP 4b OP_GREATERTHAN OP_IF 4c OP_SWAP OP_CAT OP_ENDIF OP_SWAP OP_CAT OP_CAT OP_EQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_NUMEQUAL OP_IF OP_5 OP_OUTPUTTOKENCATEGORY 00 OP_EQUALVERIFY OP_ENDIF OP_1",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract RevealName(bytes registryContractScriptHash) {\n  /**\n   * Reveals the domain name after an auction has ended, the winner must reveal the name and wait a certain amount\n   * of time before the domain can be claimed. \n   * @param name The domain name being revealed\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: RegistrationPair0 to the Registry contract pair (auctionId + nameHash)\n   * - Input3: RegistrationPair1 to the Registry contract pair (auctionId + auctionEndBlock + bidderLockingBytecode + isNameRevealed)\n   * - Input4: Funding input\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: RegistrationPair0 to the Registry contract (unchanged)\n   * - Output3: RegistrationPair1 to the Registry contract (with isNameRevealed flag set to 1)\n   * - Output4: OP_RETURN output containing the revealed name\n   * - Output5: Optional BCH change\n   * \n   * Requirements:\n   * - Auction must have ended (tx.locktime > auctionEndBlock)\n   * - Name must not have been previously revealed (isNameRevealed == 0)\n   * - Auction Pair NFTs, Token categories and capabilities must match expected structure\n   * - Bid amount must be preserved\n   */\n  function call(bytes name){\n    require(tx.inputs.length == 5);\n    require(tx.outputs.length <= 6);\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.\n\n    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);\n    require(tx.inputs[1].value == tx.outputs[1].value);\n    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);\n\n    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);\n    require(tx.inputs[2].value == tx.outputs[2].value);\n    // INFO: NFT commitment will be updated by updating the isNameRevealed flag.\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);\n    require(pair0Category == domainCategory);\n    require(pair0Capability == 0x00); // Immutable\n\n    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);\n    require(pair1Category == domainCategory);\n    require(pair1Capability == 0x01); // Mutable\n\n    // Second piece (AuctionId + lockingBytecode) should be same as the previous bid.\n    bytes8 registrationAuctionIdPair0, bytes registrationNameHash = tx.inputs[2].nftCommitment.split(8);\n\n    // Ensure that the hash256 of the name provided matches the nameHash in the pair.\n    require(hash256(name) == registrationNameHash);\n\n    // Second piece (AuctionId + lockingBytecode) should be same as the previous bid.\n    bytes8 registrationAuctionIdPair1, bytes remainingBytes0 = tx.inputs[3].nftCommitment.split(8);\n    bytes4 auctionEndBlock, bytes remainingBytes1 = remainingBytes0.split(4);\n    bytes isNameRevealed = remainingBytes1.split(32)[1];\n\n    // Ensure that the same pair is used\n    require(registrationAuctionIdPair0 == registrationAuctionIdPair1);\n\n    // Make sure that the auction has ended.\n    require(int(tx.locktime) > int(auctionEndBlock));\n\n    // Ensure that the name is not revealed.\n    require(int(isNameRevealed) == 0);\n\n    // Mark that the name is revealed\n    require(tx.outputs[3].nftCommitment == tx.inputs[3].nftCommitment.split(37)[0] + bytes1(1));\n\n    // Ensuring an OP_RETURN output.\n    require(tx.outputs[4].value == 0);\n    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));\n\n    if(tx.outputs.length == 6){\n      require(tx.outputs[5].tokenCategory == 0x00);\n    }\n  }\n}",
+  "debug": {
+    "bytecode": "c3559c69c456a16900c7517a876951ce51d1876951c651cc9c6951cf51d2876952ce52d1876952c652cc9c6900d101207f7552d101207f517a52798769007a0100876953d101207f517a527a8769007a51876952cf587f5279aa517a876953cf587f007a547f007a01207f77537a537a8769c5527a81a069007a81009c6953d253cf01257f755151807e876954cc009c6954cd016a527a8276014ba063014c7c7e687c7e7e8769c4569c6355d1010087696851",
+    "sourceMap": "31:12:31:28;:32::33;:12:::1;:4::35;32:12:32:29:0;:33::34;:12:::1;:4::36;34:22:34:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;37:22:37:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;38:22:38:23:0;:12::30:1;:45::46:0;:34::53:1;:12;:4::55;39:22:39:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;41:22:41:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;42:22:42:23:0;:12::30:1;:45::46:0;:34::53:1;:12;:4::55;46:38:46:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;48:60:48:61:0;:49::76:1;:83::85:0;:49::86:1;49:12:49:25:0;;:29::43;;:12:::1;:4::45;50:12:50:27:0;;:31::35;:12:::1;:4::37;52:60:52:61:0;:49::76:1;:83::85:0;:49::86:1;53:12:53:25:0;;:29::43;;:12:::1;:4::45;54:12:54:27:0;;:31::35;:12:::1;:4::37;57:78:57:79:0;:68::94:1;:101::102:0;:68::103:1;60:20:60:24:0;;:12::25:1;:29::49:0;;:12:::1;:4::51;63:73:63:74:0;:63::89:1;:96::97:0;:63::98:1;64:52:64:67:0;;:74::75;:52::76:1;65:27:65:42:0;;:49::51;:27::52:1;:::55;68:12:68:38:0;;:42::68;;:12:::1;:4::70;71:16:71:27:0;:35::50;;:31::51:1;:12;:4::53;74:16:74:30:0;;:12::31:1;:35::36:0;:12:::1;:4::38;77:23:77:24:0;:12::39:1;:53::54:0;:43::69:1;:76::78:0;:43::79:1;:::82;:92::93:0;:85::94:1;;:43;:12;:4::96;80:23:80:24:0;:12::31:1;:35::36:0;:12:::1;:4::38;81:23:81:24:0;:12::41:1;:45::80:0;:74::78;;::::1;;;;;;;;;;;;:12::80;:4::82;83:7:83:24:0;:28::29;:7:::1;:30:85:5:0;84:25:84:26;:14::41:1;:45::49:0;:14:::1;:6::51;83:30:85:5;30:2:86:3",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 4,
+        "line": 31
+      },
+      {
+        "ip": 8,
+        "line": 32
+      },
+      {
+        "ip": 14,
+        "line": 34
+      },
+      {
+        "ip": 20,
+        "line": 37
+      },
+      {
+        "ip": 26,
+        "line": 38
+      },
+      {
+        "ip": 32,
+        "line": 39
+      },
+      {
+        "ip": 38,
+        "line": 41
+      },
+      {
+        "ip": 44,
+        "line": 42
+      },
+      {
+        "ip": 59,
+        "line": 49
+      },
+      {
+        "ip": 64,
+        "line": 50
+      },
+      {
+        "ip": 74,
+        "line": 53
+      },
+      {
+        "ip": 79,
+        "line": 54
+      },
+      {
+        "ip": 90,
+        "line": 60
+      },
+      {
+        "ip": 109,
+        "line": 68
+      },
+      {
+        "ip": 115,
+        "line": 71
+      },
+      {
+        "ip": 121,
+        "line": 74
+      },
+      {
+        "ip": 134,
+        "line": 77
+      },
+      {
+        "ip": 139,
+        "line": 80
+      },
+      {
+        "ip": 158,
+        "line": 81
+      },
+      {
+        "ip": 167,
+        "line": 84
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.11.0-next.0"
+  },
+  "updatedAt": "2025-02-01T21:43:18.293Z"
+}

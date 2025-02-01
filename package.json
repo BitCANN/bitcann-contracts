@@ -4,7 +4,7 @@
   "description": "Bitcoin Cash for Assigned Names and Numbers",
   "main": "./index.js",
   "scripts": {
-    "start": "npm run compile:registry && npm run compile:registrationauction && npm run compile:bid && npm run compile:registrationconflict && node index.js",
+    "start": "npm run compile:registry && npm run compile:registrationauction && npm run compile:bid && npm run compile:registrationconflict && npm run compile:revealname && node index.js",
     "compile:registry": "cashc contracts/Registry.cash -o artifacts/Registry.json",
     "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json", 
     "compile:registrationauction": "cashc contracts/RegistrationAuction.cash -o artifacts/RegistrationAuction.json",
@@ -12,7 +12,8 @@
     "compile:resolveauction": "cashc contracts/ResolveAuctionConflict.cash -o artifacts/ResolveAuctionConflict.json",
     "compile:removeillegal": "cashc contracts/RemoveIllegalAuction.cash -o artifacts/RemoveIllegalAuction.json",
     "compile:registrationconflict": "cashc contracts/RegistrationConflict.cash -o artifacts/RegistrationConflict.json",
-    "compile": "npm run compile:registry && npm run compile:domain && npm run compile:registrationauction && npm run compile:bid && npm run compile:resolveauction && npm run compile:removeillegal && npm run compile:registrationconflict",
+    "compile:revealname": "cashc contracts/RevealName.cash -o artifacts/RevealName.json",
+    "compile": "npm run compile:registry && npm run compile:domain && npm run compile:registrationauction && npm run compile:bid && npm run compile:resolveauction && npm run compile:removeillegal && npm run compile:registrationconflict && npm run compile:revealname",
     "build": "npm run compile && node index.js"
   },
   "dependencies": {
