@@ -1,0 +1,99 @@
+pragma cashscript ^0.11.0;
+
+contract DomainFactory(
+  bytes domainContractPartialBytecodeHash,
+  bytes20 platformPKH
+) {
+
+  /* Create a Domain
+  *
+  * INFO: This function can be called by anyone, making it highly impossible for anyone to not claim the domain.
+  * If someone doesn't claim then the person interested shall call the claim function and wait for the hearbeat NFT
+  * to be old enough to be burnt and then start an auction.
+  *
+  * Question: What if no one claims the domain and the name is still unknown?
+  * - The name cannot be revealed, someone must reveal the name in order to move forward from this step.
+  *
+  * Question: What if the name is revealed but the domain is not claimed?
+  */
+  function call(bytes domainContractPartialBytecode, bytes name){
+    // Input0: Any input from this contract.
+    // Input1: NFT with lockingBytecode of this contract from registry contract
+    // Input2: First part of the auction pair i.e auctionId + nameHash
+    // Input3: Second part of the auction pair i.e auctionId + auctionEndBlock + lockingBytecode
+    require(tx.inputs.length == 4);
+    // Output0: Input0 back to this contract.
+    // Output1: NFT to registry contract
+    // Output2: The first output is the immutable NFT going back to the new Owner.
+    // Output3: Heartbeat NFT is issued to the contract.
+    // Output4: OP_RETURN to reveal the name.
+    // Output5: The second output is the platform fee. 50% goes to the platform, 50% goes to the miners.
+
+    // Ensure that the transaction is atleast 2 blocks old.
+    require(tx.age >= 2);
+
+    // For the first 4 years, the platform collects 50% of the fees
+    if (int(tx.locktime) > 1093240) {
+      require(tx.outputs.length == 5);
+    } else {
+      require(tx.outputs.length == 6);
+      require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(platformPKH));
+      // Enforce that the other half goes to the miners.
+      require(tx.outputs[5].value == tx.inputs[2].value / 2);
+    }
+
+    // The category from the regostry contract should match with all the other outputs that have a tokenCategory.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
+    bytes pair0Category, bytes pair0Capability = tx.inputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+
+    bytes8 auctionIdPair0, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);
+    bytes auctionEndBlock, bytes winnerLockingBytecode = remainingBytes.split(4);
+    // Make sure that the auction has ended.
+    require(int(tx.locktime) > int(auctionEndBlock));
+    bytes8 auctionIdPair1, bytes nameHash = tx.inputs[2].nftCommitment.split(8);
+    // Comfirm that the same piece of the pair are being used by matching the auctionId.
+    require(auctionIdPair0 == auctionIdPair1);
+    // Make sure that the name is correct.
+    require(hash256(name) == nameHash);
+
+    bytes bytecodeHash = hash160(domainContractPartialBytecode);
+    require(bytecodeHash == domainContractPartialBytecodeHash);
+    bytes domainBytecode = 0x28 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
+    bytes32 scriptHash = hash256(domainBytecode);
+    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+
+    // Send the heartbeat NFT to the domain contract.
+    require(tx.outputs[3].lockingBytecode == domainLockingBytecode);
+
+
+    // TODO: Send the domain NFT to the contract and let user claim it.
+    // Incentivise users to penalise the domain if it is invalid.
+    // 20% funds go to the Domain to incentivise invalid domain penalisation.
+    // 30% goes to the team and 50% goes to the miners.
+
+    // Once the user claims the domain, they get the NFT and remaining funds also go the the miners.
+    // If it is penalised then the money goes to the party who provided the proof.
+
+    // Send the domain NFT to the winner
+    require(tx.outputs[2].nftCommitment == auctionIdPair0 + nameHash);
+    require(tx.outputs[3].lockingBytecode == winnerLockingBytecode);
+    require(tx.outputs[2].value == 1000);
+    // Send the heartbeat NFT to the domain contract.
+    require(tx.outputs[3].nftCommitment == auctionIdPair0 + bytes(tx.locktime));
+    require(tx.outputs[3].value == 1000);
+
+    require(tx.outputs[4].value == 0);
+    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
+  }
+
+}

@@ -1,0 +1,116 @@
+pragma cashscript ^0.11.0;
+
+
+
+// The domain contract be just like the registry contract. when sending funds to the domain contract it can be easy
+// by just adding nameHash to the bytecode of the registryContract as registry contract will have category and extension.
+// But these two will be with the domain as well so the only unique thing in the domain contract will be the nameHash.
+
+
+// OR in any case, it's going to be a very small bytecode push. so I should make it just like the registry contract.
+// Later the domain contract can call the functions just like registry calls. 
+
+// Claim domain can be responsible for sending the script hash of the required contract to the domain contract
+// for each new registration. and since it's completely fine for this to be single threaded. It is perfect.
+
+
+
+// Lookup can be done by taking the name and doing a hash256 and attaching the bytecode of the domain contract.
+// Hash it and get the address and search for the UTXOs.
+
+// Lookup for the owner is basically whoever happens to be the owner of the NFT.
+
+
+// Transfer Ownership is as simple as sending the NFT to the new owner.
+
+// Lookup for records? Just fetch the transactions of this contract, all the OP_RETURN statements will be records.
+
+// NEED A STANDARD FOR RECORDS
+
+
+
+// Auth + Heartbeat NFT is issued to the contract.
+// Each time the contract is used, the heartbeat must be used with it.
+// If the domain has been inactive for 1 year then the heartbeat NFT can be used for others to remove the ownership.
+// making it possible for others to register the domain.
+
+// What about the previous owner? Don't they still have the NFT?
+// Yes, they still have the NFT but the auth NFT that had the corrosponding registrationId is no longer available so they
+// can't use it anymore.
+
+contract Domain(bytes32 nameHash, bytes32 domainCategory) {
+
+  // // Prove that the heartbeat NFT is no longer valid and burn it. Opening this domain for new registration.
+  // function proveInactivity(){
+  //   // (tx.locktime - heartbeat >= 2 years);
+  //   // Allow burn
+  // }
+
+  /*
+   * This allows anyone to use the auth + heartbear NFT to use it with other contracts.
+   * For example: Other contracts (IllegalAuction) can prove that the domain is owned and has not been inactive for 2 years or more.
+   * and that acts as a security measure to eliminate illegal auctions.
+   */
+  function externalUse(){
+    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[this.activeInputIndex].tokenCategory.split(32);
+    require(heartbeatCategory == domainCategory);
+    require(heartbeatCapability == 0x01); // Mutable
+
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == this.activeBytecode);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    require(tx.inputs[this.activeInputIndex].tokenCategory == tx.outputs[this.activeInputIndex].tokenCategory);
+    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);
+    require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value);
+  }
+
+  function addRecord(){
+    // Input0: The heartbeat NFT from the domain contract.
+    // Input1: The domain NFT owned by the owner.
+    require(tx.inputs.length == 2);
+    // Output0: Input0 back to the domain contract.
+    // Output1: The domain NFT back to the owner.
+    // Output2: OP_RETURN to reveal the data.
+    require(tx.outputs.length == 3);
+
+    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
+    require(heartbeatCategory == domainCategory);
+    require(heartbeatCapability == 0x01); // Mutable
+
+    bytes nameHashFromNFT = tx.inputs[0].nftCommitment.split(8)[1];
+    // Ensure that the NFT is verified.
+    require(nameHashFromNFT == nameHash);
+    bytes locktime = bytes(tx.locktime);
+    require(locktime.length == 4);
+    require(tx.outputs[0].nftCommitment == locktime + nameHash);
+
+    bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
+    require(ownerKeyCategory == domainCategory);
+    require(ownerKeyCapability == 0x00); // Immutable
+
+    require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
+    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+
+    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
+    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
+    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
+    require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);
+
+    // This enforces an OP_RETURN output.
+    require(tx.outputs[2].value == 0);
+  }
+
+  function renounceOwnership(){
+    // Input0: The heartbeat NFT from the domain contract.
+    // Input1: The domain NFT owned by the owner.
+    require(tx.inputs.length == 2);
+    // Output0: OP_RETURN announcing that the ownership has been renounced. (Data can be anything as the owner wishes)
+    // Output1: Change BCH
+    require(tx.outputs.length == 2);
+
+
+
+    // This enforces an OP_RETURN output.
+    require(tx.outputs[0].value == 0);
+    require(tx.outputs[0].tokenCategory == 0x);
+  }
+}

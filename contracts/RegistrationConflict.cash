@@ -1,0 +1,73 @@
+pragma cashscript ^0.11.0;
+
+contract RegistrationConflict() {
+
+  /*
+  * This contract exists to inventivise a single registration running for a given nameHash at a given time.
+  * Any attempt to create a new registration for the same nameHash provides anyone an opportunity to take away the funds from the new bid.
+  */
+  function call() {
+    // Input0: Any input from this contract.
+    // Input1: NFT with lockingBytecode of this contract from registry contract
+    // Input2: valid Bid NFT part0
+    // Input3: valid Bid NFT part1
+    // Input4: invalid Bid NFT part0 (Newer bid needs to be removed.)
+    // Input5: invalid Bid NFT part1
+    require(tx.inputs.length == 6);
+    // Output0: Input0 back to this contract.
+    // Output1: NFT to registry contract
+    // Output2: valid Bid NFT part0
+    // Output3: valid Bid NFT part1
+    // Output4: change in BCH
+    require(tx.outputs.length == 5);
+
+    // Pair0 of the valid auction NFT.
+    // It does not matter what the category is, only the capability matters.
+    require(tx.inputs[2].tokenCategory.split(32)[1] == 0x00); // Immutable
+
+    // Pair1 of the valid auction NFT.
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    require(tx.inputs[3].tokenCategory.split(32)[1] == 0x01); // Mutable
+
+    // Pair0 of the invalid auction NFT. (These two will be burned)
+    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
+    require(tx.inputs[4].tokenCategory.split(32)[1] == 0x00); // Immutable
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    // Pair1 of the invalid auction NFT.
+    require(tx.inputs[5].tokenCategory.split(32)[1] == 0x01); // Mutable
+
+
+    bytes idValidBid, bytes nameHashValidBid = tx.inputs[2].nftCommitment.split(8);
+    bytes idInvalidBid, bytes nameHashInvalidBid = tx.inputs[4].nftCommitment.split(8);
+
+    // Ensure the correct pair is being used
+    require(idValidBid == tx.inputs[3].nftCommitment.split(8)[0]);
+    // Ensure the correct pair is being used
+    require(idInvalidBid == tx.inputs[5].nftCommitment.split(8)[0]);
+    // Ensure the nameHash is the same so that the bids can be compared
+    require(nameHashValidBid == nameHashInvalidBid);
+
+    // Ensure the auctionId of the valid bid is less than the auctionId of the invalid bid.
+    require(int(idValidBid) < int(idInvalidBid));
+
+    // Make sure that the valid bid is the one that survives.
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
+    require(tx.inputs[3].nftCommitment == tx.outputs[3].nftCommitment);
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
+    require(tx.inputs[3].tokenCategory == tx.outputs[3].tokenCategory);
+    require(tx.inputs[2].value == tx.outputs[2].value);
+    require(tx.inputs[3].value == tx.outputs[3].value);
+    
+    require(tx.inputs[0].lockingBytecode == tx.outputs[2].lockingBytecode);
+    require(tx.inputs[0].lockingBytecode == tx.outputs[3].lockingBytecode);
+    
+    // Ensure that both pair come from the same registry contract.
+    require(tx.inputs[0].lockingBytecode == tx.inputs[2].lockingBytecode);
+    require(tx.inputs[0].lockingBytecode == tx.inputs[3].lockingBytecode);
+    require(tx.inputs[0].lockingBytecode == tx.inputs[4].lockingBytecode);
+    require(tx.inputs[0].lockingBytecode == tx.inputs[5].lockingBytecode);
+
+    // The change should go to anyone whom the called of this wants to give it to.
+    require(tx.outputs[4].tokenCategory == 0x);
+  }
+}

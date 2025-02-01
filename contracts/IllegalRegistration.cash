@@ -1,0 +1,61 @@
+pragma cashscript ^0.11.0;
+
+contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
+
+  // - Penalise illegal registration
+  // during the registration, if anyone can provide a valid heartbeat NFT from the domain contract then they can
+  // take away the bidder's funds and burn the bid reculting the auction to be cancelled.
+  // Any mutable commitment with te domainCategory is bound to be coming from a domain contract (Excluding activeBytecode)
+  function call(bytes domainContractPartialBytecode, bytes name){
+    // Input0: Any input from this contract.
+    // Input1: NFT with lockingBytecode of this contract from registry contract
+    // Input2: The first part of the registration pair i.e auctionId + nameHash
+    // Input3: The second part of the registration pair i.e auctionId + lockingBytecode
+    // Input4: The heartbeat NFT of the domain that is already owned.
+    require(tx.inputs.length == 5);
+    // Output0: Input0 back to this contract.
+    // Output1: NFT to registry contract
+    // Output2: The heartbeat NFT of the domain that is already owned back to the domain contract.
+    // Output3: Funds from the registration to the caller.
+    require(tx.outputs.length == 4);
+
+    // The category from the regostry contract should match with all the other outputs that have a tokenCategory.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
+    bytes pair0Category, bytes pair0Capability = tx.inputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+    bytes nameHash = tx.inputs[2].nftCommitment.split(8)[1];
+    // Make sure that the name is correct.
+    require(hash256(name) == nameHash);
+
+    bytes heartBeatLastBeat = tx.inputs[4].nftCommitment.split(8)[1];
+
+   
+    // Make sure that the heartbeat is not older than 105120 blocks i.e 2 years.
+    // If it's older than that it means the domain has been inactive and eligible for re-registration.
+    // Hence, the registration is not illegal.
+    require(int(heartBeatLastBeat) + 105120 <= tx.locktime);
+
+    // Send the heartbeat NFT back to the domain contract.
+    require(tx.inputs[4].nftCommitment == tx.outputs[2].nftCommitment);
+    require(tx.inputs[4].lockingBytecode == tx.outputs[2].lockingBytecode);
+    require(tx.inputs[4].tokenCategory == tx.outputs[2].tokenCategory);
+    require(tx.inputs[4].value == tx.outputs[2].value);
+
+    bytes bytecodeHash = hash160(domainContractPartialBytecode);
+    require(bytecodeHash == domainContractPartialBytecodeHash);
+    bytes domainBytecode = 0x28 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
+    bytes32 scriptHash = hash256(domainBytecode);
+    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+
+    require(tx.inputs[4].lockingBytecode == domainLockingBytecode);
+  }
+}

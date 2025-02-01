@@ -1,0 +1,97 @@
+pragma cashscript ^0.11.0;
+
+contract Bid(bytes registryContractScriptHash) {
+  /**
+   * Places a new bid on an active domain registration auction
+   * 
+   * The function allows placing a new bid with:
+   * - Minimum 5% increase over previous bid
+   * - Auction is extended by 72 blocks if a new bid is placed when the auction is less than 72 blocks away from ending.
+   * - Previous bidder receives their bid amount back in the same transaction,
+   * - Uses NFT pairs to track auction state:
+   *   1. (Immutable) NFT with registrationId(8 bytes) + nameHash(32 bytes) + satoshivalue attached to the utxo
+   *   2. (Mutable) NFT with registrationId(8 bytes) + auctionEndBlock(4 bytes) + new bidder's lockingBytecode(25 bytes) + isNameRevealed flag(1 byte)
+   * 
+   * @inputs
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: RegistrationPair0 to the Registry contract
+   * - Input3: RegistrationPair1 to the Registry contract
+   * - Input4: Funding UTXO from new bidder
+   * 
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
+   * - Output2: RegistrationPair0 to the Registry contract
+   * - Output3: RegistrationPair1 to the Registry contract
+   * - Output4: Previous bid amount returned to previous bidder
+   * - Output5: Optional change in BCH to new bidder
+   */
+  function call(){
+    require(tx.inputs.length == 5);
+    require(tx.outputs.length <= 6);
+    // Lock this contract to only be used with the registry contract.
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
+
+    // RegistrationPair0 (RegistrationAuctionId + nameHash) should be same.
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
+    bytes8 registrationAuctionId, bytes remainingBytes0 = tx.inputs[3].nftCommitment.split(8);
+    bytes registrationAuctionEndBlock, bytes remainingBytes1 = remainingBytes0.split(4);
+    bytes previousBidderLockingBytecode = remainingBytes1.split(25)[0];
+
+    // Confirm that the Pair0 and Pair1 are from the same RegistrationAuctionId.
+    require(registrationAuctionId == tx.inputs[2].nftCommitment.split(8)[0]);
+
+    // INFO: Since the auction is active, no need to check for the isNameRevealed flag.
+  
+    // New bid is placed, send the funds of the previous bid to the previous bidder.
+    require(tx.outputs[3].lockingBytecode == previousBidderLockingBytecode);
+    // Deal with all the locking bytecode restrictions.
+    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);
+    require(tx.outputs[2].lockingBytecode == tx.outputs[3].lockingBytecode);
+    require(tx.inputs[2].lockingBytecode == tx.outputs[2].lockingBytecode);
+
+    // All the token categories in the transaction should be the same.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
+    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    // Enforcing the structure of the pair results in predictable behaviour.
+    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
+    require(tx.inputs[3].tokenCategory == tx.outputs[3].tokenCategory);
+
+    // Need to add strict checks for value to ensure predictability in behaviour.
+    require(tx.outputs[3].value == tx.inputs[3].value);
+    // The amount being sent back to the previous bidder is equal to the value of the previous bid, in the first part of the pair.
+    require(tx.outputs[4].value == tx.inputs[2].value);
+    // INFO: As no minting NFT is used so there is no need to check tokenCategory for other inputs.
+
+    int newAuctionEndBlock = int(registrationAuctionEndBlock);
+    int locktime = int(tx.locktime);
+    // Make sure that the auction is still active.
+    require(locktime <= newAuctionEndBlock);
+    if(locktime - newAuctionEndBlock < 72) {
+      // When a new bid is placed, the auction is extended by 72 blocks.
+      newAuctionEndBlock = locktime + 72;
+    }
+      // Ensure that the second piece of the pair has the locking bytecode of the new bidder.
+    require(tx.outputs[3].nftCommitment == registrationAuctionId + bytes(newAuctionEndBlock) + tx.inputs[4].lockingBytecode + bytes(0));
+    // Since the funds stay in the first piece of the paur, make sure that the value is atleast 5% higher.
+    require(tx.outputs[2].value >= tx.inputs[2].value * 105 / 100);
+
+    if(tx.outputs.length == 5){
+      // If any change then it must be pure BCH
+      require(tx.outputs[4].tokenCategory == 0x);
+    }
+  }
+}

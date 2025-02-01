@@ -1,0 +1,22 @@
+{
+  "name": "bitcann",
+  "version": "0.1.0",
+  "description": "Bitcoin Cash for Assigned Names and Numbers",
+  "main": "./index.js",
+  "scripts": {
+    "start": "npm run compile:registry && npm run compile:registrationauction && npm run compile:bid && node index.js",
+    "compile:registry": "cashc contracts/Registry.cash -o artifacts/Registry.json",
+    "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json", 
+    "compile:registrationauction": "cashc contracts/RegistrationAuction.cash -o artifacts/RegistrationAuction.json",
+    "compile:bid": "cashc contracts/Bid.cash -o artifacts/Bid.json",
+    "compile:resolveauction": "cashc contracts/ResolveAuctionConflict.cash -o artifacts/ResolveAuctionConflict.json",
+    "compile:removeillegal": "cashc contracts/RemoveIllegalAuction.cash -o artifacts/RemoveIllegalAuction.json",
+    "compile": "npm run compile:registry && npm run compile:domain && npm run compile:registration && npm run compile:bid && npm run compile:resolveauction && npm run compile:removeillegal",
+    "build": "npm run compile && node index.js"
+  },
+  "dependencies": {
+    "@bitauth/libauth": "^3.1.0-next.4",
+    "cashc": "^0.11.0-next.0", 
+    "cashscript": "^0.11.0-next.0"
+  }
+}

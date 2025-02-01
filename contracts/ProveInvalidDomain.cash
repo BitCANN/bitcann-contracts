@@ -1,0 +1,41 @@
+pragma cashscript ^0.11.0;
+
+contract InvalidDomain() {
+
+
+  // Allowed Characters:
+
+  // Lowercase and uppercase letters (a-z)
+  // Digits (0-9)
+  // Hyphens (-)
+
+  // This function makes it possible for anyone to burn the Heartbeat NFT making the domain unusable.
+  // This does not stop the domain from being registered.
+  function call(int characterIndex, bytes name){
+    require(name.length <= 63);
+    bytes32 nameHashFromParam = hash256(name);
+    require(nameHashFromParam == nameHash);
+
+    bytes tld = name.split(name.length - 4)[1];
+    require(tld == bytes('.sat'));
+    
+    require(tx.inputs.length == 1);
+    require(tx.outputs.length == 1);
+    // This should be the the NFT that is trying to own the dinvalid domain.
+    // fetch the name[0]
+    bytes character = name.split(characterIndex)[0];
+    int charVal = int(character);
+
+    require(!within(charVal, 97, 123) || !within(charVal, 48, 58) || charVal != 45);
+
+    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+    
+    require(tx.inputs[0].tokenCategory == domainCategory);
+    bytes cat, bytes cap = tx.outputs[0].tokenCategory.split(32);
+    require(cat == domainCategory);
+    require(cap == 0x02); // Minting
+
+    require(tx.outputs[0].tokenCategory == 0x);
+  }
+
+}

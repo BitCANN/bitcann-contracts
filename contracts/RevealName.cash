@@ -1,0 +1,62 @@
+pragma cashscript ^0.11.0;
+
+contract RevealName() {
+  function call(bytes name){
+    // Input0: Any input from this contract.
+    // Input1: NFT with lockingBytecode of this contract from registry contract
+    // Input2: The first part of the auction pair i.e auctionId + nameHash
+    // Input3: The second part of the auction pair i.e auctionId + lockingBytecode
+    // Input4: Funding input
+    require(tx.inputs.length == 5);
+    // Output0: Input0 back to this contract.
+    // Output1: NFT to registry contract
+    // Output2: The first outputs is the first part of the auction pair i.e auctionId + nameHash
+    // Output3: The second output is the second part of the auction pair i.e auctionId + newLockingBytecode
+    // Output4: Funds back to the previous bidder
+    // Output5: Any change in BCH
+    require(tx.outputs.length <= 6);
+
+    // The category from the regostry contract should match with all the other outputs that have a tokenCategory.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
+    // Enforcing the structure of the pair results in predictable behaviour.
+    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // The second part of the pair changes with each new bid, hence it's marked as mutable.
+    // Enforcing the structure of the pair results in predictable behaviour.
+    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
+    require(tx.inputs[2].value == tx.outputs[2].value); // Preserve the bid amount.
+    require(tx.inputs[3].tokenCategory == tx.outputs[3].tokenCategory);
+    // First piece (AuctionId + nameHash) should be same as the previous bid.
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
+
+
+    // Second piece (AuctionId + lockingBytecode) should be same as the previous bid.
+    bytes8 auctionId, bytes remainingBytes0 = tx.inputs[3].nftCommitment.split(8);
+    bytes4 auctionEndBlock, bytes remainingBytes1 = remainingBytes0.split(4);
+    bytes25 previousBidderLockingBytecode, bytes1 isNameRevealed = remainingBytes1.split(32);
+
+    // Make sure that the auction has ended.
+    require(int(tx.locktime) > int(auctionEndBlock));
+
+    // Ensure that the name is not revealed.
+    require(int(isNameRevealed) == 0);
+
+    // Mark that the name is revealed
+    require(tx.outputs[3].nftCommitment == tx.inputs[3].nftCommitment.split(37)[0] + bytes(1));
+
+    // Ensuring an OP_RETURN output.
+    require(tx.outputs[4].value == 0);
+    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([names]));
+
+    require(tx.outputs[5].tokenCategory == 0x00);
+
+  }
+}
