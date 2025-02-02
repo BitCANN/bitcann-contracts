@@ -38,6 +38,14 @@ pragma cashscript ^0.11.0;
 // Yes, they still have the NFT but the auth NFT that had the corrosponding registrationId is no longer available so they
 // can't use it anymore.
 
+// INFO: It's important to mention the domainCategory here as anyone can send any utxo with matching NFT commitment and capability and create records. Hence, the
+// domainCategory should be a restriction in spending and creating records.
+
+// INFO: nameHash is important as it makes is easy for lookups and assigns a unique script to a unique domain.
+
+// WARNING: Do not send the ownership NFT to the domain contract. It's like keeping the lock and key together.
+// Anyone will be able to call the `renounceOwnership` function burning the ownership and making it possible for a new auction to begin.
+
 contract Domain(bytes32 nameHash, bytes32 domainCategory) {
 
   // // Prove that the heartbeat NFT is no longer valid and burn it. Opening this domain for new registration.
@@ -63,54 +71,102 @@ contract Domain(bytes32 nameHash, bytes32 domainCategory) {
     require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value);
   }
 
+
+  // Add record: just add
+  // Remove record: hash the record you wanted to remove and just use OP_RETURN(RM hash(content of record to be removed))
   function addRecord(){
-    // Input0: The heartbeat NFT from the domain contract.
+    // Input0: The heartbeat NFT from self.
     // Input1: The domain NFT owned by the owner.
-    require(tx.inputs.length == 2);
-    // Output0: Input0 back to the domain contract.
+    // Input2: Transaction funding UTXO (optional)
+    require(tx.inputs.length <= 3);
+    // Output0: Input0 back to self.
     // Output1: The domain NFT back to the owner.
     // Output2: OP_RETURN to reveal the data.
-    require(tx.outputs.length == 3);
+    // Output3: Change BCH (optional)
+    require(tx.outputs.length <= 4);
+
+    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+    require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
+    require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);
+
+    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
+    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
+
+    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
 
     bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
     require(heartbeatCategory == domainCategory);
     require(heartbeatCapability == 0x01); // Mutable
 
-    bytes nameHashFromNFT = tx.inputs[0].nftCommitment.split(8)[1];
+    bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
+    bytes registrationId, bytes nameHashFromOwnerNFT = tx.inputs[1].nftCommitment.split(8);
+
+    require(heartbeatRegistrationId == registrationId);
+
     // Ensure that the NFT is verified.
-    require(nameHashFromNFT == nameHash);
-    bytes locktime = bytes(tx.locktime);
-    require(locktime.length == 4);
-    require(tx.outputs[0].nftCommitment == locktime + nameHash);
+    require(nameHashFromOwnerNFT == nameHash);
+
+    // Since a new record is added, update the heartbeat.
+    require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + nameHash);
 
     bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
     require(ownerKeyCategory == domainCategory);
     require(ownerKeyCapability == 0x00); // Immutable
 
-    require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
-    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
-
-    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
-    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
-    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
-    require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);
-
     // This enforces an OP_RETURN output.
     require(tx.outputs[2].value == 0);
+
+    if(tx.inputs.length == 3){
+      // Pure BCH
+      require(tx.inputs[2].tokenCategory == 0x);
+    }
+
+    if(tx.outputs.length == 4){
+      // Pure BCH
+      require(tx.outputs[3].tokenCategory == 0x);
+    }
   }
 
+  /**
+   * Allows domain owner to renounce ownership by burning both NFTs
+   * 
+   * This function enables permanent domain abandonment by:
+   * - Burning both the domain ownership NFT and heartbeat NFT
+   * - Returning any BCH value as change
+   * - Making the domain available for re-registration
+   *
+   * @inputs
+   * - Input0: Heartbeat NFT from domain contract
+   * - Input1: Domain ownership NFT from owner
+   *
+   * @outputs 
+   * - Output0: BCH change (if any)
+   *
+   * Requirements:
+   * - Both NFTs must be from same registration
+   * - NFTs must have correct categories and capabilities
+   * - Only BCH change output allowed
+   */
   function renounceOwnership(){
-    // Input0: The heartbeat NFT from the domain contract.
-    // Input1: The domain NFT owned by the owner.
     require(tx.inputs.length == 2);
-    // Output0: OP_RETURN announcing that the ownership has been renounced. (Data can be anything as the owner wishes)
-    // Output1: Change BCH
-    require(tx.outputs.length == 2);
+    require(tx.outputs.length == 1);
 
-
-
-    // This enforces an OP_RETURN output.
-    require(tx.outputs[0].value == 0);
+    // Pure BCH
     require(tx.outputs[0].tokenCategory == 0x);
+
+    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+
+    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
+    require(heartbeatCategory == domainCategory);
+    require(heartbeatCapability == 0x01); // Mutable
+
+    bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
+    require(ownerKeyCategory == domainCategory);
+    require(ownerKeyCapability == 0x00); // Immutable
+
+    bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
+    bytes registrationId = tx.inputs[1].nftCommitment.split(8)[0];
+
+    require(heartbeatRegistrationId == registrationId);
   }
 }

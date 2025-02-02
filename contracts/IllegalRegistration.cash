@@ -1,8 +1,8 @@
 pragma cashscript ^0.11.0;
 
-contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
+contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContractPartialBytecodeHash) {
   /**
-   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds
+   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds as reward.
    * 
    * If someone attempts to register a domain that is already owned and active (has a valid heartbeat NFT),
    * this function allows anyone to:
@@ -14,15 +14,15 @@ contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
    * @param name - Name being registered illegally
    * 
    * @inputs
-   * - Input0: Any input from this contract
-   * - Input1: NFT with lockingBytecode of this contract from registry contract
-   * - Input2: Registration NFT pair0 (immutable) containing auctionId + nameHash
-   * - Input3: Registration NFT pair1 (mutable) containing auctionId + lockingBytecode
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: Registration NFT pair0
+   * - Input3: Registration NFT pair1
    * - Input4: Heartbeat NFT proving active domain ownership
    * 
    * @outputs
-   * - Output0: Input0 back to this contract
-   * - Output1: NFT back to registry contract
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
    * - Output2: Heartbeat NFT back to domain contract
    * - Output3: Bid funds to caller as reward
    * 
@@ -34,27 +34,19 @@ contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
    * - All NFTs must have correct categories and capabilities
    */
   function call(bytes domainContractPartialBytecode, bytes name){
-    // Input0: Any input from this contract.
-    // Input1: NFT with lockingBytecode of this contract from registry contract
-    // Input2: The first part of the registration pair i.e auctionId + nameHash
-    // Input3: The second part of the registration pair i.e auctionId + lockingBytecode
-    // Input4: The heartbeat NFT of the domain that is already owned.
     require(tx.inputs.length == 5);
-    // Output0: Input0 back to this contract.
-    // Output1: NFT to registry contract
-    // Output2: The heartbeat NFT of the domain that is already owned back to the domain contract.
-    // Output3: Funds from the registration to the caller.
     require(tx.outputs.length == 4);
+    // Lock this contract to only be used with the registry contract.
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
 
-    // The category from the regostry contract should match with all the other outputs that have a tokenCategory.
+    // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
 
-    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
     bytes pair0Category, bytes pair0Capability = tx.inputs[2].tokenCategory.split(32);
     require(pair0Category == domainCategory);
     require(pair0Capability == 0x00); // Immutable
 
-    // The second part of the pair changes with each new bid, hence it's marked as mutable.
     bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);
     require(pair1Category == domainCategory);
     require(pair1Capability == 0x01); // Mutable
@@ -63,13 +55,22 @@ contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
     // Make sure that the name is correct.
     require(hash256(name) == nameHash);
 
-    bytes heartBeatLastBeat = tx.inputs[4].nftCommitment.split(8)[1];
+    bytes registrationIdPart0 = tx.inputs[2].nftCommitment.split(8)[0];
+    bytes registrationIdPart1 = tx.inputs[3].nftCommitment.split(8)[0];
+    require(registrationIdPart0 == registrationIdPart1);
 
+    // Make sure that the heartbeat NFT is from the same category and in mutable capability.
+    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[4].tokenCategory.split(32);
+    require(heartbeatCategory == domainCategory);
+    require(heartbeatCapability == 0x01); // Mutable
+
+    bytes registrationIdHeartBeat = tx.inputs[4].nftCommitment.split(8)[0];
+
+    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.
+    require(int(registrationIdHeartBeat) < int(registrationIdPart0));
    
-    // Make sure that the heartbeat is not older than 105120 blocks i.e 2 years.
-    // If it's older than that it means the domain has been inactive and eligible for re-registration.
-    // Hence, the registration is not illegal.
-    require(int(heartBeatLastBeat) + 105120 <= tx.locktime);
+    // NOTICE: It does not matter if the heartbeat is already older than 2 years. If it is then is should be burned
+    // As it is allowed for anyone to burn the heartbeat NFT by anyone for any Domain contract is the domain has expired.
 
     // Send the heartbeat NFT back to the domain contract.
     require(tx.inputs[4].nftCommitment == tx.outputs[2].nftCommitment);
@@ -77,9 +78,12 @@ contract IllegalRegistration(bytes domainContractPartialBytecodeHash) {
     require(tx.inputs[4].tokenCategory == tx.outputs[2].tokenCategory);
     require(tx.inputs[4].value == tx.outputs[2].value);
 
+    // Derive the locking bytecode from the domain contract bytecode using the provided bytecode,
+    // provided name and the nameHash.
+
     bytes bytecodeHash = hash160(domainContractPartialBytecode);
     require(bytecodeHash == domainContractPartialBytecodeHash);
-    bytes domainBytecode = 0x28 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
+    bytes domainBytecode = 0x20 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
