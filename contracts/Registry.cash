@@ -23,7 +23,8 @@ contract Registry(bytes domainCategory) {
     // Registry Contract
 
     // Make sure that the NFT stays with the contract.
-    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+    bytes32 scriptHash = hash256(this.activeBytecode);
+    require(tx.inputs[0].lockingBytecode == new LockingBytecodeP2SH32(scriptHash));
     require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);

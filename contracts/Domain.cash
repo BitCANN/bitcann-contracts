@@ -64,7 +64,8 @@ contract Domain(bytes32 nameHash, bytes32 domainCategory) {
     require(heartbeatCategory == domainCategory);
     require(heartbeatCapability == 0x01); // Mutable
 
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == this.activeBytecode);
+    bytes32 scriptHash = hash256(this.activeBytecode);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == new LockingBytecodeP2SH32(scriptHash));
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
     require(tx.inputs[this.activeInputIndex].tokenCategory == tx.outputs[this.activeInputIndex].tokenCategory);
     require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);

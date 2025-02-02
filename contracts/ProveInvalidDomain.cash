@@ -1,6 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract InvalidDomain() {
+contract ProveInvalidDomain(bytes registryContractScriptHash) {
 
   // Allowed Characters:
   // - Lowercase letters (a-z)
@@ -19,44 +19,79 @@ contract InvalidDomain() {
    * @param name - Full domain name to validate
    *
    * @inputs
-   * - Input0: Domain NFT from this contract to be burned
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: RegistrationPair0 (immutable) containing auctionId + nameHash
+   * - Input3: RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode + isNameRevealed
    *
-   * @outputs  
-   * - Output0: Pure BCH (NFT is burned)
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
+   * - Output2: Reward to caller
    *
    * Requirements:
    * - Name must be 63 characters or less
    * - Name must match the stored nameHash
-   * - Name must end in '.sat'
+   * - Name must end in '.sat' or '.bch' domain (Depending on the initial deployed configurations)
    * - Character at characterIndex must be invalid (not a-z, 0-9, or hyphen)
-   * - Transaction must have exactly 1 input and 1 output
+   * - Transaction must have exactly 4 inputs and 3 outputs
    * - Input must be from this contract and have the domain NFT
    * - Output must burn the NFT by converting to pure BCH
    */
   function call(int characterIndex, bytes name) {
+    require(tx.inputs.length == 4);
+    require(tx.outputs.length == 3);
+
+    // Lock this contract to only be used with the registry contract.
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+
+    // All the token categories in the transaction should be the same.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
+    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // Pair1 changes with each new bid (locking bytecode) and isNameRevealed flag is set to 1 when name is revealed, hence it's capability is mutable.
+    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+    // Ensure that the Pair0 and Pair1 are going to the Registration Contract.
+    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);
+
+    bytes8 registrationIdPair0, bytes nameHash = tx.inputs[2].nftCommitment.split(8);
+    bytes8 registrationIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);
+    bytes isNameRevealed = remainingBytes.split(29)[1];
+    
+    // Ensure the correct pair is being used.
+    require(registrationIdPair0 == registrationIdPair1);
+    // Ensure the name is revealed before proving the domain as invalid.
+    require(isNameRevealed == 0x01);
+
     require(name.length <= 63);
     bytes32 nameHashFromParam = hash256(name);
     require(nameHashFromParam == nameHash);
 
     bytes tld = name.split(name.length - 4)[1];
+
     require(tld == bytes('.sat'));
+    // @NOTE:This should be done for .bch domains and .sat domains line should be removed.
+    // require(tld == bytes('.bch'));
     
-    require(tx.inputs.length == 1);
-    require(tx.outputs.length == 1);
-    
-    bytes character = name.split(characterIndex)[0];
+
+    bytes characterSplitBytes = name.split(characterIndex)[0];
+    characterIndex = characterIndex - 1;
+    bytes character = name.split(characterIndex)[1];
     int charVal = int(character);
 
-    require(!within(charVal, 97, 123) || !within(charVal, 48, 58) || charVal != 45);
+    // Ensure the character is not a-z, A-Z, 0-9, or hyphen.
+    require(!within(charVal, 97, 123) || !within(charVal, 65, 91) || !within(charVal, 48, 58) || charVal != 45);
 
-    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
-    
-    require(tx.inputs[0].tokenCategory == domainCategory);
-    bytes cat, bytes cap = tx.outputs[0].tokenCategory.split(32);
-    require(cat == domainCategory);
-    require(cap == 0x02); // Minting
-
-    require(tx.outputs[0].tokenCategory == 0x);
+    // Pure BCH
+    require(tx.outputs[3].tokenCategory == 0x);
   }
 
 }
