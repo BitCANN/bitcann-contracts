@@ -64,12 +64,10 @@ contract Domain(bytes32 nameHash, bytes32 domainCategory) {
     require(heartbeatCategory == domainCategory);
     require(heartbeatCapability == 0x01); // Mutable
 
-    bytes32 scriptHash = hash256(this.activeBytecode);
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == new LockingBytecodeP2SH32(scriptHash));
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    require(tx.inputs[this.activeInputIndex].tokenCategory == tx.outputs[this.activeInputIndex].tokenCategory);
-    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);
-    require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value);
+    require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+    require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
+    require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);
+    require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);
   }
 
 

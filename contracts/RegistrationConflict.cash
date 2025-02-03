@@ -21,7 +21,7 @@ contract RegistrationConflict(bytes registryContractScriptHash) {
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
    * - Output2: Valid auction's NFT pair0 preserved
-   * - Output3: Valid auction's NFT pair1 preserved  
+   * - Output3: Valid auction's NFT pair1 preserved
    * - Output4: BCH change/reward to caller
    */
   function call() {

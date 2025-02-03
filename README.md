@@ -4,18 +4,20 @@ Bitcoin Cash for Assigned Names and Numbers
 
 ### Contract Description
 
-1. RegistrationContract
-2. StartRegistration
+
+1. Registration
+2. RegistrationAuction
 3. Bid
 4. RevealName
 5. DomainFactroy
 6. Domain
 7. ProveInvalidDomain
-8. RemoveIllegalRegistration
-9. ResolveRegistrationConflict
+8. IllegalRegistration
+9. RegistrationConflict
 
 
-#### RegistrationContract
+#### Registry
+
 
 The Registration contract contains NFTs with the domain category that have scriptHash of the contract which with the contract interacts with. [5-10 threads each] `require(inputs[0].nftCommitment == lockingBytecode)`. These contracts are tightly locked with each other.
 
@@ -23,9 +25,9 @@ The Registration contract contains NFTs with the domain category that have scrip
 All the transactions made with registration contract should have the `lockingbytecode` of the target contract in it's nftCommitment and should be 0th index. The target contract's NFT should be 1st index.  Rest of the restrictions on inputs and outputs are done by the target contract. It's ok to trust all the convanents places by this target contract as it's been whitelisted before deployment.
 
 
-#### StartRegistration
+#### RegistrationAuction
 
-
+Input0
 
 
 ### FAQs
@@ -83,3 +85,112 @@ Anyone can provide the auth+heartbeat NFT form the domain Contract by using the 
 
 #### Can a bid be cancelled?
 No, If a bid it made, it's locked in. Whoever wins the registration auction of the domain can later put it for sale in a secondary market.
+
+#### What consists of the ownership NFT?
+It has information in two parts in the NFT commitment, 8 bytes is the registrationID and 32 bytes is the nameHash (Domain name hashed). The capability of the NFT is immutable. Whoever has the NFT has the capability to add or remove records, they can also renounce ownership.
+
+#### What happens if they renounce ownership?
+The owner must call the `renounceOwnership` function of their respective Domain contract.
+The function will burn the `heartbeat` NFT that exists in the Domain contract and also burn the 
+`ownership` NFT that the owner provides when calling this function. This will ensure that a new
+auction can be initiated by any other interested party.
+
+
+#### How will any party initiate the auction?
+If a domain is owned by anyone then the Domain contract representing the domain name must have a `heartbeat` NFT, if anyone tries to create an auction for a domain which has that NFT, they can prove it's existance and penalise the illegal auction by taking away the funds in the Bid and burning the illegal auction's Registation Pair NFTs.
+
+So, if no one can provide the heaertbeat NFT that means the auction is valid and can continue to expect more bids and be sold at a later block.
+
+#### What is a heartbeatNFT?
+
+#### What is Registration Counter NFT?
+Registration on BCH is a single threaded operation, which means only 1 auction can initiate at a time. So this restricts any parallel activity for registration. The registration contract has a single NFT from the `domainCategory`, let's call it registrationCounter NFT.
+This NFT has minting Capability and it acts as storage. It's nftcommitment increases by 1 for each new auction initiated. The NFT commitment is of 8 bytes starting for 0 at the time of genesis.
+
+#### What is Registration Pair NFTs?
+When a new registration beings an auction is created, for each auction there can ever be 2 NFTs that exist as a pair. (This pair exists because of the limited space in the NFT commitment i.e 40 bytes).
+So the required information is divided into 2 NFTs and they are always used together in a single transaction.
+
+- (Immutable) NFT with registrationId(8 bytes) + nameHash(32 bytes) + satoshivalue attached to the utxo
+- (Mutable) NFT with registrationId(8 bytes) + registrationAuctionEndBlock(4 bytes) + bidder's lockingBytecode(25 bytes) + isNameRevealed flag(1 byte)
+
+If the previous registrationID was 0 then in the output the minting counter NFT that belongs to the Registry contract registationID get's incremented by 1.
+
+The registration pair also stats with the registry contract.
+
+
+#### How are other contracts dealing with the Registry Contract?
+1. We already have determined the tokenCategory for this domain system.
+2. The registry contract has immutable NFTs that have P2SH lockingBytecode stored as NFTCommitment and have the same tokenCategory as that of the domainCategory.
+3. All this happens at the genesis time i.e before the contracts are functional
+
+nftCommitment => (lockingBytecodeP2SH32)
+
+Registry contract says that I don't care how many inputs and outputs are used, as long as my own utxo is the 0th index input and output
+and, some contract that has the same lockingbytecode that I have stored in the NFTcommitment of my 0th input.
+
+Let's say the lockingBytecode of the Bid Contract is `abc` then in the genesis if 5 NFTs were created with category the same as domainCategory and their
+NFT commitment as `abc` then it's a 5 threaded system which means, 5 transaction can be executed parallely consuming one of these 5 NFTs as the 0th input and 
+1st input being the contract that `abc` as it's lockingbytecode.
+
+So in a way registry contract as whitelisted a list of contract that can be execute along with the itself.
+
+
+Registry Contract also acts as a storage contract
+
+
+#### What is the structure of the Domain contract?
+A domain contract is a 1-of-1, each unique domain has a single owner and a single contract.
+
+#### What type of record can be added?
+
+Anything, the records exists as an OP_RETURN. The owner of the domain makes these 'addRecord' calls. 
+The record can be any from DNS configuration to identity, to website, so socials and/or addresses.
+
+
+
+
+npm => bitcann.js
+
+
+findAddress({ type: 'BCH', name: 'kuldeep.sat' })
+
+1. bytecode = hash256(kuldeep.sat) + domainContractLockingBytecode
+2. scriptHash = hash160(bytecode)
+3. scriptHashToCashAddress(scriptHash)
+4. Fetch the transacitonHistory.
+
+(kuldeep.sat -> address)
+
+
+
+
+
+1. OP_RETURNS (Records)
+
+10 transacvtion:
+
+A 192.u10293820913.
+
+kuldeep.sat  -> 192.32131232131
+
+MX
+NS -> 
+
+await bitcann.addRecord('TXT', 'uvkbhhulkdjtyrhxfgn hvbiukt6rutdjyhxfchgvjiluoeu56drycfhgv')
+
+
+
+regisration + nameHash
+
+kuldeep.sat -> nameHash
+
+chainGraph, who owner? address -> ()
+
+
+TXT 
+
+AAAA CNAME, wwebside
+
+bchaddress (address)
+evmaddress (address)

@@ -27,12 +27,13 @@ contract RegistrationAuction(bytes registryContractScriptHash) {
    * - Output4: RegistrationPair1 to the Registry contract
    * - Output5: Optional change in BCH
    */
-  function call(bytes nameHash){
+  function call(bytes32 nameHash){
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 6);
     // Lock this contract to only be used with the registry contract.
     require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
     // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
+    // Needs fewer operations with this approach as it would require this code to check 0th and 1st input and output in all other contracts.
 
     // Ensure that the counter NFT is incremented by 1 with each transaction.
     int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());
@@ -41,7 +42,7 @@ contract RegistrationAuction(bytes registryContractScriptHash) {
   
     // Inputs[3] is the funding UTXO
     require(tx.inputs[3].tokenCategory == 0x);
-    // Every auction begins with a base value of atleast0.025 BCH.
+    // Every auction begins with a base value of atleast 0.025 BCH.
     require(tx.outputs[3].value >= 2500000);
 
     // Create the first piece of the registration pair. i.e Pair0
