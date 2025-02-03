@@ -5,13 +5,14 @@ Bitcoin Cash for Assigned Names and Numbers
 
 - Decentralised domain names like `.sat` and `.bch`
 - Add/Remove records, currency addresses, text records, social, email and custom records
-- No expiry/ No renewals
+- No expiry/renewals
 - NFT domains, domain ownership is an NFT, providing proof of ownership and enabling secondary market trading.
 - Hidden name during auction. Ensures privacy, fair price discovery and reduces squatting.
 - Earn by protecting the system by
-   - Report invalid registrations
-   - Identify registration conflicts
+   - Burn invalid registrations
+   - Identify and burn registration conflicts
    - Proving domain violations
+- Lookup as easy as fetching transaction history
 - Possible to sign-In using your identity
 - Indexer needed only for heavy usage apps/services
 
@@ -22,10 +23,10 @@ Bitcoin Cash for Assigned Names and Numbers
    - [Bid](#bid)
    - [RevealName](#revealname)
    - [DomainFactory](#domainfactory)
-   - [Domain](#domain)
    - [ProveInvalidDomain](#proveinvaliddomain)
    - [IllegalRegistration](#illegalregistration)
    - [RegistrationConflict](#registrationconflict)
+   - [Domain](#domain-contract)
 2. [FAQs](#faqs)
    - [How are the domains sold?](#how-are-the-domains-sold)
    - [How gets the money from auction?](#how-gets-the-money-from-auction)
@@ -95,7 +96,7 @@ Each authorized contract has a designated number of threads:
    - Runs for 144 blocks (~1 day), extended by 72 blocks if bid made near end (i.e less than 72 blocks were remaining)
    - Creates two NFT pairs to track the auction state:
      1. Immutable NFT containing registrationId (8 bytes) + nameHash (32 bytes). The satoshis held by this NFT is the bid value.
-     2. Mutable NFT containing registrationId (8 bytes) + registrationAuctionEndBlock (4 bytes) + bidderLockingytecode (25 bytes) + isNameRevealed flag (1 byte)
+     2. Mutable NFT containing registrationId (8 bytes) + auctionEndBlock (4 bytes) + bidderLockingytecode (25 bytes) + isNameRevealed flag (1 byte)
 
    Transaction Structure:
    | # | Inputs | Outputs |
@@ -108,13 +109,188 @@ Each authorized contract has a designated number of threads:
    | 5 | | Optional change in BCH |
 
 
+#### Bid
+
+The Bid contract allows updating the bid amount on active domain registration auctions by the new bidder. Each update must:
+- Be at least 5% higher than the previous bid
+- Extend auction by 72 blocks if placed when < 72 blocks remain
+- Return previous bidder's funds in same transaction
+- Update NFT pairs tracking auction state:
+  1. Immutable NFT with registrationId (8 bytes) + nameHash (32 bytes) + new bid value
+  2. Mutable NFT with registrationId (8 bytes) + updated auctionEndBlock (4 bytes) + new bidder's lockingBytecode (25 bytes) + isNameRevealed flag (1 byte)
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | RegistrationPair0 to the Registry contract | RegistrationPair0 to the Registry contract |
+| 3 | RegistrationPair1 to the Registry contract | RegistrationPair1 to the Registry contract |
+| 4 | Funding UTXO from new bidder | Previous bid amount returned to previous bidder |
+| 5 | | Optional change in BCH to new bidder |
+
+
+#### RevealName
+
+The RevealName contract allows revealing the domain name after an auction has ended. The winning bidder must:
+- Wait until auction end block has passed
+- Reveal the actual domain name that matches the nameHash
+- Wait additional 2 blocks after revealing before claiming
+- Update NFT pairs tracking auction state:
+  1. Immutable NFT with registrationId (8 bytes) + nameHash (32 bytes) remains unchanged
+  2. Mutable NFT with registrationId (8 bytes) + auctionEndBlock (4 bytes) + bidder's lockingBytecode (25 bytes) + isNameRevealed flag set to 1
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | RegistrationPair0 to the Registry contract | RegistrationPair0 to the Registry contract (unchanged) |
+| 3 | RegistrationPair1 to the Registry contract | RegistrationPair1 to the Registry contract (with isNameRevealed=1) |
+| 4 | Funding input | OP_RETURN output containing the revealed name |
+| 5 | | Optional BCH change |
+
+
+#### DomainFactory
+
+The DomainFactory contract finalizes domain registration auctions by:
+- Verifying auction has ended and winner's bid is valid
+- Issuing mutable heartbeat NFT to domain contract
+- Issuing immutable domain NFT to auction winner 
+- Distributing auction fees between platform and miners
+
+Requirements:
+- Transaction must be at least 2 blocks old
+- Auction must have ended (current block > endBlock)
+- Domain contract bytecode must match expected hash
+- NFTs must have correct categories and capabilities
+- Platform fee split 50/50 with miners for first 4 years
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | First part of auction pair (immutable) containing auctionId + nameHash | Domain NFT to auction winner |
+| 3 | Second part of auction pair (mutable) containing auctionId + endBlock + bidderLockingBytecode | Heartbeat NFT to domain contract |
+| 4 | | Platform fee (only for first 4 years) |
+| 5 | | Miner fee (only for first 4 years) |
+
+
+#### ProveInvalidDomain
+
+The ProveInvalidDomain contract allows anyone to prove a domain name contains invalid characters and burn the associated NFT, making it unusable. Key aspects:
+
+- Validates that a character at specified index is invalid (not a-z, 0-9, or hyphen)
+- Burns the NFT by converting to pure BCH
+- Rewards the prover for keeping the system in check
+- Does not prevent domain from being re-registered
+
+Requirements:
+- Name must be 63 characters or less
+- Name must match stored nameHash 
+- Name must end in '.sat' or '.bch' domain
+- Character at index must be invalid
+- Transaction must have exactly 4 inputs and 3 outputs
+- Input must be from this contract with domain NFT
+- Output must burn NFT to pure BCH
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | RegistrationPair0 (immutable) containing auctionId + nameHash | Reward to caller |
+| 3 | RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode + isNameRevealed | |
+
+
+#### IllegalRegistration
+
+The IllegalRegistration contract penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds as reward. Key aspects:
+
+- Proves domain is already owned by providing heartbeat NFT
+- Burns illegal registration bid NFTs 
+- Claims bid funds as reward for prover
+- Helps prevent duplicate registrations
+
+Requirements:
+- Name must match stored nameHash
+- Heartbeat must be less than 2 years old (105120 blocks)
+- Domain contract bytecode must match expected hash
+- Heartbeat NFT must be from valid domain contract
+- All NFTs must have correct categories and capabilities
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | Heartbeat NFT proving active domain ownership | Heartbeat NFT back to domain contract |
+| 3 | Registration NFT pair0 | Bid funds to caller as reward |
+| 4 | Registration NFT pair1 | |
+
+
+#### RegistrationConflict
+
+The RegistrationConflict contract resolves conflicts between competing registration auctions for the same name. Key aspects:
+
+- Detects when multiple auctions exist for same name
+- Allows anyone to prove an earlier auction exists
+- Burns the newer invalid auction's NFTs
+- Rewards prover with funds from invalid auction
+- Helps maintain auction uniqueness
+
+Requirements:
+- Must provide proof of earlier valid auction
+- Both auctions must be for same name (matching nameHash)
+- Earlier auction must have lower registrationId
+- All NFTs must have correct categories and capabilities
+- Invalid auction's funds go to prover as reward
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+| 1 | Any input from this contract | Input1 back to this contract without any change |
+| 2 | Valid auction's NFT pair0 (earlier registrationId) | Valid auction's NFT pair0 preserved |
+| 3 | Valid auction's NFT pair1 | Valid auction's NFT pair1 preserved |
+| 4 | Invalid auction's NFT pair0 (newer registrationId) | BCH change/reward to caller |
+| 5 | Invalid auction's NFT pair1 | |
+
+#### Domain Contract
+
+The Domain contract manages individual domain names after they are claimed from auction. Key aspects:
+
+- Unique contract for each unique domain name
+- Requires heartbeat NFT for all operations to prove active ownership
+- Enables domain owner to manage records
+- Enforces atleast one activity in 2-year
+
+The heartbeat design ensures domains remain under active control while allowing permanent ownership as long as the activity requirement is met.
+
+---
+
 ### FAQs
 
-#### How are the domains sold?
-Auction, the auction starts with 0.025 BCH as the starting about, any new bid must be 5% higher than the previous bid. By default, the auction ends in 144 blocks (i.e 1 day) but if any new bid is added the auction is extended further by 72 blocks. However, if the auction has > 72 blocks left then no changes to the deadline are made.
+#### How are domains sold?
+Domains are sold through an auction process with the following rules:
 
-#### How gets the money from auction?
-For the first 2 years, the split if 50% to miners and 50% to the development team after which it's 100% assigned to miners.
+- Starting bid >= 0.025 BCH
+- Minimum bid increment: 5% higher than previous bid
+- Default duration: 144 blocks (~1 day)
+- Extension rules:
+  - New bids extend auction by 72 blocks
+  - No extension if >72 blocks remaining
+
+#### How are auction proceeds distributed?
+The funds from successful auctions are distributed as follows:
+
+First 2 years:
+- 50% to miners
+- 50% to development team
+
+Onwards
+- 100% to miners
 
 #### Are the names revealed upfront?
 No, the auction begins by the interested party providing a hash256(name) which is 32 bytes. Only the interested parties in the domain can know by hashing the name they desire.
