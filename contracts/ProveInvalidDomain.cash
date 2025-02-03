@@ -1,12 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract ProveInvalidDomain(bytes registryContractScriptHash) {
-
-  // Allowed Characters:
-  // - Lowercase letters (a-z)
-  // - Digits (0-9) 
-  // - Hyphens (-)
-
+contract ProveInvalidDomain(bytes registryContractScriptHash, bytes tld) {
   /**
    * Proves that a domain name contains invalid characters and burns the associated NFT
    * 
@@ -75,19 +69,15 @@ contract ProveInvalidDomain(bytes registryContractScriptHash) {
     bytes32 nameHashFromParam = hash256(name);
     require(nameHashFromParam == nameHash);
 
-    bytes tld = name.split(name.length - 4)[1];
-
-    require(tld == bytes('.sat'));
-    // @NOTE:This should be done for .bch domains and .sat domains line should be removed.
-    // require(tld == bytes('.bch'));
-    
+    bytes tldInName = name.split(name.length - tld.length)[1];
+    require(tldInName == tld);    
 
     bytes characterSplitBytes = name.split(characterIndex)[0];
     characterIndex = characterIndex - 1;
-    bytes character = name.split(characterIndex)[1];
+    bytes character = characterSplitBytes.split(characterIndex)[1];
     int charVal = int(character);
 
-    // Ensure the character is not a-z, A-Z, 0-9, or hyphen.
+    // Ensure the character is not (a-z, A-Z, 0-9, or hyphen).
     require(!within(charVal, 97, 123) || !within(charVal, 65, 91) || !within(charVal, 48, 58) || charVal != 45);
 
     // Pure BCH

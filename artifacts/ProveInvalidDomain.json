@@ -4,6 +4,10 @@
     {
       "name": "registryContractScriptHash",
       "type": "bytes"
+    },
+    {
+      "name": "tld",
+      "type": "bytes"
     }
   ],
   "abi": [
@@ -21,76 +25,76 @@
       ]
     }
   ],
-  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_3 OP_NUMEQUALVERIFY OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY 00 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_3 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT 1d OP_SPLIT OP_NIP OP_3 OP_ROLL OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_PICK OP_SIZE OP_NIP 3f OP_LESSTHANOREQUAL OP_VERIFY OP_2 OP_PICK OP_HASH256 OP_EQUALVERIFY OP_OVER OP_2 OP_PICK OP_SIZE OP_NIP OP_4 OP_SUB OP_SPLIT OP_NIP 2e736174 OP_EQUALVERIFY OP_OVER OP_SWAP OP_SPLIT OP_DROP OP_SIZE OP_NIP OP_SPLIT OP_NIP OP_BIN2NUM OP_DUP 61 7b OP_WITHIN OP_NOT OP_OVER 41 5b OP_WITHIN OP_NOT OP_BOOLOR OP_OVER 30 3a OP_WITHIN OP_NOT OP_BOOLOR OP_SWAP 2d OP_NUMNOTEQUAL OP_BOOLOR OP_VERIFY OP_3 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUAL",
-  "source": "pragma cashscript ^0.11.0;\n\ncontract ProveInvalidDomain(bytes registryContractScriptHash) {\n\n  // Allowed Characters:\n  // - Lowercase letters (a-z)\n  // - Digits (0-9) \n  // - Hyphens (-)\n\n  /**\n   * Proves that a domain name contains invalid characters and burns the associated NFT\n   * \n   * This function allows anyone to prove that a domain name contains characters outside\n   * the allowed set (lowercase letters, digits, hyphens) and burn the NFT associated \n   * with that domain, making it unusable. Note that this does not prevent the domain\n   * from being re-registered.\n   *\n   * @param characterIndex - Index of the invalid character in the name\n   * @param name - Full domain name to validate\n   *\n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: RegistrationPair0 (immutable) containing auctionId + nameHash\n   * - Input3: RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode + isNameRevealed\n   *\n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Reward to caller\n   *\n   * Requirements:\n   * - Name must be 63 characters or less\n   * - Name must match the stored nameHash\n   * - Name must end in '.sat' or '.bch' domain (Depending on the initial deployed configurations)\n   * - Character at characterIndex must be invalid (not a-z, 0-9, or hyphen)\n   * - Transaction must have exactly 4 inputs and 3 outputs\n   * - Input must be from this contract and have the domain NFT\n   * - Output must burn the NFT by converting to pure BCH\n   */\n  function call(int characterIndex, bytes name) {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 3);\n\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.\n    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);\n    require(pair0Category == domainCategory);\n    require(pair0Capability == 0x00); // Immutable\n\n    // Pair1 changes with each new bid (locking bytecode) and isNameRevealed flag is set to 1 when name is revealed, hence it's capability is mutable.\n    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);\n    require(pair1Category == domainCategory);\n    require(pair1Capability == 0x01); // Mutable\n\n    // Ensure that the Pair0 and Pair1 are going to the Registration Contract.\n    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);\n    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);\n\n    bytes8 registrationIdPair0, bytes nameHash = tx.inputs[2].nftCommitment.split(8);\n    bytes8 registrationIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);\n    bytes isNameRevealed = remainingBytes.split(29)[1];\n    \n    // Ensure the correct pair is being used.\n    require(registrationIdPair0 == registrationIdPair1);\n    // Ensure the name is revealed before proving the domain as invalid.\n    require(isNameRevealed == 0x01);\n\n    require(name.length <= 63);\n    bytes32 nameHashFromParam = hash256(name);\n    require(nameHashFromParam == nameHash);\n\n    bytes tld = name.split(name.length - 4)[1];\n\n    require(tld == bytes('.sat'));\n    // @NOTE:This should be done for .bch domains and .sat domains line should be removed.\n    // require(tld == bytes('.bch'));\n    \n\n    bytes characterHalf = name.split(characterIndex)[0];\n    bytes character = name.split(characterHalf.length)[1];\n    int charVal = int(character);\n\n    // Ensure the character is not a-z, A-Z, 0-9, or hyphen.\n    require(!within(charVal, 97, 123) || !within(charVal, 65, 91) || !within(charVal, 48, 58) || charVal != 45);\n\n    // Pure BCH\n    require(tx.outputs[3].tokenCategory == 0x);\n  }\n\n}",
+  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_3 OP_NUMEQUALVERIFY OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY 00 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_3 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT 1d OP_SPLIT OP_NIP OP_3 OP_ROLL OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_3 OP_PICK OP_SIZE OP_NIP 3f OP_LESSTHANOREQUAL OP_VERIFY OP_3 OP_PICK OP_HASH256 OP_EQUALVERIFY OP_2 OP_PICK OP_3 OP_PICK OP_SIZE OP_NIP OP_2 OP_PICK OP_SIZE OP_NIP OP_SUB OP_SPLIT OP_NIP OP_EQUALVERIFY OP_SWAP OP_OVER OP_SPLIT OP_DROP OP_OVER OP_1SUB OP_SPLIT OP_NIP OP_BIN2NUM OP_DUP 61 7b OP_WITHIN OP_NOT OP_OVER 41 5b OP_WITHIN OP_NOT OP_BOOLOR OP_OVER 30 3a OP_WITHIN OP_NOT OP_BOOLOR OP_SWAP 2d OP_NUMNOTEQUAL OP_BOOLOR OP_VERIFY OP_3 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUAL OP_NIP",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract ProveInvalidDomain(bytes registryContractScriptHash, bytes tld) {\n\n  // Allowed Characters:\n  // - Lowercase letters (a-z)\n  // - Digits (0-9) \n  // - Hyphens (-)\n\n  /**\n   * Proves that a domain name contains invalid characters and burns the associated NFT\n   * \n   * This function allows anyone to prove that a domain name contains characters outside\n   * the allowed set (lowercase letters, digits, hyphens) and burn the NFT associated \n   * with that domain, making it unusable. Note that this does not prevent the domain\n   * from being re-registered.\n   *\n   * @param characterIndex - Index of the invalid character in the name\n   * @param name - Full domain name to validate\n   *\n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: RegistrationPair0 (immutable) containing auctionId + nameHash\n   * - Input3: RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode + isNameRevealed\n   *\n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Reward to caller\n   *\n   * Requirements:\n   * - Name must be 63 characters or less\n   * - Name must match the stored nameHash\n   * - Name must end in '.sat' or '.bch' domain (Depending on the initial deployed configurations)\n   * - Character at characterIndex must be invalid (not a-z, 0-9, or hyphen)\n   * - Transaction must have exactly 4 inputs and 3 outputs\n   * - Input must be from this contract and have the domain NFT\n   * - Output must burn the NFT by converting to pure BCH\n   */\n  function call(int characterIndex, bytes name) {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 3);\n\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.\n    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);\n    require(pair0Category == domainCategory);\n    require(pair0Capability == 0x00); // Immutable\n\n    // Pair1 changes with each new bid (locking bytecode) and isNameRevealed flag is set to 1 when name is revealed, hence it's capability is mutable.\n    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);\n    require(pair1Category == domainCategory);\n    require(pair1Capability == 0x01); // Mutable\n\n    // Ensure that the Pair0 and Pair1 are going to the Registration Contract.\n    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);\n    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);\n\n    bytes8 registrationIdPair0, bytes nameHash = tx.inputs[2].nftCommitment.split(8);\n    bytes8 registrationIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);\n    bytes isNameRevealed = remainingBytes.split(29)[1];\n    \n    // Ensure the correct pair is being used.\n    require(registrationIdPair0 == registrationIdPair1);\n    // Ensure the name is revealed before proving the domain as invalid.\n    require(isNameRevealed == 0x01);\n\n    require(name.length <= 63);\n    bytes32 nameHashFromParam = hash256(name);\n    require(nameHashFromParam == nameHash);\n\n    bytes tldInName = name.split(name.length - tld.length)[1];\n    require(tldInName == tld);    \n\n    bytes characterSplitBytes = name.split(characterIndex)[0];\n    characterIndex = characterIndex - 1;\n    bytes character = characterSplitBytes.split(characterIndex)[1];\n    int charVal = int(character);\n\n    // Ensure the character is not a-z, A-Z, 0-9, or hyphen.\n    require(!within(charVal, 97, 123) || !within(charVal, 65, 91) || !within(charVal, 48, 58) || charVal != 45);\n\n    // Pure BCH\n    require(tx.outputs[3].tokenCategory == 0x);\n  }\n\n}",
   "debug": {
-    "bytecode": "c3549c69c4539c6900c75179876900d101207f7552d101207f517a52798769007a0100876953d101207f517a527a8769007a51876952c7517a876952c753c7876952cf587f53cf587f007a011d7f77537a527a8769007a51876952798277013fa1695279aa007a517a876951795279827754947f77007a042e73617487695179517a7f75517a517a82777f77007a8100790161017ba59151790141015ba5919b51790130013aa5919b517a012d9e9b6953d10087",
-    "sourceMap": "42:12:42:28;:32::33;:12:::1;:4::35;43:12:43:29:0;:33::34;:12:::1;:4::36;46:22:46:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;49:38:49:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;52:60:52:61:0;:49::76:1;:83::85:0;:49::86:1;53:12:53:25:0;;:29::43;;:12:::1;:4::45;54:12:54:27:0;;:31::35;:12:::1;:4::37;57:60:57:61:0;:49::76:1;:83::85:0;:49::86:1;58:12:58:25:0;;:29::43;;:12:::1;:4::45;59:12:59:27:0;;:31::35;:12:::1;:4::37;62:22:62:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;63:22:63:23:0;:12::40:1;:54::55:0;:44::72:1;:12;:4::74;65:59:65:60:0;:49::75:1;:82::83:0;:49::84:1;66:65:66:66:0;:55::81:1;:88::89:0;:55::90:1;67:27:67:41:0;;:48::50;:27::51:1;:::54;70:12:70:31:0;;:35::54;;:12:::1;:4::56;72:12:72:26:0;;:30::34;:12:::1;:4::36;74:12:74:16:0;;:::23:1;;:27::29:0;:12:::1;:4::31;75:40:75:44:0;;:32::45:1;76:12:76:29:0;;:33::41;;:12:::1;:4::43;78:16:78:20:0;;:27::31;;:::38:1;;:41::42:0;:27:::1;:16::43;:::46;80:12:80:15:0;;:25::31;:12::32:1;:4::34;85:26:85:30:0;;:37::51;;:26::52:1;:::55;86:22:86:26:0;;:33::46;;:::53:1;;:22::54;:::57;87::87:31:0;;:18::32:1;90:20:90:27:0;;:29::31;:33::36;:13::37:1;:12;:49::56:0;;:58::60;:62::64;:42::65:1;:41;:12;:77::84:0;;:86::88;:90::92;:70::93:1;:69;:12;:97::104:0;;:108::110;:97:::1;:12;:4::112;93:23:93:24:0;:12::39:1;:43::45:0;:12:::1",
+    "bytecode": "c3549c69c4539c6900c75179876900d101207f7552d101207f517a52798769007a0100876953d101207f517a527a8769007a51876952c7517a876952c753c7876952cf587f53cf587f007a011d7f77537a527a8769007a51876953798277013fa1695379aa007a517a876952795379827752798277947f77007a517a8769517a51797f7551795194517a517a7f77007a8100790161017ba59151790141015ba5919b51790130013aa5919b517a012d9e9b6953d1008777",
+    "sourceMap": "42:12:42:28;:32::33;:12:::1;:4::35;43:12:43:29:0;:33::34;:12:::1;:4::36;46:22:46:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;49:38:49:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;52:60:52:61:0;:49::76:1;:83::85:0;:49::86:1;53:12:53:25:0;;:29::43;;:12:::1;:4::45;54:12:54:27:0;;:31::35;:12:::1;:4::37;57:60:57:61:0;:49::76:1;:83::85:0;:49::86:1;58:12:58:25:0;;:29::43;;:12:::1;:4::45;59:12:59:27:0;;:31::35;:12:::1;:4::37;62:22:62:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;63:22:63:23:0;:12::40:1;:54::55:0;:44::72:1;:12;:4::74;65:59:65:60:0;:49::75:1;:82::83:0;:49::84:1;66:65:66:66:0;:55::81:1;:88::89:0;:55::90:1;67:27:67:41:0;;:48::50;:27::51:1;:::54;70:12:70:31:0;;:35::54;;:12:::1;:4::56;72:12:72:26:0;;:30::34;:12:::1;:4::36;74:12:74:16:0;;:::23:1;;:27::29:0;:12:::1;:4::31;75:40:75:44:0;;:32::45:1;76:12:76:29:0;;:33::41;;:12:::1;:4::43;78:22:78:26:0;;:33::37;;:::44:1;;:47::50:0;;:::57:1;;:33;:22::58;:::61;79:12:79:21:0;;:25::28;;:12:::1;:4::30;81:32:81:36:0;;:43::57;;:32::58:1;:::61;82:21:82:35:0;;:38::39;:21:::1;83:22:83:41:0;;:48::62;;:22::63:1;:::66;84::84:31:0;;:18::32:1;87:20:87:27:0;;:29::31;:33::36;:13::37:1;:12;:49::56:0;;:58::60;:62::64;:42::65:1;:41;:12;:77::84:0;;:86::88;:90::92;:70::93:1;:69;:12;:97::104:0;;:108::110;:97:::1;:12;:4::112;90:23:90:24:0;:12::39:1;:43::45:0;:12:::1;41:2:91:3",
     "logs": [],
     "requires": [
       {
-        "ip": 4,
+        "ip": 5,
         "line": 42
       },
       {
-        "ip": 8,
+        "ip": 9,
         "line": 43
       },
       {
-        "ip": 14,
+        "ip": 15,
         "line": 46
       },
       {
-        "ip": 29,
+        "ip": 30,
         "line": 53
       },
       {
-        "ip": 34,
+        "ip": 35,
         "line": 54
       },
       {
-        "ip": 44,
+        "ip": 45,
         "line": 58
       },
       {
-        "ip": 49,
+        "ip": 50,
         "line": 59
       },
       {
-        "ip": 55,
+        "ip": 56,
         "line": 62
       },
       {
-        "ip": 61,
+        "ip": 62,
         "line": 63
       },
       {
-        "ip": 80,
+        "ip": 81,
         "line": 70
       },
       {
-        "ip": 85,
+        "ip": 86,
         "line": 72
       },
       {
-        "ip": 92,
+        "ip": 93,
         "line": 74
       },
       {
-        "ip": 101,
+        "ip": 102,
         "line": 76
       },
       {
-        "ip": 116,
-        "line": 80
+        "ip": 121,
+        "line": 79
       },
       {
-        "ip": 159,
+        "ip": 166,
+        "line": 87
+      },
+      {
+        "ip": 171,
         "line": 90
-      },
-      {
-        "ip": 164,
-        "line": 93
       }
     ]
   },
@@ -98,5 +102,5 @@
     "name": "cashc",
     "version": "0.11.0-next.0"
   },
-  "updatedAt": "2025-02-02T20:57:15.720Z"
+  "updatedAt": "2025-02-03T18:03:10.644Z"
 }

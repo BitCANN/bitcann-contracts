@@ -46,11 +46,6 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
     bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[2].tokenCategory.split(32);
     require(heartbeatCategory == domainCategory);
     require(heartbeatCapability == 0x01); // Mutable
-
-    bytes registrationIdHeartBeat = tx.inputs[2].nftCommitment.split(8)[0];
-
-    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.
-    require(int(registrationIdHeartBeat) < int(registrationIdPart0));
    
     // NOTICE: It does not matter if the heartbeat is already older than 2 years. If it is then is should be burned
     // As it is allowed for anyone to burn the heartbeat NFT by anyone for any Domain contract is the domain has expired.
@@ -61,11 +56,14 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    // Derive the locking bytecode from the domain contract bytecode using the provided bytecode,
-    // provided name and the nameHash.
+    bytes nameHash = tx.inputs[3].nftCommitment.split(8)[1];
+    // Make sure that the name is correct.
+    require(hash256(name) == nameHash);
 
     bytes bytecodeHash = hash160(domainContractPartialBytecode);
     require(bytecodeHash == domainContractPartialBytecodeHash);
+    // Derive the locking bytecode from the domain contract bytecode using the provided bytecode,
+    // provided name and the nameHash.
     bytes domainBytecode = 0x20 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
@@ -80,12 +78,12 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
     require(pair1Category == domainCategory);
     require(pair1Capability == 0x01); // Mutable
 
-    bytes nameHash = tx.inputs[3].nftCommitment.split(8)[1];
-    // Make sure that the name is correct.
-    require(hash256(name) == nameHash);
-
     bytes registrationIdPart0 = tx.inputs[3].nftCommitment.split(8)[0];
     bytes registrationIdPart1 = tx.inputs[4].nftCommitment.split(8)[0];
     require(registrationIdPart0 == registrationIdPart1);
+
+    bytes registrationIdHeartBeat = tx.inputs[2].nftCommitment.split(8)[0];
+    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.
+    require(int(registrationIdHeartBeat) < int(registrationIdPart0));
   }
 }
