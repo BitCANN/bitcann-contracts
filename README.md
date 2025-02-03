@@ -1,6 +1,20 @@
 # BitCANN
 Bitcoin Cash for Assigned Names and Numbers
 
+### Features
+
+- Decentralised domain names like `.sat` and `.bch`
+- Add/Remove records, currency addresses, text records, social, email and custom records
+- No expiry/ No renewals
+- NFT domains, domain ownership is an NFT, providing proof of ownership and enabling secondary market trading.
+- Hidden name during auction. Ensures privacy, fair price discovery and reduces squatting.
+- Earn by protecting the system by
+   - Report invalid registrations
+   - Identify registration conflicts
+   - Proving domain violations
+- Possible to sign-In using your identity
+- Indexer needed only for heavy usage apps/services
+
 ## Table of Contents
 1. [Contracts](#contracts)
    - [Registration](#registry-contract)
@@ -132,6 +146,10 @@ Once you have revealed the name and waited for atleast 2 blocks, you can claim t
 #### Why heartbeat?
 If the domain has been inactive for > 2 years then the domain is considered as abandoned and anyone can prove the inactivity and burn the auth+heartbeat NFT to make the auction of auction possible.
 
+Permanent domain ownership with a 2-year activity requirement
+- Domains are owned permanently as long as owners perform at least one on-chain action in a span of 2 years
+- If no activity is detected, the domain becomes eligible for re-auction
+
 
 #### Why has ID+heartBeat NFT in the domain contract?
 why attach auctionID to the auth/heartbeat NFT? because if there comes a time when the domain is
@@ -212,49 +230,11 @@ Anything, the records exists as an OP_RETURN. The owner of the domain makes thes
 The record can be any from DNS configuration to identity, to website, so socials and/or addresses.
 
 
+#### How to find the records for a domain?
+It's as simple as requesting transaction history for an address
 
 
-npm => bitcann.js
+#### How to remove records?
 
-
-findAddress({ type: 'BCH', name: 'kuldeep.sat' })
-
-1. bytecode = hash256(kuldeep.sat) + domainContractLockingBytecode
-2. scriptHash = hash160(bytecode)
-3. scriptHashToCashAddress(scriptHash)
-4. Fetch the transacitonHistory.
-
-(kuldeep.sat -> address)
-
-
-
-
-
-1. OP_RETURNS (Records)
-
-10 transacvtion:
-
-A 192.u10293820913.
-
-kuldeep.sat  -> 192.32131232131
-
-MX
-NS -> 
-
-await bitcann.addRecord('TXT', 'uvkbhhulkdjtyrhxfgn hvbiukt6rutdjyhxfchgvjiluoeu56drycfhgv')
-
-
-
-regisration + nameHash
-
-kuldeep.sat -> nameHash
-
-chainGraph, who owner? address -> ()
-
-
-TXT 
-
-AAAA CNAME, wwebside
-
-bchaddress (address)
-evmaddress (address)
+[TBD] 
+Records are added as OP_RETURN this means that the data is not stored on chain in any UTXO, it will be read by a dedicated indexer. So, in order to remove a record create a transaction from the domain contract mentioning the keyword `RMV` followed by hash160 of the previous OP_RETURN what you would like to remove, the indexers should not include that record. Or `RMV` and complete OP_RETURN what is supposed to be remove. 

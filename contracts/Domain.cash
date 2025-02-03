@@ -54,6 +54,14 @@ contract Domain(bytes32 nameHash, bytes32 domainCategory) {
   //   // Allow burn
   // }
 
+  // Allow the owner to withdraw any non domainCategory utxos
+  function withdrawFunds() {
+    bytes heartbeatCategory = tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0];
+    require(heartbeatCategory != domainCategory);
+
+    // TODO: Add owner verification using heartbeat NFT + ownership NFT
+  }
+
   /*
    * This allows anyone to use the auth + heartbear NFT to use it with other contracts.
    * For example: Other contracts (IllegalAuction) can prove that the domain is owned and has not been inactive for 2 years or more.
