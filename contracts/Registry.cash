@@ -2,22 +2,38 @@ pragma cashscript ^0.11.0;
 
 
 contract Registry(bytes domainCategory) {
-
   /**
-   * This contracts acts as the source as well as storage.
-   * This contract holds authorized NFT that have the same category as the domainCategory, these NFTs are of immutable capability and contains the lockingBytecode of other contracts that are 
-   * authorized as the 'genesis' of the system. Those NFTs are also duplicated to support multi-threading. for example, there can be 5 threads of 'Bid' contract so there can be 5 Bids happening at the same time.
-   * This contract can only be called as along with one of those authorized contracts.
+   * The Registry contract serves as both a source and storage for authorized NFTs.
+   * It holds NFTs with immutable capability that share the same category as domainCategory.
+   * These NFTs contain the lockingBytecode of authorized contracts that form the core system.
+   * Multiple copies of NFTs enable parallel processing through multiple threads.
    * 
-   * @note Existing contracts are as follows:
-   * - RegistrationAuction:           [1 thread] (Creating a registration is a single threaded operation)
-   * - Bid:                           [~10 threads]
-   * - RegistrationConflict:          [~10 threads]
-   * - ClaimDomain:                   [~10 threads]
-   * - ProveInvalidDomain:            [~10 threads]
-   * - RemoveIllegalRegistration:     [~10 threads]
-   * - RevealName:                    [~10 threads]
+   * The contract can only be called in conjunction with one of the authorized contracts.
    * 
+   * @note Authorized contracts and their thread counts:
+   * - RegistrationAuction:           [1 thread] (Single-threaded registration)
+   * - Bid:                           [~5 threads]
+   * - RegistrationConflict:          [~5 threads]
+   * - DomainFactory:                 [~5 threads]
+   * - ProveInvalidDomain:            [~5 threads]
+   * - IllegalRegistration:           [~5 threads]
+   * - RegistrationConflict:          [~5 threads]
+   * - RevealName:                    [~5 threads]
+   * 
+   * @function call
+   * Validates the transaction structure and ensures:
+   * 1. Registry contract's NFT is preserved and returned
+   * 2. NFT has correct domain category and immutable capability
+   * 3. Authorized contract's UTXO is properly handled
+   * 4. Only block-based timelocks are used (no MTP)
+   * 
+   * @inputs
+   * - Input0: Registry contract's immutable NFT
+   * - Input1: Authorized contract's UTXO
+   * 
+   * @outputs
+   * - Output0: Registry contract's NFT returned unchanged
+   * - Output1: Authorized contract's UTXO returned unchanged
    */
   function call() {
     // Registry Contract
@@ -55,5 +71,4 @@ contract Registry(bytes domainCategory) {
     // With these pre-requisites met, we just need to make sure that all the contracts that are deployed are written and initialized
     // properly, and they expect this structure and handle the inputs and outputs as expected.
   }
-
 }

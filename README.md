@@ -1,33 +1,97 @@
 # BitCANN
 Bitcoin Cash for Assigned Names and Numbers
 
+## Table of Contents
+1. [Contracts](#contracts)
+   - [Registration](#registry-contract)
+   - [RegistrationAuction](#registrationauction)
+   - [Bid](#bid)
+   - [RevealName](#revealname)
+   - [DomainFactory](#domainfactory)
+   - [Domain](#domain)
+   - [ProveInvalidDomain](#proveinvaliddomain)
+   - [IllegalRegistration](#illegalregistration)
+   - [RegistrationConflict](#registrationconflict)
+2. [FAQs](#faqs)
+   - [How are the domains sold?](#how-are-the-domains-sold)
+   - [How gets the money from auction?](#how-gets-the-money-from-auction)
+   - [Are the names revealed upfront?](#are-the-names-revealed-upfront)
+   - [When is the name revealed?](#when-is-the-name-revealed)
+   - [What type of names does it support?](#what-type-of-names-does-it-support)
+   - [How is the correctness of the name verified?](#how-is-the-correctness-of-the-name-verified)
+   - [How are auctions created?](#how-are-auctions-created)
+   - [What if two auctions from the same name are running?](#what-if-two-auctions-from-the-same-name-are-running)
+   - [I won the bidding contest, how do I claim the domain?](#i-won-the-bidding-contest-how-do-i-claim-the-domain)
+   - [Why heartbeat?](#why-heartbeat)
+   - [Why has ID+heartBeat NFT in the domain contract?](#why-has-idheartbeat-nft-in-the-domain-contract)
+   - [An illegal registration auction has started for a domain that is owner by someone, will there be two owners?](#an-illegal-registration-auction-has-started-for-a-domain-that-is-owner-by-someone-will-there-be-two-owners)
+   - [Can a bid be cancelled?](#can-a-bid-be-cancelled)
+   - [What consists of the ownership NFT?](#what-consists-of-the-ownership-nft)
+   - [What happens if they renounce ownership?](#what-happens-if-they-renounce-ownership)
+   - [How will any party initiate the auction?](#how-will-any-party-initiate-the-auction)
+   - [What is a heartbeatNFT?](#what-is-a-heartbeatnft)
+   - [What is Registration Counter NFT?](#what-is-registration-counter-nft)
+   - [What is Registration Pair NFTs?](#what-is-registration-pair-nfts)
+   - [How are other contracts dealing with the Registry Contract?](#how-are-other-contracts-dealing-with-the-registry-contract)
+   - [What is the structure of the Domain contract?](#what-is-the-structure-of-the-domain-contract)
+   - [What type of record can be added?](#what-type-of-record-can-be-added)
 
-### Contract Description
 
+### Contracts
 
-1. Registration
-2. RegistrationAuction
-3. Bid
-4. RevealName
-5. DomainFactroy
-6. Domain
-7. ProveInvalidDomain
-8. IllegalRegistration
-9. RegistrationConflict
+There are a total of 9 contracts. All contracts are static for a top-level domain (TLD), except for the Domain contract which is unique for each registered name.
 
+The Registry contract acts as the central hub. Each authorized contract can only execute transactions in conjunction with the Registry contract. This creates a star-like structure where:
 
-#### Registry
+- The Registry contract is at the center, holding immutable NFTs that contain the lockingBytecodes of authorized contracts and auction pair NFTs
+- Every transaction must include both the Registry contract's NFT and exactly one authorized contract's UTXO
+- The Registry contract validates the transaction structure, NFT handling, and timelock requirements
+- Only contracts whose lockingBytecodes are stored in the Registry's immutable NFTs can participate
+- Multiple copies of NFTs enable parallel processing through multiple threads for most contracts
 
+#### Registry Contract
 
-The Registration contract contains NFTs with the domain category that have scriptHash of the contract which with the contract interacts with. [5-10 threads each] `require(inputs[0].nftCommitment == lockingBytecode)`. These contracts are tightly locked with each other.
+The Registry contract serves as the core authorization and coordination mechanism. It:
+- Holds multiple immutable NFTs containing lockingBytecodes of authorized contracts
+- Holds Registration Auction NFT pair.
 
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Registry contract's immutable NFT | Registry contract's NFT returned unchanged |
+| 1 | Authorized contract's UTXO | Authorized contract's UTXO returned unchanged |
 
-All the transactions made with registration contract should have the `lockingbytecode` of the target contract in it's nftCommitment and should be 0th index. The target contract's NFT should be 1st index.  Rest of the restrictions on inputs and outputs are done by the target contract. It's ok to trust all the convanents places by this target contract as it's been whitelisted before deployment.
+Note: The actual number and structure of inputs/outputs and covanents beyond this pair is controlled by the authorized contract being used.
+
+Each authorized contract has a designated number of threads:
+- RegistrationAuction: 1 thread (single-threaded registration)
+- Bid: ~5 threads
+- RegistrationConflict: ~5 threads  
+- DomainFactory: ~5 threads
+- ProveInvalidDomain: ~5 threads
+- IllegalRegistration: ~5 threads
+- RegistrationConflict: ~5 threads
+- RevealName: ~5 threads
 
 
 #### RegistrationAuction
 
-Input0
+   The RegistrationAuction contract starts a new domain registration auctions. Each auction requires:
+   - A minimum starting bid of atleast 0.025 BCH
+   - Runs for 144 blocks (~1 day), extended by 72 blocks if bid made near end (i.e less than 72 blocks were remaining)
+   - Creates two NFT pairs to track the auction state:
+     1. Immutable NFT containing registrationId (8 bytes) + nameHash (32 bytes). The satoshis held by this NFT is the bid value.
+     2. Mutable NFT containing registrationId (8 bytes) + registrationAuctionEndBlock (4 bytes) + bidderLockingytecode (25 bytes) + isNameRevealed flag (1 byte)
+
+   Transaction Structure:
+   | # | Inputs | Outputs |
+   |---|--------|---------|
+   | 0 | Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract | Registry Contract's immutable NFT back to the Registry contract |
+   | 1 | Any input from this contract | Input1 back to this contract without any change |
+   | 2 | Counter NFT from Registry contract (Increases the registrationId by 1 in the output) | Counter NFT going back to the Registry contract |
+   | 3 | Funding UTXO | RegistrationPair0 to the Registry contract |
+   | 4 | | RegistrationPair1 to the Registry contract |
+   | 5 | | Optional change in BCH |
 
 
 ### FAQs
