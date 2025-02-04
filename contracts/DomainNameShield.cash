@@ -1,6 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract DomainValidator(bytes registryContractScriptHash, bytes tld) {
+contract DomainNameShield(bytes registryContractScriptHash, bytes tld) {
   /**
    * Proves that a domain name contains invalid characters and burns the associated NFT and takes away the funds as reward.
    * During the entire auction, this can be called anytime by anyone.
@@ -64,8 +64,8 @@ contract DomainValidator(bytes registryContractScriptHash, bytes tld) {
       require(tldInName != tld);
     } else {
       // Check the character for invalidity.
-      bytes firstChar = name.split(1)[0];
-      bytes lastChar = name.split(name.length - 1)[1];
+      int firstChar = int(name.split(1)[0]);
+      int lastChar = int(name.split(name.length - 1)[1]);
 
       bytes characterSplitBytes = name.split(characterNumber)[0];
       characterNumber = characterNumber - 1;

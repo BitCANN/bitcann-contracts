@@ -1,6 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract RegistrationAuction(bytes registryContractScriptHash) {
+contract Auction(bytes registryContractScriptHash) {
   /**
    * Starts a new domain registration auction
    * @param name The name being registered.

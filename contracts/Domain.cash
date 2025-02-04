@@ -53,6 +53,9 @@ contract Domain(bytes name, bytes32 domainCategory) {
     // Output3: Change BCH (optional)
     require(tx.outputs.length <= 4);
 
+    // Only provide support for blocks to reduce complexity in how nLocktime is used across different contracts.
+    require(tx.locktime < 500000000);
+
     require(tx.inputs[0].lockingBytecode == this.activeBytecode);
     require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
     require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);

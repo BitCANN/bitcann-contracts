@@ -1,0 +1,90 @@
+{
+  "contractName": "DomainNameShield",
+  "constructorInputs": [
+    {
+      "name": "registryContractScriptHash",
+      "type": "bytes"
+    },
+    {
+      "name": "tld",
+      "type": "bytes"
+    }
+  ],
+  "abi": [
+    {
+      "name": "call",
+      "inputs": [
+        {
+          "name": "characterNumber",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_3 OP_NUMEQUALVERIFY OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY 00 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_SWAP OP_3 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_EQUALVERIFY OP_DUP OP_SIZE OP_NIP OP_2 OP_PICK OP_SIZE OP_NIP OP_SUB OP_3 OP_PICK OP_LESSTHAN OP_IF OP_DUP OP_DUP OP_SIZE OP_NIP OP_3 OP_PICK OP_SIZE OP_NIP OP_SUB OP_SPLIT OP_NIP OP_DUP OP_3 OP_PICK OP_EQUAL OP_NOT OP_VERIFY OP_DROP OP_ELSE OP_DUP OP_1 OP_SPLIT OP_DROP OP_BIN2NUM OP_OVER OP_2 OP_PICK OP_SIZE OP_NIP OP_1SUB OP_SPLIT OP_NIP OP_BIN2NUM OP_2 OP_PICK OP_5 OP_PICK OP_SPLIT OP_DROP OP_5 OP_PICK OP_1SUB OP_6 OP_ROLL OP_DROP OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_TOALTSTACK OP_SWAP OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_FROMALTSTACK OP_DUP OP_6 OP_PICK OP_SPLIT OP_NIP OP_DUP OP_BIN2NUM OP_DUP 61 7b OP_WITHIN OP_NOT OP_OVER 41 5b OP_WITHIN OP_NOT OP_BOOLOR OP_OVER 30 3a OP_WITHIN OP_NOT OP_BOOLOR OP_OVER 2d OP_NUMNOTEQUAL OP_BOOLOR OP_5 OP_PICK 2d OP_NUMNOTEQUAL OP_BOOLOR OP_4 OP_PICK 2d OP_NUMNOTEQUAL OP_BOOLOR OP_VERIFY OP_2DROP OP_2DROP OP_DROP OP_ENDIF OP_3 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUAL OP_NIP OP_NIP OP_NIP",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract DomainNameShield(bytes registryContractScriptHash, bytes tld) {\n  /**\n   * Proves that a domain name contains invalid characters and burns the associated NFT and takes away the funds as reward.\n   * During the entire auction, this can be called anytime by anyone.\n   * \n   * Rules:\n   * 1. The name must consist of only these characters\n   *    - Letters (a-z or A-Z)\n   *    - Numbers (0-9)\n   *    - Hyphens (-)\n   * 2. The name cannot start and end with `-`\n   * 3. The name must end with the tld\n   *\n   * @param characterNumber - Number of the character in the name that is invalid (starting from 1)\n   * @param name - Full domain name to validate\n   *\n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: RegistrationPair0 (immutable) containing auctionId + name\n   * - Input3: RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode\n   *\n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Reward to caller\n   *\n   */\n  function call(int characterNumber) {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 3);\n\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.\n    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);\n    require(pair0Category == domainCategory);\n    require(pair0Capability == 0x00); // Immutable\n\n    // Pair1 changes with each new bid (locking bytecode), hence it's capability is mutable.\n    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);\n    require(pair1Category == domainCategory);\n    require(pair1Capability == 0x01); // Mutable\n\n    // Ensure that the Pair0 and Pair1 are going to the Registration Contract.\n    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);\n    require(tx.inputs[3].lockingBytecode == registryContractScriptHash);\n\n    bytes8 registrationIdPair0, bytes name = tx.inputs[2].nftCommitment.split(8);\n    // Ensure the correct pair is being used.\n    require(registrationIdPair0 == tx.inputs[3].nftCommitment.split(8)[0]);\n\n    int nameLength = name.length - tld.length;\n\n    if(characterNumber > nameLength){\n      bytes tldInName = name.split(name.length - tld.length)[1];\n      // This means that the domain is invalid.\n      require(tldInName != tld);\n    } else {\n      // Check the character for invalidity.\n      int firstChar = int(name.split(1)[0]);\n      int lastChar = int(name.split(name.length - 1)[1]);\n\n      bytes characterSplitBytes = name.split(characterNumber)[0];\n      characterNumber = characterNumber - 1;\n      bytes character = characterSplitBytes.split(characterNumber)[1];\n      int charVal = int(character);\n\n      // If the character is invalid.\n      require(\n        !within(charVal, 97, 123) ||\n        !within(charVal, 65, 91) ||\n        !within(charVal, 48, 58) ||\n        charVal != 45 ||\n        firstChar != 45 ||\n        lastChar != 45\n      );\n    }\n\n    // Pure BCH\n    require(tx.outputs[3].tokenCategory == 0x);\n  }\n\n}",
+  "debug": {
+    "bytecode": "c3549c69c4539c6900c75179876900d101207f7552d101207f517a52798769007a0100876953d101207f517a527a8769007a51876952c75179876953c7517a876952cf587f517a53cf587f7587690079827752798277945379517aa06300795179827753798277947f770079537987916975670079517f758151795279827751947f7781527955797f7555795194567a757c6b7c6b7c6b7c6b7c6c6c6c6c007956797f7700798100790161017ba59151790141015ba5919b51790130013aa5919b5179012d9e9b5579012d9e9b5479012d9e9b6975757575756853d10087777777",
+    "sourceMap": "32:12:32:28;:32::33;:12:::1;:4::35;33:12:33:29:0;:33::34;:12:::1;:4::36;36:22:36:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;39:38:39:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;42:60:42:61:0;:49::76:1;:83::85:0;:49::86:1;43:12:43:25:0;;:29::43;;:12:::1;:4::45;44:12:44:27:0;;:31::35;:12:::1;:4::37;47:60:47:61:0;:49::76:1;:83::85:0;:49::86:1;48:12:48:25:0;;:29::43;;:12:::1;:4::45;49:12:49:27:0;;:31::35;:12:::1;:4::37;52:22:52:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;53:22:53:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;55:55:55:56:0;:45::71:1;:78::79:0;:45::80:1;57:12:57:31:0;;:45::46;:35::61:1;:68::69:0;:35::70:1;:::73;:12;:4::75;59:21:59:25:0;;:::32:1;;:35::38:0;;:::45:1;;:21;61:7:61:22:0;;:25::35;;:7:::1;:36:65:5:0;62:24:62:28;;:35::39;;:::46:1;;:49::52:0;;:::59:1;;:35;:24::60;:::63;64:14:64:23:0;;:27::30;;:14:::1;;:6::32;61:36:65:5;65:11:84::0;67:26:67:30;;:37::38;:26::39:1;:::42;:22::43;68:25:68:29:0;;:36::40;;:::47:1;;:50::51:0;:36:::1;:25::52;:::55;:21::56;70:34:70:38:0;;:45::60;;:34::61:1;:::64;71:24:71:39:0;;:42::43;:24:::1;:6::44;;;;;;;;;;;;;;;;72:24:72:43:0;;:50::65;;:24::66:1;:::69;73::73:33:0;;:20::34:1;77:16:77:23:0;;:25::27;:29::32;:9::33:1;:8;78:16:78:23:0;;:25::27;:29::31;:9::32:1;:8;77;79:16:79:23:0;;:25::27;:29::31;:9::32:1;:8;77;80::80:15:0;;:19::21;:8:::1;77;81::81:17:0;;:21::23;:8:::1;77;82::82:16:0;;:20::22;:8:::1;77;76:6:83:8;65:11:84:5;;;;;;87:23:87:24:0;:12::39:1;:43::45:0;:12:::1;31:2:88:3;;",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 5,
+        "line": 32
+      },
+      {
+        "ip": 9,
+        "line": 33
+      },
+      {
+        "ip": 15,
+        "line": 36
+      },
+      {
+        "ip": 30,
+        "line": 43
+      },
+      {
+        "ip": 35,
+        "line": 44
+      },
+      {
+        "ip": 45,
+        "line": 48
+      },
+      {
+        "ip": 50,
+        "line": 49
+      },
+      {
+        "ip": 56,
+        "line": 52
+      },
+      {
+        "ip": 62,
+        "line": 53
+      },
+      {
+        "ip": 75,
+        "line": 57
+      },
+      {
+        "ip": 110,
+        "line": 64
+      },
+      {
+        "ip": 200,
+        "line": 76
+      },
+      {
+        "ip": 211,
+        "line": 87
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.11.0-next.0"
+  },
+  "updatedAt": "2025-02-04T14:40:45.088Z"
+}

@@ -17,14 +17,14 @@ contract DomainFactory(
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: First part of auction pair (immutable) containing auctionId + name
-   * - Input3: Second part of auction pair (mutable) containing auctionId + endBlock + bidderLockingBytecode
+   * - Input2: RegistrationPair0 from the Registry contract
+   * - Input3: RegistrationPair1 from the Registry contract
    *
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
-   * - Output2: Domain NFT to auction winner
-   * - Output3: Heartbeat NFT to domain contract
+   * - Output2: Heartbeat NFT to domain contract
+   * - Output3: Domain NFT to auction winner
    * - Output4: Platform fee (only for first 4 years)
    *
    * Requirements:
@@ -52,10 +52,6 @@ contract DomainFactory(
 
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
-
-    // Ensure that the transaction is atleast 2 blocks old to let anyone prove that the domain is invalid.
-    // If no one is able to prove that the domain is invalid then the owner can claim the funds.
-    require(tx.age >= 2);
 
     // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
     bytes pair0Category, bytes pair0Capability = tx.inputs[2].tokenCategory.split(32);
@@ -88,14 +84,13 @@ contract DomainFactory(
 
     // Send the heartbeat NFT to the domain contract.
     require(tx.outputs[3].lockingBytecode == domainLockingBytecode);
-
-    // Send the domain ownership NFT to the bidder
-    require(tx.outputs[2].nftCommitment == registrationAuctionIdPair0 + name);
-    require(tx.outputs[3].lockingBytecode == bidderLockingBytecode);
-    require(tx.outputs[2].value == 1000);
-    // Send the heartbeat NFT to the domain contract.
     require(tx.outputs[3].nftCommitment == registrationAuctionIdPair0 + bytes(tx.locktime));
     require(tx.outputs[3].value == 1000);
+
+    // Send the domain ownership NFT to the bidder
+    require(tx.outputs[4].nftCommitment == registrationAuctionIdPair0 + name);
+    require(tx.outputs[4].lockingBytecode == bidderLockingBytecode);
+    require(tx.outputs[4].value == 1000);
   }
 
 }
