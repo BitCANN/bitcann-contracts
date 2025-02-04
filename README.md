@@ -1,9 +1,13 @@
-# BCANN
+# BitCANN
 Bitcoin Cash for Assigned Names and Numbers
 
 ## Table of Contents
 1. [Features](#features)
-2. [Contracts](#contracts)
+2. [Overview](#overview)
+   - [Operational Contracts](#operational-contracts)
+   - [Guard Contracts](#guard-contracts)
+   - [Domain Contracts](#domain-contracts)
+3. [Contracts](#contracts)
    - [Registry](#registry)
    - [Auction](#auction)
    - [Bid](#bid)
@@ -12,7 +16,7 @@ Bitcoin Cash for Assigned Names and Numbers
    - [IllegalRegistration](#illegalregistration)
    - [RegistrationConflict](#registrationconflict)
    - [Domain](#domain-contract)
-3. [FAQs](#faqs)
+4. [FAQs](#faqs)
    - [How are the domains sold?](#how-are-the-domains-sold)
    - [How gets the money from auction?](#how-gets-the-money-from-auction)
    - [Are the names revealed upfront?](#are-the-names-revealed-upfront)
@@ -51,25 +55,50 @@ Bitcoin Cash for Assigned Names and Numbers
    - Proving domain violations
 
 
+## Overview
+
+There are a total of 8 contracts. These contract can be divided into 3 different categories to understand the system.
+
+- **Operational Contracts**: [Registry.cash](#registry) [Auction.cash](#auction), [Bid.cash](#bid), [DomainFactory.cash](#domainfactory)
+
+- **Guard Contracts**: [DomainNameShield.cash](#domainnameshield), [IllegalRegistration.cash](#illegalregistration), [RegistrationConflict.cash](#registrationconflict)
+
+- **Domain Contract**: [Domain.cash](#domain-contract)
+
+#### Operational Contracts
+
+The Registry contract functions as the control and storage hub. All authorized contracts (both Operational and Guard) must execute their transactions in conjunction with the Registry contract.
+
+The contracts operate in a unidirectional flow:
+- The Auction contract initiates the registration process,
+- The Bid contract updates the bid amount and bidder information for the on going auction.
+- Once the auction is complete, the DomainFactory contract distributes the ownership NFTs, and fees.
+
+
+#### Guard Contracts
+
+These contracts serve the purpose is to incentivise the enforcement of the rules. For example, if someone were to start a registration for a domain that is already owned then `IllegalRegistration` contract will authorize anyone to provide proof of ownership of the domain and penalise the illegal auction by burning the registration and giving the funds to the proof provider.
+
+Similarly, other contracts also provide a way to authorize anyone to penalise anyone who attempts to breaks the rule of the system. 
+
+#### Domain Contracts
+
+Each `Domain` contract is unique and is controlled by anyone who has the Ownership NFT relevant to that Domain contract. One can aquire the ownership NFT by following the registration process or buying it from a secondary market or by simply receiving it in a regular transaction.
+
+All the other contract work together to finally produce a pair NFT where one exists in the Domain contract(**Heartbeat NFT**) and the other exists with the owner (**Ownership NFT**).
+
+Note: To interact with the domain one must use both NFTs together.
+
+
 ## Contracts
-
-There are a total of 8 contracts. All contracts are static for a top-level domain (TLD), except for the Domain contract which is unique for each name.
-
-The Registry contract acts as the central hub. Each authorized contract can only execute transactions in conjunction with the Registry contract. This creates a star-like structure where:
-
-- The Registry contract is at the center, holding immutable NFTs that contain the lockingBytecodes of authorized contracts and auction pair NFTs
-- Every transaction must include both the Registry contract's NFT and exactly one authorized contract's UTXO
-- The Registry contract validates the transaction structure, NFT handling, and timelock requirements
-- Only contracts whose lockingBytecodes are stored in the Registry's immutable NFTs can participate
-- Multiple copies of NFTs enable parallel processing through multiple threads for most contracts
-
 
 #### Registry
 
 The Registry contract provides authorization and storage:
-- Hold a minting counter NFT to manage registration Id
-- Holds multiple immutable NFTs containing lockingBytecodes of authorized contracts
-- Holds Registration Auction NFT pair
+
+1. **Counter NFT**: Minting NFT with domain category that increments by 1 with each new registration.
+2. **Authorization NFT**: Multiple immutable NFTs containing lockingBytecodes of authorized contracts. (Operational and Guard Contracts)
+3. **Registration NFT Pair**: The Auction contract issues a pair NFT (one mutable and one immutable) that stay with the Registry Contract
 
 Transaction Structure:
 | # | Inputs | Outputs |
