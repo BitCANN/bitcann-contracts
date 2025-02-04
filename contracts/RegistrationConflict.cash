@@ -7,12 +7,12 @@ contract RegistrationConflict(bytes registryContractScriptHash) {
    * If any new auction is created when an auction already exists then the new auction is open for penalization.
    * Anyone can provide the proof of an active auction's existance and take away the funds from the "new" invalid auction
    * as a form of reward for keeping the system secure and predictable.
-   * Therefore, it's the responsibility of the application to check for any running auctions for the same nameHash.
+   * Therefore, it's the responsibility of the application to check for any running auctions for the same name.
    * 
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: Valid (earlier) auction's NFT pair0 - immutable NFT with registrationId + nameHash
+   * - Input2: Valid (earlier) auction's NFT pair0 - immutable NFT with registrationId + name
    * - Input3: Valid (earlier) auction's NFT pair1 - mutable NFT with auction state
    * - Input4: Invalid (newer) auction's NFT pair0 - immutable NFT to be removed
    * - Input5: Invalid (newer) auction's NFT pair1 - mutable NFT to be removed
@@ -46,26 +46,22 @@ contract RegistrationConflict(bytes registryContractScriptHash) {
     require(validPair1Category == domainCategory);
     require(validPair1Capability == 0x01); // Mutable
 
-    bytes invalidPair0Category, bytes invalidPair0Capability = tx.inputs[4].tokenCategory.split(32);
-    require(invalidPair0Category == domainCategory);
-    require(invalidPair0Capability == 0x00); // Immutable
+    // 2-4 should be same, 3-5 should be same
+    require(tx.inputs[2].tokenCategory == tx.inputs[4].tokenCategory);
+    require(tx.inputs[3].tokenCategory == tx.inputs[5].tokenCategory);
 
-    bytes invalidPair1Category, bytes invalidPair1Capability = tx.inputs[5].tokenCategory.split(32);
-    require(invalidPair1Category == domainCategory);
-    require(invalidPair1Capability == 0x01); // Mutable
-
-    bytes validRegistrationAuctionIdPair0, bytes nameHashValidBid = tx.inputs[2].nftCommitment.split(8);
+    bytes validRegistrationAuctionIdPair0, bytes nameFromValidBid = tx.inputs[2].nftCommitment.split(8);
     bytes validRegistrationAuctionIdPair1 = tx.inputs[3].nftCommitment.split(8)[0];
 
-    bytes invalidRegistrationAuctionIdPair0, bytes nameHashInvalidBid = tx.inputs[4].nftCommitment.split(8);
+    bytes invalidRegistrationAuctionIdPair0, bytes nameFromInvalidBid = tx.inputs[4].nftCommitment.split(8);
     bytes invalidRegistrationAuctionIdPair1 = tx.inputs[5].nftCommitment.split(8)[0];
 
     // Ensure the correct pair is being used for valid registration auction
     require(validRegistrationAuctionIdPair0 == validRegistrationAuctionIdPair1);
     // Ensure the correct pair is being used for invalid registration auction
     require(invalidRegistrationAuctionIdPair0 == invalidRegistrationAuctionIdPair1);
-    // Ensure the nameHash is the same for both auctions so they can be compared
-    require(nameHashValidBid == nameHashInvalidBid);
+    // Ensure the name is the same for both auctions so they can be compared
+    require(nameFromValidBid == nameFromInvalidBid);
     // Ensure the auctionId of the valid bid is less than the auctionId of the invalid bid.
     require(int(validRegistrationAuctionIdPair0) < int(invalidRegistrationAuctionIdPair0));
 

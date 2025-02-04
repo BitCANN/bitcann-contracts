@@ -1,0 +1,90 @@
+pragma cashscript ^0.11.0;
+
+contract DomainValidator(bytes registryContractScriptHash, bytes tld) {
+  /**
+   * Proves that a domain name contains invalid characters and burns the associated NFT and takes away the funds as reward.
+   * During the entire auction, this can be called anytime by anyone.
+   * 
+   * Rules:
+   * 1. The name must consist of only these characters
+   *    - Letters (a-z or A-Z)
+   *    - Numbers (0-9)
+   *    - Hyphens (-)
+   * 2. The name cannot start and end with `-`
+   * 3. The name must end with the tld
+   *
+   * @param characterNumber - Number of the character in the name that is invalid (starting from 1)
+   * @param name - Full domain name to validate
+   *
+   * @inputs
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: RegistrationPair0 (immutable) containing auctionId + name
+   * - Input3: RegistrationPair1 (mutable) containing auctionId + endBlock + bidderLockingBytecode
+   *
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
+   * - Output2: Reward to caller
+   *
+   */
+  function call(int characterNumber) {
+    require(tx.inputs.length == 4);
+    require(tx.outputs.length == 3);
+
+    // Lock this contract to only be used with the registry contract.
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+
+    // All the token categories in the transaction should be the same.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
+    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
+    require(pair0Category == domainCategory);
+    require(pair0Capability == 0x00); // Immutable
+
+    // Pair1 changes with each new bid (locking bytecode), hence it's capability is mutable.
+    bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);
+    require(pair1Category == domainCategory);
+    require(pair1Capability == 0x01); // Mutable
+
+    // Ensure that the Pair0 and Pair1 are going to the Registration Contract.
+    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[3].lockingBytecode == registryContractScriptHash);
+
+    bytes8 registrationIdPair0, bytes name = tx.inputs[2].nftCommitment.split(8);
+    // Ensure the correct pair is being used.
+    require(registrationIdPair0 == tx.inputs[3].nftCommitment.split(8)[0]);
+
+    int nameLength = name.length - tld.length;
+
+    if(characterNumber > nameLength){
+      bytes tldInName = name.split(name.length - tld.length)[1];
+      // This means that the domain is invalid.
+      require(tldInName != tld);
+    } else {
+      // Check the character for invalidity.
+      bytes firstChar = name.split(1)[0];
+      bytes lastChar = name.split(name.length - 1)[1];
+
+      bytes characterSplitBytes = name.split(characterNumber)[0];
+      characterNumber = characterNumber - 1;
+      bytes character = characterSplitBytes.split(characterNumber)[1];
+      int charVal = int(character);
+
+      // If the character is invalid.
+      require(
+        !within(charVal, 97, 123) ||
+        !within(charVal, 65, 91) ||
+        !within(charVal, 48, 58) ||
+        charVal != 45 ||
+        firstChar != 45 ||
+        lastChar != 45
+      );
+    }
+
+    // Pure BCH
+    require(tx.outputs[3].tokenCategory == 0x);
+  }
+
+}

@@ -17,7 +17,7 @@ contract DomainFactory(
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: First part of auction pair (immutable) containing auctionId + nameHash
+   * - Input2: First part of auction pair (immutable) containing auctionId + name
    * - Input3: Second part of auction pair (mutable) containing auctionId + endBlock + bidderLockingBytecode
    *
    * @outputs
@@ -70,13 +70,10 @@ contract DomainFactory(
     require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
     require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);
 
-    bytes8 registrationAuctionIdPair0, bytes nameHash = tx.inputs[2].nftCommitment.split(8);
-    bytes8 registrationAuctionIdPair1, bytes remainingBytes0 = tx.inputs[3].nftCommitment.split(8);
-    bytes registrationAuctionEndBlock, bytes remainingBytes1 = remainingBytes0.split(4);
-    bytes bidderLockingBytecode, bytes1 isNameRevealed = remainingBytes1.split(1);
+    bytes8 registrationAuctionIdPair0, bytes name = tx.inputs[2].nftCommitment.split(8);
+    bytes8 registrationAuctionIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);
+    bytes4 registrationAuctionEndBlock, bytes bidderLockingBytecode = remainingBytes.split(4);
     
-    // The must be revealed before this call
-    require(isNameRevealed == 0x01);
     // Make sure that the auction has ended.
     require(int(tx.locktime) > int(registrationAuctionEndBlock));
     // Comfirm that the same piece of the pair are being used by matching the auctionId.
@@ -84,7 +81,8 @@ contract DomainFactory(
 
     bytes bytecodeHash = hash160(domainContractPartialBytecode);
     require(bytecodeHash == domainContractPartialBytecodeHash);
-    bytes domainBytecode = 0x20 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
+
+    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
@@ -92,7 +90,7 @@ contract DomainFactory(
     require(tx.outputs[3].lockingBytecode == domainLockingBytecode);
 
     // Send the domain ownership NFT to the bidder
-    require(tx.outputs[2].nftCommitment == registrationAuctionIdPair0 + nameHash);
+    require(tx.outputs[2].nftCommitment == registrationAuctionIdPair0 + name);
     require(tx.outputs[3].lockingBytecode == bidderLockingBytecode);
     require(tx.outputs[2].value == 1000);
     // Send the heartbeat NFT to the domain contract.

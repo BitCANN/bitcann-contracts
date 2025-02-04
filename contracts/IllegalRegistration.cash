@@ -27,13 +27,15 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
    * - Output3: Bid funds to caller as reward
    * 
    * Requirements:
-   * - Name must match stored nameHash
    * - Heartbeat must be less than 2 years old (105120 blocks)
    * - Domain contract bytecode must match expected hash
    * - Heartbeat NFT must be from valid domain contract
    * - All NFTs must have correct categories and capabilities
    */
-  function call(bytes domainContractPartialBytecode, bytes name){
+  function call(bytes domainContractPartialBytecode){
+    // If the domain contract has the valid heartbeat NFT then it's safe to assume that the name is valid.
+
+
     require(tx.inputs.length == 5);
     require(tx.outputs.length == 4);
     // Lock this contract to only be used with the registry contract.
@@ -56,15 +58,12 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    bytes nameHash = tx.inputs[3].nftCommitment.split(8)[1];
-    // Make sure that the name is correct.
-    require(hash256(name) == nameHash);
+    bytes name = tx.inputs[3].nftCommitment.split(8)[1];
 
     bytes bytecodeHash = hash160(domainContractPartialBytecode);
     require(bytecodeHash == domainContractPartialBytecodeHash);
-    // Derive the locking bytecode from the domain contract bytecode using the provided bytecode,
-    // provided name and the nameHash.
-    bytes domainBytecode = 0x20 + domainCategory + 0x20 + nameHash + domainContractPartialBytecode;
+    
+    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 

@@ -10,11 +10,10 @@
     "compile:registrationauction": "cashc contracts/RegistrationAuction.cash -o artifacts/RegistrationAuction.json",
     "compile:bid": "cashc contracts/Bid.cash -o artifacts/Bid.json",
     "compile:registrationconflict": "cashc contracts/RegistrationConflict.cash -o artifacts/RegistrationConflict.json",
-    "compile:revealname": "cashc contracts/RevealName.cash -o artifacts/RevealName.json",
     "compile:illegalregistration": "cashc contracts/IllegalRegistration.cash -o artifacts/IllegalRegistration.json",
     "compile:domainfactory": "cashc contracts/DomainFactory.cash -o artifacts/DomainFactory.json",
-    "compile:proveinvaliddomain": "cashc contracts/ProveInvalidDomain.cash -o artifacts/ProveInvalidDomain.json",
-    "compile": "npm run compile:registry && npm run compile:registrationauction && npm run compile:bid && npm run compile:registrationconflict && npm run compile:revealname && npm run compile:illegalregistration && npm run compile:domainfactory && npm run compile:proveinvaliddomain",
+    "compile:domainvalidator": "cashc contracts/DomainValidator.cash -o artifacts/DomainValidator.json",
+    "compile": "npm run compile:registry && npm run compile:registrationauction && npm run compile:bid && npm run compile:registrationconflict && npm run compile:illegalregistration && npm run compile:domainfactory && npm run compile:domainvalidator",
     "build": "npm run compile && node index.js"
   },
   "dependencies": {

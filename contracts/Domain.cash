@@ -1,52 +1,13 @@
 pragma cashscript ^0.11.0;
 
 
-
-// The domain contract be just like the registry contract. when sending funds to the domain contract it can be easy
-// by just adding nameHash to the bytecode of the registryContract as registry contract will have category and extension.
-// But these two will be with the domain as well so the only unique thing in the domain contract will be the nameHash.
-
-
-// OR in any case, it's going to be a very small bytecode push. so I should make it just like the registry contract.
-// Later the domain contract can call the functions just like registry calls. 
-
-// Claim domain can be responsible for sending the script hash of the required contract to the domain contract
-// for each new registration. and since it's completely fine for this to be single threaded. It is perfect.
-
-
-
-// Lookup can be done by taking the name and doing a hash256 and attaching the bytecode of the domain contract.
-// Hash it and get the address and search for the UTXOs.
-
-// Lookup for the owner is basically whoever happens to be the owner of the NFT.
-
-
-// Transfer Ownership is as simple as sending the NFT to the new owner.
-
-// Lookup for records? Just fetch the transactions of this contract, all the OP_RETURN statements will be records.
-
-// NEED A STANDARD FOR RECORDS
-
-
-
-// Auth + Heartbeat NFT is issued to the contract.
-// Each time the contract is used, the heartbeat must be used with it.
-// If the domain has been inactive for 1 year then the heartbeat NFT can be used for others to remove the ownership.
-// making it possible for others to register the domain.
-
-// What about the previous owner? Don't they still have the NFT?
-// Yes, they still have the NFT but the auth NFT that had the corrosponding registrationId is no longer available so they
-// can't use it anymore.
-
 // INFO: It's important to mention the domainCategory here as anyone can send any utxo with matching NFT commitment and capability and create records. Hence, the
 // domainCategory should be a restriction in spending and creating records.
-
-// INFO: nameHash is important as it makes is easy for lookups and assigns a unique script to a unique domain.
 
 // WARNING: Do not send the ownership NFT to the domain contract. It's like keeping the lock and key together.
 // Anyone will be able to call the `renounceOwnership` function burning the ownership and making it possible for a new auction to begin.
 
-contract Domain(bytes32 nameHash, bytes32 domainCategory) {
+contract Domain(bytes name, bytes32 domainCategory) {
 
   // // Prove that the heartbeat NFT is no longer valid and burn it. Opening this domain for new registration.
   // function proveInactivity(){
@@ -106,15 +67,15 @@ contract Domain(bytes32 nameHash, bytes32 domainCategory) {
     require(heartbeatCapability == 0x01); // Mutable
 
     bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
-    bytes registrationId, bytes nameHashFromOwnerNFT = tx.inputs[1].nftCommitment.split(8);
+    bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[1].nftCommitment.split(8);
 
     require(heartbeatRegistrationId == registrationId);
 
     // Ensure that the NFT is verified.
-    require(nameHashFromOwnerNFT == nameHash);
+    require(nameFromOwnerNFT == name);
 
     // Since a new record is added, update the heartbeat.
-    require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + nameHash);
+    require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + name);
 
     bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
     require(ownerKeyCategory == domainCategory);
