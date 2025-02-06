@@ -2,8 +2,8 @@ pragma cashscript ^0.11.0;
 
 contract Auction(bytes registryContractScriptHash) {
 
-  function withdraw(sig signature, pubkey pk){
-    require(checkSig(signature, pk));
+  function withdraw(){
+    require(2+2 == 4);
   }
 
   /**
@@ -49,9 +49,12 @@ contract Auction(bytes registryContractScriptHash) {
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 6);
     // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[1].lockingBytecode == registryContractScriptHash);
+
+    // Input2 and Output2 are counter
     require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
     require(tx.outputs[2].lockingBytecode == registryContractScriptHash);
+    // New auctionNFT
     require(tx.outputs[3].lockingBytecode == registryContractScriptHash);
 
     // Registration ID increases by 1 with each transaction.
@@ -74,7 +77,7 @@ contract Auction(bytes registryContractScriptHash) {
     require(tx.outputs[3].nftCommitment == pkh + name);
 
     // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+    bytes domainCategory = tx.outputs[1].tokenCategory;
 
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
@@ -88,6 +91,12 @@ contract Auction(bytes registryContractScriptHash) {
     // Enforce an OP_RETURN output.
     require(tx.outputs[4].value == 0);
     require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
+
+    //  // If OP_RETURN then value must be 0
+    //         if (tx.outputs[0].lockingBytecode.split(1)[0] == 0x6a) {
+    //             require(tx.outputs[0].value == 0);
+    //         }
+
 
     if(tx.outputs.length == 6){
       // If any change then it must be pure BCH

@@ -12,7 +12,7 @@ import {
   cashAddressToLockingBytecode
 } from '@bitauth/libauth';
 
-import { alicePriv, aliceAddress } from './common-js.js';
+import { alicePriv, aliceAddress, alicePkh } from './common-js.js';
 const artifactRegistry = compileFile(new URL('./contracts/Registry.cash', import.meta.url));
 const artifactAuction = compileFile(new URL('./contracts/Auction.cash', import.meta.url));
 
@@ -21,20 +21,19 @@ const addressType = 'p2sh32';
 const options = { provider, addressType }
 
 const aliceTemplate = new SignatureTemplate(alicePriv);
-const aliceLockingBytecode = binToHex(cashAddressToLockingBytecode(aliceAddress).bytecode)
 
-const domainCategory = 'a49f355d8a88d3aa2c0bc1f1ab8e0639074823df1da658773a67304b6f9f6c52'
+const domainCategory = '5a48189d187490936959c04f28c70d26a4e4c5102b98866bf94b5a31ecdb4fb4'
 const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
 const registryLockingBytecode = cashAddressToLockingBytecode(registryContract.address).bytecode
-const registryLockingBytecodeHex = binToHex(registryLockingBytecode)
 
 const auctionContract = new Contract(artifactAuction, [registryLockingBytecode], options);
 const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address)
 const auctionLockingBytecodeHex = binToHex(auctionLockingBytecode.bytecode)
 
 const nameHex = Buffer.from('test.sats').toString('hex')
+console.log('INFO: nameHex', nameHex)
 const name = hexToBin(nameHex)
 
 
@@ -43,8 +42,6 @@ console.log('INFO: aliceAddress', aliceAddress)
 console.log('INFO: registryContract.address: ', registryContract.address)
 console.log('INFO: auctionContract.address: ', auctionContract.address)
 console.log('INFO: auctionLockingBytecodeHex: ', auctionLockingBytecodeHex)
-console.log('INFO: aliceLockingBytecode', aliceLockingBytecode)
-console.log('INFO: registryLockingBytecodeHex: ', registryLockingBytecodeHex)
 
 
 const getUtxos = async () => {
@@ -71,11 +68,6 @@ const auction = async () => {
 
   console.log('INFO: userUTXO', userUTXO)
 
-  const tempMintingCopyUTXO = userUTXOs.find(utxo => utxo?.token?.category === domainCategory);
-  if (!tempMintingCopyUTXO) throw new Error('Could not find user UTXO without token');
-
-  console.log('INFO: tempMintingCopyUTXO', tempMintingCopyUTXO)
-
   // The necessary UTXO to be used from the auction contract
   const auctionContractUTXO = auctionUTXOs[0]
 
@@ -90,12 +82,14 @@ const auction = async () => {
   );
 
   console.log('INFO: threadNFTUTXO', threadNFTUTXO)
+  console.log('INFO: registryUTXOs', registryUTXOs)
 
   // // Registration NFT UTXO from registry contract
   const registrationCounterUTXO = registryUTXOs.find(utxo => 
     utxo.token?.nft?.capability === 'minting' &&
     utxo.token?.category === domainCategory &&
-    utxo.token?.nft?.commitment === '0000000000000000'
+    utxo.token?.nft?.commitment === '0000000000000000' &&
+    utxo.token?.amount > 0
   );
 
   console.log('INFO: registrationCounterUTXO', registrationCounterUTXO)
@@ -108,10 +102,15 @@ const auction = async () => {
 
 
   const transaction = await new TransactionBuilder({ provider })
+  .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(auctionContractUTXO, auctionContract.unlock.call(name))
+  // .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
   .addInput(registrationCounterUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
+  .addOutput({
+    to: auctionContract.tokenAddress,
+    amount: auctionContractUTXO.satoshis
+  })
   .addOutput({
     to: registryContract.tokenAddress,
     amount: threadNFTUTXO.satoshis,
@@ -125,15 +124,11 @@ const auction = async () => {
     }
   })
   .addOutput({
-    to: auctionContract.tokenAddress,
-    amount: auctionContractUTXO.satoshis
-  })
-  .addOutput({
     to: registryContract.tokenAddress,
     amount: registrationCounterUTXO.satoshis,
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: registrationCounterUTXO.token.amount,
+      amount: registrationCounterUTXO.token.amount  - BigInt(1),
       nft: {
         capability: registrationCounterUTXO.token.nft.capability,
         commitment: newRegistrationId
@@ -142,35 +137,22 @@ const auction = async () => {
   })
   .addOutput({
     to: registryContract.tokenAddress,
-    amount: BigInt(800),
-    token: {
-      category: registrationCounterUTXO.token.category,
-      amount: BigInt(0),
-      nft: {
-        capability: 'none',
-        commitment: newRegistrationId + binToHex(name)
-      }
-    }
-  })
-  .addOutput({
-    to: registryContract.tokenAddress,
     amount: BigInt(1000),
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: BigInt(0),
+      amount: BigInt(1),
       nft: {
         capability: 'mutable',
-        commitment: newRegistrationId + currentBlock.toString(16).padStart(8, '0') + aliceLockingBytecode
+        commitment: binToHex(alicePkh) + binToHex(name)
       }
     }
   })
-  .addOpReturnOutput([nameHex])
+  .addOpReturnOutput(['test.sats'])
   .addOutput({
     to: aliceAddress,
     amount: userUTXO.satoshis - BigInt(3300),
   })
-  .setLocktime(currentBlock)
-  .build();
+  .send();
 
   console.log('INFO: transaction', transaction)
 }
