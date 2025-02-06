@@ -40,25 +40,32 @@ contract Domain(bytes name, bytes32 domainCategory) {
   }
 
 
-  // Add record: just add
-  // Remove record: hash the record you wanted to remove and just use OP_RETURN(RM hash(content of record to be removed))
-  function addRecord(){
-    // Input0: The heartbeat NFT from self.
-    // Input1: The domain NFT owned by the owner.
-    // Input2: Transaction funding UTXO (optional)
-    require(tx.inputs.length <= 3);
-    // Output0: Input0 back to self.
-    // Output1: The domain NFT back to the owner.
-    // Output2: OP_RETURN to reveal the data.
-    // Output3: Change BCH (optional)
-    require(tx.outputs.length <= 4);
+  /**
+   * Adds or removes a record associated with this domain
+   * 
+   * Records are stored in OP_RETURN outputs and can be added or removed by the domain owner.
+   * To add a record, include the record data directly in the OP_RETURN output.
+   * To remove a record, prefix "RM" followed by the hash of the record content in the OP_RETURN output.
+   * 
+   * @inputs
+   * - Input0: Heartbeat NFT from this domain contract
+   * - Input1: Domain ownership NFT from owner
+   * - Input2: Funding UTXO
+   * 
+   * @outputs  
+   * - Output0: Heartbeat NFT returned to this contract
+   * - Output1: Domain NFT returned to owner
+   * - Output2: OP_RETURN containing record data or removal hash
+   * - Output3: BCH change output
+   * 
+   */
+  function addRecord() {
+    require(tx.inputs.length == 3);
+    require(tx.outputs.length == 4);
 
-    // Only provide support for blocks to reduce complexity in how nLocktime is used across different contracts.
-    require(tx.locktime < 500000000);
-
-    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+    bytes activeLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
     require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
-    require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);
 
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
@@ -77,6 +84,7 @@ contract Domain(bytes name, bytes32 domainCategory) {
     // Ensure that the NFT is verified.
     require(nameFromOwnerNFT == name);
 
+    // TODO: FIX THIS
     // Since a new record is added, update the heartbeat.
     require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + name);
     // Immutable
@@ -85,15 +93,8 @@ contract Domain(bytes name, bytes32 domainCategory) {
     // This enforces an OP_RETURN output.
     require(tx.outputs[2].value == 0);
 
-    if(tx.inputs.length == 3){
-      // Pure BCH
-      require(tx.inputs[2].tokenCategory == 0x);
-    }
-
-    if(tx.outputs.length == 4){
-      // Pure BCH
-      require(tx.outputs[3].tokenCategory == 0x);
-    }
+    require(tx.inputs[2].tokenCategory == 0x);
+    require(tx.outputs[3].tokenCategory == 0x);
   }
 
   /**
@@ -120,18 +121,19 @@ contract Domain(bytes name, bytes32 domainCategory) {
     require(tx.inputs.length == 2);
     require(tx.outputs.length == 1);
 
-    // Pure BCH
-    require(tx.outputs[0].tokenCategory == 0x);
-
-    require(tx.inputs[0].lockingBytecode == this.activeBytecode);
+    bytes activeLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
+    require(tx.outputs[0].lockingBytecode == activeLockingBytecode);
 
     bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
     require(heartbeatCategory == domainCategory);
     require(heartbeatCapability == 0x01); // Mutable
 
-    bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
-    require(ownerKeyCategory == domainCategory);
-    require(ownerKeyCapability == 0x00); // Immutable
+        // Pure BCH
+    require(tx.outputs[0].tokenCategory == 0x);
+
+    // Immutable ownership NFT
+    require(tx.inputs[1].tokenCategory == domainCategory);
 
     bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
     bytes registrationId = tx.inputs[1].nftCommitment.split(8)[0];
