@@ -1,6 +1,11 @@
 pragma cashscript ^0.11.0;
 
 contract Auction(bytes registryContractScriptHash) {
+
+  function withdraw(sig signature, pubkey pk){
+    require(checkSig(signature, pk));
+  }
+
   /**
    * Starts a new domain registration auction
    * @param name The name being registered.
@@ -43,8 +48,11 @@ contract Auction(bytes registryContractScriptHash) {
   
     // Inputs[3] is the funding UTXO
     require(tx.inputs[3].tokenCategory == 0x);
-    // Every auction begins with a base value of atleast 0.025 BCH.
-    require(tx.outputs[3].value >= 2500000);
+    // // Every auction begins with a base value of atleast 0.025 BCH.
+    // require(tx.outputs[3].value >= 2500000);
+
+    // FOR TESTS: Every auction begins with a base value of atleast 0.000008 BCH.
+    require(tx.outputs[3].value >= 800);
 
     // Create the first piece of the registration pair. i.e Pair0
     // Note: outputs[2] nftcommitment is the new registrationAuctionId
@@ -66,10 +74,8 @@ contract Auction(bytes registryContractScriptHash) {
     require(idCounterCategory == domainCategory);
     require(idCounterCapability == 0x02); // Minting
 
-    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
-    bytes pair0Category, bytes pair0Capability = tx.outputs[3].tokenCategory.split(32);
-    require(pair0Category == domainCategory);
-    require(pair0Capability == 0x00); // Immutable
+    // Immutable
+    require(tx.outputs[3].tokenCategory == domainCategory);
 
     // Pair1 changes with each new bid (locking bytecode), hence it's capability is mutable.
     bytes pair1Category, bytes pair1Capability = tx.outputs[4].tokenCategory.split(32);

@@ -79,10 +79,8 @@ contract Domain(bytes name, bytes32 domainCategory) {
 
     // Since a new record is added, update the heartbeat.
     require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + name);
-
-    bytes ownerKeyCategory, bytes ownerKeyCapability = tx.inputs[1].tokenCategory.split(32);
-    require(ownerKeyCategory == domainCategory);
-    require(ownerKeyCapability == 0x00); // Immutable
+    // Immutable
+    require(tx.inputs[1].tokenCategory == domainCategory);
 
     // This enforces an OP_RETURN output.
     require(tx.outputs[2].value == 0);

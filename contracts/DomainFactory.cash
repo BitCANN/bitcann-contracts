@@ -53,10 +53,8 @@ contract DomainFactory(
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
 
-    // The first part of the pair never changes, only the satoshi value changes, hence it's marked as immutable.
-    bytes pair0Category, bytes pair0Capability = tx.inputs[2].tokenCategory.split(32);
-    require(pair0Category == domainCategory);
-    require(pair0Capability == 0x00); // Immutable
+    // Pair0 is immutable
+    require(tx.inputs[2].tokenCategory == domainCategory);
 
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
     bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "compile:registry": "cashc contracts/Registry.cash -o artifacts/Registry.json",
-    "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json", 
+    "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json",
     "compile:auction": "cashc contracts/Auction.cash -o artifacts/Auction.json",
     "compile:bid": "cashc contracts/Bid.cash -o artifacts/Bid.json",
     "compile:registrationconflict": "cashc contracts/RegistrationConflict.cash -o artifacts/RegistrationConflict.json",
@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@bitauth/libauth": "^3.1.0-next.4",
-    "cashc": "^0.11.0-next.0", 
-    "cashscript": "^0.11.0-next.0"
+    "cashc": "^0.11.0-next.0",
+    "cashscript": "^0.11.0-next.0",
+    "dotenv": "^16.4.7"
   }
 }

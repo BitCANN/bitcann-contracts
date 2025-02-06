@@ -38,11 +38,8 @@ contract DomainNameShield(bytes registryContractScriptHash, bytes tld) {
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
 
-    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
-    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
-    require(pair0Category == domainCategory);
-    require(pair0Capability == 0x00); // Immutable
-
+    // Pair0 is immutable
+    require(tx.outputs[2].tokenCategory == domainCategory);
     // Pair1 changes with each new bid (locking bytecode), hence it's capability is mutable.
     bytes pair1Category, bytes pair1Capability = tx.outputs[3].tokenCategory.split(32);
     require(pair1Category == domainCategory);

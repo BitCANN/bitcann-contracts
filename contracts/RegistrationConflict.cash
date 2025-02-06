@@ -38,10 +38,9 @@ contract RegistrationConflict(bytes registryContractScriptHash) {
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
 
-    bytes validPair0Category, bytes validPair0Capability = tx.inputs[2].tokenCategory.split(32);
-    require(validPair0Category == domainCategory);
-    require(validPair0Capability == 0x00); // Immutable
-
+    // Pair0 is immutable
+    require(tx.inputs[2].tokenCategory == domainCategory);
+    // Pair1
     bytes validPair1Category, bytes validPair1Capability = tx.inputs[3].tokenCategory.split(32);
     require(validPair1Category == domainCategory);
     require(validPair1Capability == 0x01); // Mutable

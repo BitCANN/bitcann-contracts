@@ -44,10 +44,8 @@ contract Bid(bytes registryContractScriptHash) {
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
 
-    // Pair0 never changes, only the satoshi value changes with each new bid, hence it's capability is immutable.
-    bytes pair0Category, bytes pair0Capability = tx.outputs[2].tokenCategory.split(32);
-    require(pair0Category == domainCategory);
-    require(pair0Capability == 0x00); // Immutable
+    // Pair0 is immutable
+    require(tx.outputs[2].tokenCategory == domainCategory);
 
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
     // Enforcing the structure of the pair results in predictable behaviour.

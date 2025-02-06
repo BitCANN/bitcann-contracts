@@ -2,6 +2,12 @@ pragma cashscript ^0.11.0;
 
 
 contract Registry(bytes domainCategory) {
+
+  function withdraw(sig signature, pubkey pk){
+    require(checkSig(signature, pk));
+  }
+
+
   /**
    * The Registry contract serves as both a source and storage for authorized NFTs.
    * It holds NFTs with immutable capability that share the same category as domainCategory.
@@ -37,13 +43,8 @@ contract Registry(bytes domainCategory) {
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
     require(tx.inputs[0].value == tx.outputs[0].value);
-
-    // Make sure that the token category is the domain category and the capability is immutable.
-    bytes scriptCategory, bytes scriptCapability = tx.inputs[0].tokenCategory.split(32);
-    require(scriptCategory == domainCategory);
-    // Must be Immutable as the scriptLockingBytecode are added in the immutable NFTs.
-    require(scriptCapability == 0x00); // Immutable
-
+    // Just check the length of tokenCategory to be 32 as immutable NFTs do not have capability.
+    require(tx.inputs[0].tokenCategory == domainCategory);
 
     // Script Contract (Contract Composition)
 

@@ -7,10 +7,14 @@ import {
   deriveSeedFromBip39Mnemonic,
 } from '@bitauth/libauth';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 // This is duplicated from common.ts because it is not possible to import from a .ts file in p2pkh.js
 
 // Generate entropy from BIP39 mnemonic phrase and initialise a root HD-wallet node
-const seed = deriveSeedFromBip39Mnemonic('CashScript Examples');
+// const seed = deriveSeedFromBip39Mnemonic('CashScript Examples');
+const seed = deriveSeedFromBip39Mnemonic(process.env.SEED);
 const rootNode = deriveHdPrivateNodeFromSeed(seed, { assumeValidity: true, throwErrors: true });
 const baseDerivationPath = "m/44'/145'/0'/0";
 
@@ -20,5 +24,5 @@ if (typeof aliceNode === 'string') throw new Error();
 export const alicePub = secp256k1.derivePublicKeyCompressed(aliceNode.privateKey);
 export const alicePriv = aliceNode.privateKey;
 export const alicePkh = hash160(alicePub);
-export const aliceAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkh', payload: alicePkh, throwErrors: true }).address;
-export const aliceTokenAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkhWithTokens', payload: alicePkh, throwErrors: true }).address;
+export const aliceAddress = encodeCashAddress({ prefix: 'bitcoincash', type: 'p2pkh', payload: alicePkh, throwErrors: true }).address;
+export const aliceTokenAddress = encodeCashAddress({ prefix: 'bitcoincash', type: 'p2pkhWithTokens', payload: alicePkh, throwErrors: true }).address;

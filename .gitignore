@@ -107,3 +107,5 @@ typings/
 .dynamodb/
 
 manual-test.ts
+
+cashscript/

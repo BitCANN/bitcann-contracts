@@ -68,11 +68,9 @@ contract IllegalRegistration(bytes registryContractScriptHash, bytes domainContr
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
     require(tx.inputs[2].lockingBytecode == domainLockingBytecode);
-
-    bytes pair0Category, bytes pair0Capability = tx.inputs[3].tokenCategory.split(32);
-    require(pair0Category == domainCategory);
-    require(pair0Capability == 0x00); // Immutable
-
+    // Pair0 is immutable
+    require(tx.inputs[3].tokenCategory == domainCategory);
+    // Pair1
     bytes pair1Category, bytes pair1Capability = tx.inputs[4].tokenCategory.split(32);
     require(pair1Category == domainCategory);
     require(pair1Capability == 0x01); // Mutable
