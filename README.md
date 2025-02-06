@@ -43,7 +43,7 @@ Bitcoin Cash for Assigned Names and Numbers
 ### Features
 
 - Decentralised domain names like `.sat` and `.bch`
-- Add/Remove records, currency addresses, text records, social, email and custom records
+- Add/Remove records, RPA Pay Codes, currency addresses, text records, social, email and custom records
 - No expiry/renewals
 - Domain ownership is an NFT, providing proof of ownership and enabling secondary market trading.
 - Lookup as easy as fetching transaction history

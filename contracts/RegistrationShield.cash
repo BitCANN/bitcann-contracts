@@ -1,0 +1,115 @@
+pragma cashscript ^0.11.0;
+
+contract RegistrationShield(bytes registryContractScriptHash, bytes domainContractPartialBytecode, bytes tld) {
+  /**
+   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds as reward.
+   * 
+   * If someone attempts to register a domain that is already owned and active (has a valid heartbeat NFT),
+   * this function allows anyone to:
+   * - Prove the domain is already owned by providing the heartbeat NFT
+   * - Burn the illegal registration bid NFTs
+   * - Claim the bid funds as a reward
+   * 
+   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to verify ownership
+   * @param name - Name being registered illegally
+   * 
+   * @inputs
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: Heartbeat NFT proving active domain ownership
+   * - Input3: auctionNFT
+   * 
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
+   * - Output2: Heartbeat NFT back to domain contract
+   * - Output3: BCH change/reward to caller
+   * 
+   * Requirements:
+   * - Heartbeat must be less than 2 years old (105120 blocks)
+   * - Domain contract bytecode must match expected hash
+   * - Heartbeat NFT must be from valid domain contract
+   * - All NFTs must have correct categories and capabilities
+   */
+  function illegal(){
+    require(tx.inputs.length == 4);
+    require(tx.outputs.length == 4);
+    // Lock this contract to only be used with the registry contract.
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
+
+    // All the token categories in the transaction should be the same.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+    // Make sure that the heartbeat NFT is from the same category and in mutable capability.
+    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[2].tokenCategory.split(32);
+    require(heartbeatCategory == domainCategory);
+    require(heartbeatCapability == 0x01); // Mutable
+   
+    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
+
+    // Send the heartbeat NFT back to the domain contract.
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
+    require(tx.inputs[2].lockingBytecode == tx.outputs[2].lockingBytecode);
+
+    bytes name = tx.inputs[3].nftCommitment.split(20)[1];
+    
+    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length + tld.length) + name + tld + domainContractPartialBytecode;
+    bytes32 scriptHash = hash256(domainBytecode);
+    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+    require(tx.inputs[2].lockingBytecode == domainLockingBytecode);
+
+
+    bytes registrationIdHeartBeat = tx.inputs[2].nftCommitment.split(8)[0];
+    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.
+    require(int(registrationIdHeartBeat) < tx.inputs[3].tokenAmount);
+
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
+
+  }
+
+  /**
+   * Resolves a conflict between two competing registration auctions for the same name
+   * 
+   * If any new auction is created when an auction already exists then the new auction is open for penalization.
+   * Anyone can provide the proof of an active auction's existance and take away the funds from the "new" invalid auction
+   * as a form of reward for keeping the system secure and predictable.
+   * Therefore, it's the responsibility of the application to check for any running auctions for the same name.
+   * 
+   * @inputs
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: valid auctionNFT
+   * - Input3: Invalid auctionNFT
+   * 
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output1: Input1 back to this contract without any change
+   * - Output2: Valid auctionNFT
+   * - Output3: BCH change/reward to caller
+   */
+  function conflict() {
+    require(tx.inputs.length == 4);
+    require(tx.outputs.length == 4);
+    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);    
+    require(tx.inputs[3].lockingBytecode == registryContractScriptHash);
+    require(tx.outputs[2].lockingBytecode == registryContractScriptHash);
+
+    // All the token categories in the transaction should be the same.
+    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+
+    bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);
+    require(validAuctionCategory == domainCategory);
+    require(validAuctionCapability == 0x01); // Mutable
+
+    require(tx.inputs[2].value == tx.outputs[2].value);
+    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
+    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);
+    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);
+
+    // Send the tokenAmount to the registry contract
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
+    require(tx.outputs[4].tokenCategory == 0x);
+  }
+}

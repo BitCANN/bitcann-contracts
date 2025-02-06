@@ -8,12 +8,10 @@
     "compile:registry": "cashc contracts/Registry.cash -o artifacts/Registry.json",
     "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json",
     "compile:auction": "cashc contracts/Auction.cash -o artifacts/Auction.json",
-    "compile:bid": "cashc contracts/Bid.cash -o artifacts/Bid.json",
-    "compile:registrationconflict": "cashc contracts/RegistrationConflict.cash -o artifacts/RegistrationConflict.json",
-    "compile:illegalregistration": "cashc contracts/IllegalRegistration.cash -o artifacts/IllegalRegistration.json",
+    "compile:registrationshield": "cashc contracts/RegistrationShield.cash -o artifacts/RegistrationShield.json",
     "compile:domainfactory": "cashc contracts/DomainFactory.cash -o artifacts/DomainFactory.json",
     "compile:domainnameshield": "cashc contracts/DomainNameShield.cash -o artifacts/DomainNameShield.json",
-    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:bid && npm run compile:registrationconflict && npm run compile:illegalregistration && npm run compile:domainfactory && npm run compile:domainnameshield",
+    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:registrationshield && npm run compile:domainfactory && npm run compile:domainnameshield",
     "build": "npm run compile && node index.js"
   },
   "dependencies": {

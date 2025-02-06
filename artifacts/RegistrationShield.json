@@ -1,0 +1,145 @@
+{
+  "contractName": "RegistrationShield",
+  "constructorInputs": [
+    {
+      "name": "registryContractScriptHash",
+      "type": "bytes"
+    },
+    {
+      "name": "domainContractPartialBytecode",
+      "type": "bytes"
+    },
+    {
+      "name": "tld",
+      "type": "bytes"
+    }
+  ],
+  "abi": [
+    {
+      "name": "illegal",
+      "inputs": []
+    },
+    {
+      "name": "conflict",
+      "inputs": []
+    }
+  ],
+  "bytecode": "OP_3 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_0 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOTOKENCATEGORY OP_3 OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_UTXOTOKENCATEGORY OP_2 OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_2 OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_2 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_3 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP 20 OP_ROT OP_CAT OP_OVER OP_SIZE OP_NIP OP_4 OP_PICK OP_SIZE OP_NIP OP_ADD OP_CAT OP_SWAP OP_CAT OP_ROT OP_CAT OP_SWAP OP_CAT OP_HASH256 aa20 OP_SWAP OP_CAT 87 OP_CAT OP_2 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_BIN2NUM OP_3 OP_UTXOTOKENAMOUNT OP_LESSTHAN OP_VERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUAL OP_NIP OP_ELSE OP_3 OP_ROLL OP_1 OP_NUMEQUALVERIFY OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOVALUE OP_2 OP_OUTPUTVALUE OP_NUMEQUALVERIFY OP_2 OP_UTXOTOKENCATEGORY OP_3 OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_3 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_EQUALVERIFY OP_2 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_LESSTHAN OP_VERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUALVERIFY OP_4 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUAL OP_NIP OP_NIP OP_ENDIF",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract RegistrationShield(bytes registryContractScriptHash, bytes domainContractPartialBytecode, bytes tld) {\n  /**\n   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds as reward.\n   * \n   * If someone attempts to register a domain that is already owned and active (has a valid heartbeat NFT),\n   * this function allows anyone to:\n   * - Prove the domain is already owned by providing the heartbeat NFT\n   * - Burn the illegal registration bid NFTs\n   * - Claim the bid funds as a reward\n   * \n   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to verify ownership\n   * @param name - Name being registered illegally\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: Heartbeat NFT proving active domain ownership\n   * - Input3: auctionNFT\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Heartbeat NFT back to domain contract\n   * - Output3: BCH change/reward to caller\n   * \n   * Requirements:\n   * - Heartbeat must be less than 2 years old (105120 blocks)\n   * - Domain contract bytecode must match expected hash\n   * - Heartbeat NFT must be from valid domain contract\n   * - All NFTs must have correct categories and capabilities\n   */\n  function illegal(){\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 4);\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n    // Make sure that the heartbeat NFT is from the same category and in mutable capability.\n    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[2].tokenCategory.split(32);\n    require(heartbeatCategory == domainCategory);\n    require(heartbeatCapability == 0x01); // Mutable\n   \n    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);\n    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);\n\n    // Send the heartbeat NFT back to the domain contract.\n    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);\n    require(tx.inputs[2].lockingBytecode == tx.outputs[2].lockingBytecode);\n\n    bytes name = tx.inputs[3].nftCommitment.split(20)[1];\n    \n    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length + tld.length) + name + tld + domainContractPartialBytecode;\n    bytes32 scriptHash = hash256(domainBytecode);\n    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);\n    require(tx.inputs[2].lockingBytecode == domainLockingBytecode);\n\n\n    bytes registrationIdHeartBeat = tx.inputs[2].nftCommitment.split(8)[0];\n    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.\n    require(int(registrationIdHeartBeat) < tx.inputs[3].tokenAmount);\n\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);\n\n  }\n\n  /**\n   * Resolves a conflict between two competing registration auctions for the same name\n   * \n   * If any new auction is created when an auction already exists then the new auction is open for penalization.\n   * Anyone can provide the proof of an active auction's existance and take away the funds from the \"new\" invalid auction\n   * as a form of reward for keeping the system secure and predictable.\n   * Therefore, it's the responsibility of the application to check for any running auctions for the same name.\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: valid auctionNFT\n   * - Input3: Invalid auctionNFT\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Valid auctionNFT\n   * - Output3: BCH change/reward to caller\n   */\n  function conflict() {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 4);\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);    \n    require(tx.inputs[3].lockingBytecode == registryContractScriptHash);\n    require(tx.outputs[2].lockingBytecode == registryContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);\n    require(validAuctionCategory == domainCategory);\n    require(validAuctionCapability == 0x01); // Mutable\n\n    require(tx.inputs[2].value == tx.outputs[2].value);\n    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);\n    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);\n    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);\n\n    // Send the tokenAmount to the registry contract\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);\n    require(tx.outputs[4].tokenCategory == 0x);\n  }\n}",
+  "debug": {
+    "bytecode": "5379009c63c3549c69c4549c6900c7517a876900d101207f7552ce01207f517a52798769007a51876952ce53ce876952ce52d1876952cf52d2876952c752cd876953cf01147f770120527a7e5179827754798277937e517a7e527a7e517a7e007aaa02aa20517a7e01877e52c7517a876952cf587f75007a8153d09f6900d300d053d0939c7767537a519c69c3549c69c4549c6900c75179876952c75179876953c75179876952cd517a876900d101207f7552ce01207f517a527a8769007a51876952c652cc9c6952ce53ce876952cf01147f7753cf01147f77876952d053d09f6900d300d053d0939c6954d10087777768",
+    "sourceMap": "34:2:69:3;;;;;35:12:35:28;:32::33;:12:::1;:4::35;36:12:36:29:0;:33::34;:12:::1;:4::36;38:22:38:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;42:38:42:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;44:67:44:68:0;:57::83:1;:90::92:0;:57::93:1;45:12:45:29:0;;:33::47;;:12:::1;:4::49;46:12:46:31:0;;:35::39;:12:::1;:4::41;48:22:48:23:0;:12::38:1;:52::53:0;:42::68:1;:12;:4::70;49:22:49:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;52:22:52:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;53:22:53:23:0;:12::40:1;:55::56:0;:44::73:1;:12;:4::75;55:27:55:28:0;:17::43:1;:50::52:0;:17::53:1;:::56;57:27:57:31:0;:34::48;;:27:::1;:57::61:0;;:::68:1;;:71::74:0;;:::81:1;;:57;:27::82;:85::89:0;;:27:::1;:92::95:0;;:27:::1;:98::127:0;;:27:::1;58:33:58:47:0;;:25::48:1;59:36:59:73:0;:62::72;;:36::73:1;;;60:22:60:23:0;:12::40:1;:44::65:0;;:12:::1;:4::67;63:46:63:47:0;:36::62:1;:69::70:0;:36::71:1;:::74;65:16:65:39:0;;:12::40:1;:53::54:0;:43::67:1;:12;:4::69;67:23:67:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12;34:2:69:3;;91::114::0;;;;;92:12:92:28;:32::33;:12:::1;:4::35;93:12:93:29:0;:33::34;:12:::1;:4::36;94:22:94:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;95:22:95:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;96:22:96:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;97:23:97:24:0;:12::41:1;:45::71:0;;:12:::1;:4::73;100:38:100:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;102:73:102:74:0;:63::89:1;:96::98:0;:63::99:1;103:12:103:32:0;;:36::50;;:12:::1;:4::52;104:12:104:34:0;;:38::42;:12:::1;:4::44;106:22:106:23:0;:12::30:1;:45::46:0;:34::53:1;:12;:4::55;107:22:107:23:0;:12::38:1;:52::53:0;:42::68:1;:12;:4::70;108:22:108:23:0;:12::38:1;:45::47:0;:12::48:1;:::51;:65::66:0;:55::81:1;:88::90:0;:55::91:1;:::94;:12;:4::96;109:22:109:23:0;:12::36:1;:49::50:0;:39::63:1;:12;:4::65;112:23:112:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12;:4::94;113:23:113:24:0;:12::39:1;:43::45:0;:12:::1;91:2:114:3;;3:0:115:1",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 11,
+        "line": 35
+      },
+      {
+        "ip": 15,
+        "line": 36
+      },
+      {
+        "ip": 21,
+        "line": 38
+      },
+      {
+        "ip": 36,
+        "line": 45
+      },
+      {
+        "ip": 41,
+        "line": 46
+      },
+      {
+        "ip": 47,
+        "line": 48
+      },
+      {
+        "ip": 53,
+        "line": 49
+      },
+      {
+        "ip": 59,
+        "line": 52
+      },
+      {
+        "ip": 65,
+        "line": 53
+      },
+      {
+        "ip": 108,
+        "line": 60
+      },
+      {
+        "ip": 120,
+        "line": 65
+      },
+      {
+        "ip": 129,
+        "line": 67
+      },
+      {
+        "ip": 139,
+        "line": 92
+      },
+      {
+        "ip": 143,
+        "line": 93
+      },
+      {
+        "ip": 149,
+        "line": 94
+      },
+      {
+        "ip": 155,
+        "line": 95
+      },
+      {
+        "ip": 161,
+        "line": 96
+      },
+      {
+        "ip": 167,
+        "line": 97
+      },
+      {
+        "ip": 182,
+        "line": 103
+      },
+      {
+        "ip": 187,
+        "line": 104
+      },
+      {
+        "ip": 193,
+        "line": 106
+      },
+      {
+        "ip": 199,
+        "line": 107
+      },
+      {
+        "ip": 211,
+        "line": 108
+      },
+      {
+        "ip": 217,
+        "line": 109
+      },
+      {
+        "ip": 226,
+        "line": 112
+      },
+      {
+        "ip": 231,
+        "line": 113
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.11.0-next.0"
+  },
+  "updatedAt": "2025-02-06T19:10:06.168Z"
+}

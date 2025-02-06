@@ -37,6 +37,11 @@ contract DomainFactory(
   function call(bytes domainContractPartialBytecode){
     require(tx.inputs.length == 4);
 
+    // Make sure that the sequence number is greater than 1 day.
+    require(tx.inputs[2].sequenceNumber > 1 days);
+    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
+    // require(tx.inputs[2].sequenceNumber >= 1 days);
+
     // For the first 4 years, the platform collects 50% of the fees
     if (int(tx.locktime) > 1093240) {
       require(tx.outputs.length == 4);
