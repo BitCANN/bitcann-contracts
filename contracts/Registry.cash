@@ -2,6 +2,10 @@ pragma cashscript ^0.11.0;
 
 /**
   * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
+
+  * The Registry has two minting NFTs:
+  * 1. registrationMintingNFT which has tokenAmount and nftCommitment
+  * 2. domainMintingNFT which does not have any tokenAmount or nftCommitment
  */
 contract Registry(bytes domainCategory) {
   /**

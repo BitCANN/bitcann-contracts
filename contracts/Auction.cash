@@ -15,17 +15,6 @@ contract Auction() {
    *   satoshiValue: (Represents the bid amount)
    *   commitment:   bidder's PKH(20 bytes) + name(bytes)
    * 
-   // Let the tokenAmount be the registrationId. so the mintingNFT should have amount(max mintable) and registrationId 8 bytes.
-   // When creating a new registration, it updates the registrationID and also attaches tokenAmount to the immutableNFT.
-
-
-   // At the time of penalisations the tokens can just go back to the registry contract to the authorized contract.
-   // then accumulateTokens can be called to merge the tokens.
-
-      // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
-    // Needs fewer operations with this approach as it would require this code to check 0th and 1st input and output in all other contracts.
-
-   
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract

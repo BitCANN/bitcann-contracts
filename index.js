@@ -26,22 +26,21 @@ const domainCategory = '5a48189d187490936959c04f28c70d26a4e4c5102b98866bf94b5a31
 const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
-const registryLockingBytecode = cashAddressToLockingBytecode(registryContract.address).bytecode
 
-const auctionContract = new Contract(artifactAuction, [registryLockingBytecode], options);
+const auctionContract = new Contract(artifactAuction, [], options);
 const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address)
 const auctionLockingBytecodeHex = binToHex(auctionLockingBytecode.bytecode)
 
-const nameHex = Buffer.from('test.sats').toString('hex')
+const nameHex = Buffer.from('test').toString('hex')
 console.log('INFO: nameHex', nameHex)
 const name = hexToBin(nameHex)
 
 
 console.log('INFO: domainCategory', domainCategory)
 console.log('INFO: aliceAddress', aliceAddress)
-console.log('INFO: registryContract.address: ', registryContract.address)
-console.log('INFO: auctionContract.address: ', auctionContract.address)
-console.log('INFO: auctionLockingBytecodeHex: ', auctionLockingBytecodeHex)
+console.log('let registryContractAddress = ', registryContract.address)
+console.log('let auctionContractAddress = ', auctionContract.address)
+console.log('let auctionLockingBytecode = ', auctionLockingBytecodeHex)
 
 
 const getUtxos = async () => {
@@ -146,7 +145,7 @@ const auction = async () => {
       }
     }
   })
-  .addOpReturnOutput(['test.sats'])
+  .addOpReturnOutput(['test'])
   .addOutput({
     to: aliceAddress,
     amount: userUTXO.satoshis - BigInt(3300),

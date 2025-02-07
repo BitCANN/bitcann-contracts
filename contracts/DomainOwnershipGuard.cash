@@ -1,6 +1,9 @@
 pragma cashscript ^0.11.0;
 
-contract Guard(bytes domainContractPartialBytecode, bytes tld) {
+contract DomainOwnershipGuard(
+  bytes domainContractPartialBytecode,
+  bytes tld
+) {
   /**
    * If the Domain being auctions already has an 'externalAuth' NFT, with the same category then the auction is invalid.
    * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as reward.
@@ -17,7 +20,7 @@ contract Guard(bytes domainContractPartialBytecode, bytes tld) {
    * - Output2: External Auth NFT back to Domain contract
    * - Output3: BCH change/reward to caller
    */
-  function illegal(){
+  function call(){
     require(tx.inputs.length == 4);
     require(tx.outputs.length == 4);
     
@@ -45,57 +48,5 @@ contract Guard(bytes domainContractPartialBytecode, bytes tld) {
     require(tx.outputs[2].lockingBytecode == domainLockingBytecode);
 
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
-  }
-
-  /**
-   * Resolves a conflict between two competing registration auctions for the same name
-   * 
-   * If any new auction is created when an auction already exists then the new auction is open for penalization.
-   * Anyone can provide the proof of an active auction's existance and take away the funds from the "new" invalid auction
-   * as a form of reward for keeping the system secure and predictable.
-   * Therefore, it's the responsibility of the application to check for any running auctions for the same name.
-   * 
-   * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
-   * - Input1: Any input from this contract
-   * - Input2: valid auctionNFT
-   * - Input3: Invalid auctionNFT
-   * 
-   * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract
-   * - Output1: Input1 back to this contract without any change
-   * - Output2: Valid auctionNFT
-   * - Output3: BCH change/reward to caller
-   */
-  function conflict() {
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length == 4);
-
-        // This contract can only be used at input1 and it should return to itself.
-    require(this.activeInputIndex == 1);
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-
-    // Lock this contract to only be used with the registry type contract.
-    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);    
-    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
-
-    // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
-
-    bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);
-    require(validAuctionCategory == domainCategory);
-    require(validAuctionCapability == 0x01); // Mutable
-
-    require(tx.inputs[2].value == tx.outputs[2].value);
-    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
-    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);
-    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);
-
-    // Send the tokenAmount to the registry contract
-    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
-    require(tx.outputs[4].tokenCategory == 0x);
   }
 }

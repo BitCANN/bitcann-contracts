@@ -21,7 +21,7 @@ contract AuctionConflictResolver() {
    * - Output2: Valid auctionNFT
    * - Output3: BCH change/reward to caller
    */
-  function conflict() {
+  function call() {
     require(tx.inputs.length == 4);
     require(tx.outputs.length == 4);
 

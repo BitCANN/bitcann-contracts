@@ -1,10 +1,10 @@
 pragma cashscript ^0.11.0;
 
-contract Domain(bytes name) {
+contract Domain(bytes name, bytes domainCategory) {
 
   // Allow the owner to withdraw any funds but the immutable NFTs.
   function withdrawFunds() {
-    require(tx.inputs[this.activeInputIndex].tokenCategory.length != 32);
+    require(tx.inputs[this.activeInputIndex].tokenCategory != domainCategory);
   }
 
   /*
@@ -12,6 +12,7 @@ contract Domain(bytes name) {
    */
   function externalUse(){
     require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
+    require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
 
     require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
     require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
@@ -48,6 +49,8 @@ contract Domain(bytes name) {
     require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
     require(tx.outputs[0].lockingBytecode == activeLockingBytecode);
 
+    require(tx.inputs[0].tokenCategory == domainCategory);
+    require(tx.inputs[1].tokenCategory == domainCategory);
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
 
@@ -95,9 +98,10 @@ contract Domain(bytes name) {
 
     require(tx.inputs[0].nftCommitment == 0x);
     require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
+    require(tx.inputs[0].tokenCategory == domainCategory);
 
     if(tx.inputs.length == 3){
-      require(tx.inputs[2].tokenCategory == tx.inputs[0].tokenCategory);
+      require(tx.inputs[2].tokenCategory == domainCategory);
       require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
     }
 
