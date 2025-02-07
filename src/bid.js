@@ -18,7 +18,7 @@ import {
   aliceTemplate,
   alicePkh,
   aliceAddress,
-  name
+  nameBin
 } from './setup.js'
 
 
@@ -113,7 +113,7 @@ export const bid = async () => {
       amount: BigInt(1),
       nft: {
         capability: 'mutable',
-        commitment: binToHex(alicePkh) + binToHex(name)
+        commitment: binToHex(alicePkh) + binToHex(nameBin)
       }
     }
   })

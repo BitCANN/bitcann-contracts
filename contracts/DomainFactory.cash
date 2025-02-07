@@ -81,7 +81,7 @@ contract DomainFactory(
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
     
     bytes fullName = name + tld;
-    bytes domainBytecode = bytes(fullName.length) + fullName + 0x20 + parentCategory + domainContractBytecode;
+    bytes domainBytecode = 0x20 + parentCategory + bytes(fullName.length) + fullName + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     

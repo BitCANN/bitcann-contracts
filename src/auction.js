@@ -13,7 +13,8 @@ import {
   aliceTemplate,
   alicePkh,
   aliceAddress,
-  name
+  name,
+  nameBin
 } from './setup.js'
 
 
@@ -70,7 +71,7 @@ export const auction = async () => {
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(auctionContractUTXO, auctionContract.unlock.call(name))
+  .addInput(auctionContractUTXO, auctionContract.unlock.call(nameBin))
   .addInput(registrationCounterUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
   .addOutput({
@@ -109,11 +110,11 @@ export const auction = async () => {
       amount: BigInt(1),
       nft: {
         capability: 'mutable',
-        commitment: binToHex(alicePkh) + binToHex(name)
+        commitment: binToHex(alicePkh) + binToHex(nameBin)
       }
     }
   })
-  .addOpReturnOutput(['test'])
+  .addOpReturnOutput([name])
   .addOutput({
     to: aliceAddress,
     amount: userUTXO.satoshis - BigInt(3300),
