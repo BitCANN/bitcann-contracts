@@ -2,11 +2,7 @@
   "contractName": "DomainFactory",
   "constructorInputs": [
     {
-      "name": "registryContractScriptHash",
-      "type": "bytes"
-    },
-    {
-      "name": "domainContractPartialBytecodeHash",
+      "name": "domainContractBytecode",
       "type": "bytes"
     },
     {
@@ -17,104 +13,119 @@
   "abi": [
     {
       "name": "call",
-      "inputs": [
-        {
-          "name": "domainContractPartialBytecode",
-          "type": "bytes"
-        }
-      ]
+      "inputs": []
     }
   ],
-  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_2 OP_INPUTSEQUENCENUMBER 805101 OP_GREATERTHAN OP_VERIFY OP_TXLOCKTIME 78ae10 OP_GREATERTHAN OP_IF OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_ELSE OP_TXOUTPUTCOUNT OP_5 OP_NUMEQUALVERIFY OP_5 OP_OUTPUTBYTECODE 76a914 OP_4 OP_PICK OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_5 OP_OUTPUTVALUE OP_2 OP_UTXOVALUE OP_2 OP_DIV OP_NUMEQUALVERIFY OP_ENDIF OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_UTXOTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_ROT OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_3 OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_4 OP_SPLIT OP_TXLOCKTIME OP_ROT OP_BIN2NUM OP_GREATERTHAN OP_VERIFY OP_3 OP_PICK OP_ROT OP_EQUALVERIFY OP_6 OP_PICK OP_HASH160 OP_5 OP_ROLL OP_EQUALVERIFY 20 OP_4 OP_ROLL OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP OP_CAT OP_2 OP_PICK OP_CAT OP_5 OP_ROLL OP_CAT OP_HASH256 aa20 OP_SWAP OP_CAT 87 OP_CAT OP_3 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCOMMITMENT OP_3 OP_PICK OP_TXLOCKTIME OP_CAT OP_EQUALVERIFY OP_3 OP_OUTPUTVALUE e803 OP_NUMEQUALVERIFY OP_4 OP_OUTPUTTOKENCOMMITMENT OP_2SWAP OP_CAT OP_EQUALVERIFY OP_4 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_4 OP_OUTPUTVALUE e803 OP_NUMEQUAL OP_NIP",
-  "source": "pragma cashscript ^0.11.0;\n\ncontract DomainFactory(\n  bytes registryContractScriptHash,\n  bytes domainContractPartialBytecodeHash,\n  bytes20 platformPKH\n) {\n  /**\n   * This function finalizes a domain registration auction by:\n   * - Verifying the auction has ended and the winner's bid is valid\n   * - Issuing a mutable heartbeat NFT to the domain contract\n   * - Issuing an immutable domain NFT to the auction winner\n   * - Distributing auction fees between platform and miners\n   *\n   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to create\n   *\n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: RegistrationPair0 from the Registry contract\n   * - Input3: RegistrationPair1 from the Registry contract\n   *\n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Heartbeat NFT to domain contract\n   * - Output3: Domain NFT to auction winner\n   * - Output4: Platform fee (only for first 4 years)\n   *\n   * Requirements:\n   * - Transaction must be at least 2 blocks old\n   * - Auction must have ended (current block > endBlock)\n   * - Domain contract bytecode must match expected hash\n   * - NFTs must have correct categories and capabilities\n   * - Platform fee split 50/50 with miners for first 4 years\n   */\n  function call(bytes domainContractPartialBytecode){\n    require(tx.inputs.length == 4);\n\n    // Make sure that the sequence number is greater than 1 day.\n    require(tx.inputs[2].sequenceNumber > 1 days);\n    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days\n    // require(tx.inputs[2].sequenceNumber >= 1 days);\n\n    // For the first 4 years, the platform collects 50% of the fees\n    if (int(tx.locktime) > 1093240) {\n      require(tx.outputs.length == 4);\n    } else {\n      require(tx.outputs.length == 5);\n      require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(platformPKH));\n      // Enforce that the other half goes to the miners.\n      require(tx.outputs[5].value == tx.inputs[2].value / 2);\n    }\n\n    // Lock this contract to only be used with the registry contract.\n    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    // Pair0 is immutable\n    require(tx.inputs[2].tokenCategory == domainCategory);\n\n    // The second part of the pair changes with each new bid, hence it's marked as mutable.\n    bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);\n    require(pair1Category == domainCategory);\n    require(pair1Capability == 0x01); // Mutable\n\n    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);\n    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);\n\n    bytes8 registrationAuctionIdPair0, bytes name = tx.inputs[2].nftCommitment.split(8);\n    bytes8 registrationAuctionIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);\n    bytes4 registrationAuctionEndBlock, bytes bidderLockingBytecode = remainingBytes.split(4);\n    \n    // Make sure that the auction has ended.\n    require(int(tx.locktime) > int(registrationAuctionEndBlock));\n    // Comfirm that the same piece of the pair are being used by matching the auctionId.\n    require(registrationAuctionIdPair0 == registrationAuctionIdPair1);\n\n    bytes bytecodeHash = hash160(domainContractPartialBytecode);\n    require(bytecodeHash == domainContractPartialBytecodeHash);\n\n    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractPartialBytecode;\n    bytes32 scriptHash = hash256(domainBytecode);\n    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);\n\n    // Send the heartbeat NFT to the domain contract.\n    require(tx.outputs[3].lockingBytecode == domainLockingBytecode);\n    require(tx.outputs[3].nftCommitment == registrationAuctionIdPair0 + bytes(tx.locktime));\n    require(tx.outputs[3].value == 1000);\n\n    // Send the domain ownership NFT to the bidder\n    require(tx.outputs[4].nftCommitment == registrationAuctionIdPair0 + name);\n    require(tx.outputs[4].lockingBytecode == bidderLockingBytecode);\n    require(tx.outputs[4].value == 1000);\n  }\n\n}",
+  "bytecode": "OP_TXINPUTCOUNT OP_3 OP_NUMEQUALVERIFY OP_TXLOCKTIME 78ae10 OP_GREATERTHAN OP_IF OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_ELSE OP_TXOUTPUTCOUNT OP_5 OP_NUMEQUALVERIFY OP_5 OP_OUTPUTBYTECODE 76a914 OP_3 OP_PICK OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_5 OP_OUTPUTVALUE OP_2 OP_UTXOVALUE OP_2 OP_DIV OP_NUMEQUALVERIFY OP_ENDIF OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_2 OP_INPUTSEQUENCENUMBER 805101 OP_GREATERTHANOREQUAL OP_VERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_2 OP_UTXOTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT 20 OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT OP_4 OP_ROLL OP_CAT OP_HASH256 aa20 OP_SWAP OP_CAT 87 OP_CAT OP_2 OP_UTXOTOKENAMOUNT OP_8 OP_NUM2BIN OP_2 OP_OUTPUTBYTECODE OP_2 OP_PICK OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY OP_5 OP_PICK OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCOMMITMENT OP_0 OP_EQUALVERIFY OP_2 OP_OUTPUTVALUE e803 OP_NUMEQUALVERIFY OP_3 OP_OUTPUTBYTECODE OP_ROT OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY OP_3 OP_OUTPUTVALUE e803 OP_NUMEQUALVERIFY OP_4 OP_OUTPUTTOKENCOMMITMENT OP_SWAP OP_ROT OP_CAT OP_EQUALVERIFY OP_4 OP_OUTPUTTOKENCATEGORY OP_ROT OP_EQUALVERIFY OP_4 OP_OUTPUTBYTECODE 76a914 OP_ROT OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_4 OP_OUTPUTVALUE e803 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_2 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUAL OP_NIP",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract DomainFactory(\n  bytes domainContractBytecode,\n  bytes20 platformPKH\n) {\n  /**\n   * This function finalizes a domain registration auction by:\n   * - Verifying the auction has ended and the winner's bid is valid\n   * - Issuing an immutable externalAuth NFT to the domain contract\n   * - Issuing an immutable internalAuth NFT to the domain contract\n   * - Issuing an immutable domain NFT to the auction winner\n   * - Distributing auction fees between platform and miners\n   *\n   * @param domainContractBytecode - Partial bytecode of the domain contract to create\n   * @param platformPKH - Public key hash of the platform's fee recipient\n   *\n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: auctionNFT\n   * - Input3: Funding UTXO\n   *\n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: External Auth NFT to domain contract\n   * - Output3: Internal Auth NFT to domain contract\n   * - Output4: Domain NFT to auction winner\n   * - Output5: Platform fee (only for first 4 years)\n   *\n   */\n  function call(){\n    require(tx.inputs.length == 3);\n    // For the first 4 years, the platform collects 50% of the fees\n    if (tx.locktime > 1093240) {\n      require(tx.outputs.length == 4);\n    } else {\n      require(tx.outputs.length == 5);\n      require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(platformPKH));\n      // Enforce that the other half goes to the miners.\n      require(tx.outputs[5].value == tx.inputs[2].value / 2);\n    }\n\n    // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);\n    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);\n\n    // Make sure that the sequence number is greater than 1 day.\n    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days\n    require(tx.inputs[2].sequenceNumber >= 1 days);\n\n    bytes domainCategory = tx.outputs[0].tokenCategory;\n    require(tx.inputs[2].tokenCategory == domainCategory);\n\n    // The second part of the pair changes with each new bid, hence it's marked as mutable.\n    bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);\n    require(auctionCategory == domainCategory);\n    require(auctionCapability == 0x01); // Mutable\n\n\n    bytes20 bidderPKH, bytes name = tx.inputs[2].nftCommitment.split(20);\n\n    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractBytecode;\n    bytes32 scriptHash = hash256(domainBytecode);\n    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);\n\n    bytes8 registrationId = bytes8(tx.inputs[2].tokenAmount);\n\n    // Send the external auth NFT to the domain contract.\n    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);\n    require(tx.outputs[2].tokenCategory == domainCategory); // Immutable\n    require(tx.outputs[2].nftCommitment == 0x);\n    require(tx.outputs[2].value == 1000);\n\n    // Send the internal auth NFT to the domain contract.\n    require(tx.outputs[3].lockingBytecode == domainLockingBytecode);\n    require(tx.outputs[3].tokenCategory == domainCategory); // Immutable\n    require(tx.outputs[3].nftCommitment == registrationId);\n    require(tx.outputs[3].value == 1000);\n\n    // Send the domain ownership NFT to the bidder\n    require(tx.outputs[4].nftCommitment == registrationId + name);\n    require(tx.outputs[4].tokenCategory == domainCategory); // Immutable\n    require(tx.outputs[4].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH));\n    require(tx.outputs[4].value == 1000);\n\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount);\n  }\n\n}",
   "debug": {
-    "bytecode": "c3549c6952cb03805101a069c50378ae10a063c4549c6967c4559c6955cd0376a91454797e0288ac7e876955cc52c652969c696800c75179876900d101207f7552ce5179876953ce01207f517a52798769007a51876952c7527a876952c753c7876952cf587f53cf587f007a547fc5527a81a0695379527a87695679a9007a557a87690120547a7e527982777e52797e557a7e007aaa02aa20517a7e01877e53cd517a876953d25379c57e876953cc02e8039c6954d2537a537a7e876954cd517a876954cc02e8039c77",
-    "sourceMap": "38:12:38:28;:32::33;:12:::1;:4::35;41:22:41:23:0;:12::39:1;:42::48:0;:12:::1;:4::50;46:12:46:23:0;:27::34;:8:::1;:36:48:5:0;47:14:47:31;:35::36;:14:::1;:6::38;48:11:53:5:0;49:14:49:31;:35::36;:14:::1;:6::38;50:25:50:26:0;:14::43:1;:47::84:0;:72::83;;:47::84:1;;;:14;:6::86;52:25:52:26:0;:14::33:1;:47::48:0;:37::55:1;:58::59:0;:37:::1;:14;:6::61;48:11:53:5;56:22:56:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;59:38:59:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;62:22:62:23:0;:12::38:1;:42::56:0;;:12:::1;:4::58;65:59:65:60:0;:49::75:1;:82::84:0;:49::85:1;66:12:66:25:0;;:29::43;;:12:::1;:4::45;67:12:67:27:0;;:31::35;:12:::1;:4::37;69:22:69:23:0;:12::40:1;:44::70:0;;:12:::1;:4::72;70:22:70:23:0;:12::40:1;:54::55:0;:44::72:1;:12;:4::74;72:62:72:63:0;:52::78:1;:85::86:0;:52::87:1;73:72:73:73:0;:62::88:1;:95::96:0;:62::97:1;74:70:74:84:0;;:91::92;:70::93:1;77:16:77:27:0;:35::62;;:31::63:1;:12;:4::65;79:12:79:38:0;;:42::68;;:12:::1;:4::70;81:33:81:62:0;;:25::63:1;82:12:82:24:0;;:28::61;;:12:::1;:4::63;84:27:84:31:0;:34::48;;:27:::1;:57::61:0;;:::68:1;;:27::69;:72::76:0;;:27:::1;:79::108:0;;:27:::1;85:33:85:47:0;;:25::48:1;86:36:86:73:0;:62::72;;:36::73:1;;;89:23:89:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;90:23:90:24:0;:12::39:1;:43::69:0;;:78::89;:43::90:1;:12;:4::92;91:23:91:24:0;:12::31:1;:35::39:0;:12:::1;:4::41;94:23:94:24:0;:12::39:1;:43::69:0;;:72::76;;:43:::1;:12;:4::78;95:23:95:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;96:23:96:24:0;:12::31:1;:35::39:0;:12:::1;37:2:97:3",
+    "bytecode": "c3539c69c50378ae10a063c4549c6967c4559c6955cd0376a91453797e0288ac7e876955cc52c652969c6968c0519c69c0c7c0cd876900c752c75179876953c7517a876952cb03805101a26900d152ce5179876953ce01207f517a52798769007a51876952cf01147f012053797e517982777e51797e547a7e007aaa02aa20517a7e01877e52d0588052cd5279876952d15579876952d200876952cc02e8039c6953cd527a876953d15479876953d25179876953cc02e8039c6954d2517a527a7e876954d1527a876954cd0376a914527a7e0288ac7e876954cc02e8039c6900d300d052d0939c77",
+    "sourceMap": "34:12:34:28;:32::33;:12:::1;:4::35;36:8:36:19:0;:22::29;:8:::1;:31:38:5:0;37:14:37:31;:35::36;:14:::1;:6::38;38:11:43:5:0;39:14:39:31;:35::36;:14:::1;:6::38;40:25:40:26:0;:14::43:1;:47::84:0;:72::83;;:47::84:1;;;:14;:6::86;42:25:42:26:0;:14::33:1;:47::48:0;:37::55:1;:58::59:0;:37:::1;:14;:6::61;38:11:43:5;46:12:46:33:0;:37::38;:12:::1;:4::40;47:22:47:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;50:47:50:48:0;:37::65:1;51:22:51:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;52:22:52:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;56:22:56:23:0;:12::39:1;:43::49:0;:12:::1;:4::51;58:38:58:39:0;:27::54:1;59:22:59:23:0;:12::38:1;:42::56:0;;:12:::1;:4::58;62:63:62:64:0;:53::79:1;:86::88:0;:53::89:1;63:12:63:27:0;;:31::45;;:12:::1;:4::47;64:12:64:29:0;;:33::37;:12:::1;:4::39;67:46:67:47:0;:36::62:1;:69::71:0;:36::72:1;69:27:69:31:0;:34::48;;:27:::1;:57::61:0;;:::68:1;;:27::69;:72::76:0;;:27:::1;:79::101:0;;:27:::1;70:33:70:47:0;;:25::48:1;71:36:71:73:0;:62::72;;:36::73:1;;;73:45:73:46:0;:35::59:1;:28::60;;76:23:76:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;77:23:77:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;78:23:78:24:0;:12::39:1;:43::45:0;:12:::1;:4::47;79:23:79:24:0;:12::31:1;:35::39:0;:12:::1;:4::41;82:23:82:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;83:23:83:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;84:23:84:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;85:23:85:24:0;:12::31:1;:35::39:0;:12:::1;:4::41;88:23:88:24:0;:12::39:1;:43::57:0;;:60::64;;:43:::1;:12;:4::66;89:23:89:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;90:23:90:24:0;:12::41:1;:45::80:0;:70::79;;:45::80:1;;;:12;:4::82;91:23:91:24:0;:12::31:1;:35::39:0;:12:::1;:4::41;93:23:93:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12;33:2:94:3",
     "logs": [],
     "requires": [
       {
-        "ip": 6,
-        "line": 38
+        "ip": 5,
+        "line": 34
       },
       {
-        "ip": 11,
-        "line": 41
+        "ip": 13,
+        "line": 37
       },
       {
-        "ip": 19,
+        "ip": 18,
+        "line": 39
+      },
+      {
+        "ip": 28,
+        "line": 40
+      },
+      {
+        "ip": 36,
+        "line": 42
+      },
+      {
+        "ip": 41,
+        "line": 46
+      },
+      {
+        "ip": 47,
         "line": 47
       },
       {
-        "ip": 24,
-        "line": 49
+        "ip": 55,
+        "line": 51
       },
       {
-        "ip": 34,
-        "line": 50
-      },
-      {
-        "ip": 42,
+        "ip": 61,
         "line": 52
       },
       {
-        "ip": 49,
+        "ip": 66,
         "line": 56
       },
       {
-        "ip": 60,
-        "line": 62
+        "ip": 74,
+        "line": 59
       },
       {
-        "ip": 70,
-        "line": 66
+        "ip": 84,
+        "line": 63
       },
       {
-        "ip": 75,
-        "line": 67
+        "ip": 89,
+        "line": 64
       },
       {
-        "ip": 81,
-        "line": 69
+        "ip": 127,
+        "line": 76
       },
       {
-        "ip": 87,
-        "line": 70
-      },
-      {
-        "ip": 105,
+        "ip": 133,
         "line": 77
       },
       {
-        "ip": 111,
+        "ip": 138,
+        "line": 78
+      },
+      {
+        "ip": 143,
         "line": 79
       },
       {
-        "ip": 120,
+        "ip": 149,
         "line": 82
       },
       {
-        "ip": 150,
+        "ip": 155,
+        "line": 83
+      },
+      {
+        "ip": 161,
+        "line": 84
+      },
+      {
+        "ip": 166,
+        "line": 85
+      },
+      {
+        "ip": 175,
+        "line": 88
+      },
+      {
+        "ip": 181,
         "line": 89
       },
       {
-        "ip": 158,
+        "ip": 191,
         "line": 90
       },
       {
-        "ip": 163,
+        "ip": 196,
         "line": 91
       },
       {
-        "ip": 172,
-        "line": 94
-      },
-      {
-        "ip": 178,
-        "line": 95
-      },
-      {
-        "ip": 183,
-        "line": 96
+        "ip": 205,
+        "line": 93
       }
     ]
   },
@@ -122,5 +133,5 @@
     "name": "cashc",
     "version": "0.11.0-next.0"
   },
-  "updatedAt": "2025-02-06T20:05:21.250Z"
+  "updatedAt": "2025-02-07T16:07:11.768Z"
 }

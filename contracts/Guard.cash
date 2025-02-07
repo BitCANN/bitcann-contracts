@@ -1,71 +1,50 @@
 pragma cashscript ^0.11.0;
 
-contract Guard(bytes registryContractScriptHash, bytes domainContractPartialBytecode, bytes tld) {
+contract Guard(bytes domainContractPartialBytecode, bytes tld) {
   /**
-   * Penalizes illegal domain registrations by allowing anyone to burn the bid and claim the funds as reward.
-   * 
-   * If someone attempts to register a domain that is already owned and active (has a valid heartbeat NFT),
-   * this function allows anyone to:
-   * - Prove the domain is already owned by providing the heartbeat NFT
-   * - Burn the illegal registration bid NFTs
-   * - Claim the bid funds as a reward
-   * 
-   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to verify ownership
-   * @param name - Name being registered illegally
+   * If the Domain being auctions already has an 'externalAuth' NFT, with the same category then the auction is invalid.
+   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as reward.
    * 
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: Heartbeat NFT proving active domain ownership
+   * - Input2: External Auth NFT from Domain contract
    * - Input3: auctionNFT
    * 
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
-   * - Output2: Heartbeat NFT back to domain contract
+   * - Output2: External Auth NFT back to Domain contract
    * - Output3: BCH change/reward to caller
-   * 
-   * Requirements:
-   * - Heartbeat must be less than 2 years old (105120 blocks)
-   * - Domain contract bytecode must match expected hash
-   * - Heartbeat NFT must be from valid domain contract
-   * - All NFTs must have correct categories and capabilities
    */
   function illegal(){
     require(tx.inputs.length == 4);
     require(tx.outputs.length == 4);
-    // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
-    // All the input and output conditions for inputs[0], inputs[1], outputs[0] and outputs[1] are already checked in the registry contract.
-
-    // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
-    // Make sure that the heartbeat NFT is from the same category and in mutable capability.
-    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[2].tokenCategory.split(32);
-    require(heartbeatCategory == domainCategory);
-    require(heartbeatCapability == 0x01); // Mutable
-   
-    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
-    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
-
-    // Send the heartbeat NFT back to the domain contract.
-    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
-    require(tx.inputs[2].lockingBytecode == tx.outputs[2].lockingBytecode);
-
-    bytes name = tx.inputs[3].nftCommitment.split(20)[1];
     
-    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length + tld.length) + name + tld + domainContractPartialBytecode;
+    // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
+
+    bytes parentDomainCategory = tx.inputs[0].tokenCategory;
+    require(tx.inputs[3].tokenCategory == parentDomainCategory);
+
+    require(tx.inputs[2].tokenCategory == parentDomainCategory);
+    require(tx.outputs[2].tokenCategory == parentDomainCategory);
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
+    require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is use and not the internalAuth NFT.
+
+    bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;
+    bytes domainBytecode =  bytes(fullName.length) + fullName + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     require(tx.inputs[2].lockingBytecode == domainLockingBytecode);
-
-
-    bytes registrationIdHeartBeat = tx.inputs[2].nftCommitment.split(8)[0];
-    // Make sure that registrationId in the heartbeat is less that the registrationId in the new auction.
-    require(int(registrationIdHeartBeat) < tx.inputs[3].tokenAmount);
+    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);
 
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
-
   }
 
   /**
@@ -91,10 +70,17 @@ contract Guard(bytes registryContractScriptHash, bytes domainContractPartialByte
   function conflict() {
     require(tx.inputs.length == 4);
     require(tx.outputs.length == 4);
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);    
-    require(tx.inputs[3].lockingBytecode == registryContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == registryContractScriptHash);
+
+        // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);    
+    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
+    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
 
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
@@ -140,9 +126,16 @@ contract Guard(bytes registryContractScriptHash, bytes domainContractPartialByte
     require(tx.inputs.length == 3);
     require(tx.outputs.length == 3);
 
+    // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+
     // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
+    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
 
     // All the token categories in the transaction should be the same.
     bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];

@@ -13,7 +13,8 @@ contract Registry(bytes domainCategory) {
    * The contract can only be called in conjunction with one of the authorized contracts.
    * 
    * @note Authorized contracts and their thread counts:
-   * - Auction:           [1 thread] (Single-threaded registration)
+   * - Auction:                       [1 thread] (Single-threaded registration)
+   * - Bid:                           [~5 threads]
    * - DomainFactory:                 [~5 threads]
    * - DomainNameShield:              [~5 threads]
    * - IllegalRegistration:           [~5 threads]

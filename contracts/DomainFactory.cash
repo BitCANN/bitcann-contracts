@@ -1,49 +1,39 @@
 pragma cashscript ^0.11.0;
 
 contract DomainFactory(
-  bytes registryContractScriptHash,
-  bytes domainContractPartialBytecodeHash,
+  bytes domainContractBytecode,
   bytes20 platformPKH
 ) {
   /**
    * This function finalizes a domain registration auction by:
    * - Verifying the auction has ended and the winner's bid is valid
-   * - Issuing a mutable heartbeat NFT to the domain contract
+   * - Issuing an immutable externalAuth NFT to the domain contract
+   * - Issuing an immutable internalAuth NFT to the domain contract
    * - Issuing an immutable domain NFT to the auction winner
    * - Distributing auction fees between platform and miners
    *
-   * @param domainContractPartialBytecode - Partial bytecode of the domain contract to create
+   * @param domainContractBytecode - Partial bytecode of the domain contract to create
+   * @param platformPKH - Public key hash of the platform's fee recipient
    *
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: RegistrationPair0 from the Registry contract
-   * - Input3: RegistrationPair1 from the Registry contract
+   * - Input2: auctionNFT
+   * - Input3: Funding UTXO
    *
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
-   * - Output2: Heartbeat NFT to domain contract
-   * - Output3: Domain NFT to auction winner
-   * - Output4: Platform fee (only for first 4 years)
+   * - Output2: External Auth NFT to domain contract
+   * - Output3: Internal Auth NFT to domain contract
+   * - Output4: Domain NFT to auction winner
+   * - Output5: Platform fee (only for first 4 years)
    *
-   * Requirements:
-   * - Transaction must be at least 2 blocks old
-   * - Auction must have ended (current block > endBlock)
-   * - Domain contract bytecode must match expected hash
-   * - NFTs must have correct categories and capabilities
-   * - Platform fee split 50/50 with miners for first 4 years
    */
-  function call(bytes domainContractPartialBytecode){
-    require(tx.inputs.length == 4);
-
-    // Make sure that the sequence number is greater than 1 day.
-    require(tx.inputs[2].sequenceNumber > 1 days);
-    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
-    // require(tx.inputs[2].sequenceNumber >= 1 days);
-
+  function call(){
+    require(tx.inputs.length == 3);
     // For the first 4 years, the platform collects 50% of the fees
-    if (int(tx.locktime) > 1093240) {
+    if (tx.locktime > 1093240) {
       require(tx.outputs.length == 4);
     } else {
       require(tx.outputs.length == 5);
@@ -52,48 +42,55 @@ contract DomainFactory(
       require(tx.outputs[5].value == tx.inputs[2].value / 2);
     }
 
-    // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
+    // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
 
-    // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
+    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
-    // Pair0 is immutable
+    // Make sure that the sequence number is greater than 1 day.
+    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
+    require(tx.inputs[2].sequenceNumber >= 1 days);
+
+    bytes domainCategory = tx.outputs[0].tokenCategory;
     require(tx.inputs[2].tokenCategory == domainCategory);
 
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
-    bytes pair1Category, bytes pair1Capability = tx.inputs[3].tokenCategory.split(32);
-    require(pair1Category == domainCategory);
-    require(pair1Capability == 0x01); // Mutable
+    bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);
+    require(auctionCategory == domainCategory);
+    require(auctionCapability == 0x01); // Mutable
 
-    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == tx.inputs[3].lockingBytecode);
 
-    bytes8 registrationAuctionIdPair0, bytes name = tx.inputs[2].nftCommitment.split(8);
-    bytes8 registrationAuctionIdPair1, bytes remainingBytes = tx.inputs[3].nftCommitment.split(8);
-    bytes4 registrationAuctionEndBlock, bytes bidderLockingBytecode = remainingBytes.split(4);
-    
-    // Make sure that the auction has ended.
-    require(int(tx.locktime) > int(registrationAuctionEndBlock));
-    // Comfirm that the same piece of the pair are being used by matching the auctionId.
-    require(registrationAuctionIdPair0 == registrationAuctionIdPair1);
+    bytes20 bidderPKH, bytes name = tx.inputs[2].nftCommitment.split(20);
 
-    bytes bytecodeHash = hash160(domainContractPartialBytecode);
-    require(bytecodeHash == domainContractPartialBytecodeHash);
-
-    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractPartialBytecode;
+    bytes domainBytecode = 0x20 + domainCategory + bytes(name.length) + name + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
-    // Send the heartbeat NFT to the domain contract.
+    bytes8 registrationId = bytes8(tx.inputs[2].tokenAmount);
+
+    // Send the external auth NFT to the domain contract.
+    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);
+    require(tx.outputs[2].tokenCategory == domainCategory); // Immutable
+    require(tx.outputs[2].nftCommitment == 0x);
+    require(tx.outputs[2].value == 1000);
+
+    // Send the internal auth NFT to the domain contract.
     require(tx.outputs[3].lockingBytecode == domainLockingBytecode);
-    require(tx.outputs[3].nftCommitment == registrationAuctionIdPair0 + bytes(tx.locktime));
+    require(tx.outputs[3].tokenCategory == domainCategory); // Immutable
+    require(tx.outputs[3].nftCommitment == registrationId);
     require(tx.outputs[3].value == 1000);
 
     // Send the domain ownership NFT to the bidder
-    require(tx.outputs[4].nftCommitment == registrationAuctionIdPair0 + name);
-    require(tx.outputs[4].lockingBytecode == bidderLockingBytecode);
+    require(tx.outputs[4].nftCommitment == registrationId + name);
+    require(tx.outputs[4].tokenCategory == domainCategory); // Immutable
+    require(tx.outputs[4].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH));
     require(tx.outputs[4].value == 1000);
+
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount);
   }
 
 }

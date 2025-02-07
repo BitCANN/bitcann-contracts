@@ -1,37 +1,17 @@
 pragma cashscript ^0.11.0;
 
+contract Domain(bytes name) {
 
-// INFO: It's important to mention the domainCategory here as anyone can send any utxo with matching NFT commitment and capability and create records. Hence, the
-// domainCategory should be a restriction in spending and creating records.
-
-// WARNING: Do not send the ownership NFT to the domain contract. It's like keeping the lock and key together.
-// Anyone will be able to call the `renounceOwnership` function burning the ownership and making it possible for a new auction to begin.
-
-contract Domain(bytes name, bytes32 domainCategory) {
-
-  // // Prove that the heartbeat NFT is no longer valid and burn it. Opening this domain for new registration.
-  // function proveInactivity(){
-  //   // (tx.locktime - heartbeat >= 2 years);
-  //   // Allow burn
-  // }
-
-  // Allow the owner to withdraw any non domainCategory utxos
+  // Allow the owner to withdraw any funds but the immutable NFTs.
   function withdrawFunds() {
-    bytes heartbeatCategory = tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0];
-    require(heartbeatCategory != domainCategory);
-
-    // TODO: Add owner verification using heartbeat NFT + ownership NFT
+    require(tx.inputs[this.activeInputIndex].tokenCategory.length != 32);
   }
 
   /*
-   * This allows anyone to use the auth + heartbear NFT to use it with other contracts.
-   * For example: Other contracts (IllegalAuction) can prove that the domain is owned and has not been inactive for 2 years or more.
-   * and that acts as a security measure to eliminate illegal auctions.
+   * Allow this to be attached to other contracts and prove that the domain is owned.
    */
   function externalUse(){
-    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[this.activeInputIndex].tokenCategory.split(32);
-    require(heartbeatCategory == domainCategory);
-    require(heartbeatCapability == 0x01); // Mutable
+    require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
 
     require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
     require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
@@ -48,12 +28,12 @@ contract Domain(bytes name, bytes32 domainCategory) {
    * To remove a record, prefix "RM" followed by the hash of the record content in the OP_RETURN output.
    * 
    * @inputs
-   * - Input0: Heartbeat NFT from this domain contract
+   * - Input0: Internal Auth NFT
    * - Input1: Domain ownership NFT from owner
    * - Input2: Funding UTXO
    * 
    * @outputs  
-   * - Output0: Heartbeat NFT returned to this contract
+   * - Output0: Internal Auth NFT returned to this contract
    * - Output1: Domain NFT returned to owner
    * - Output2: OP_RETURN containing record data or removal hash
    * - Output3: BCH change output
@@ -64,31 +44,19 @@ contract Domain(bytes name, bytes32 domainCategory) {
     require(tx.outputs.length == 4);
 
     bytes activeLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+
     require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
-    require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
+    require(tx.outputs[0].lockingBytecode == activeLockingBytecode);
 
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
 
+    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
     require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
 
-    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
-    require(heartbeatCategory == domainCategory);
-    require(heartbeatCapability == 0x01); // Mutable
-
-    bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
     bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[1].nftCommitment.split(8);
-
-    require(heartbeatRegistrationId == registrationId);
-
-    // Ensure that the NFT is verified.
+    require(tx.inputs[0].nftCommitment == registrationId);
     require(nameFromOwnerNFT == name);
-
-    // TODO: FIX THIS
-    // Since a new record is added, update the heartbeat.
-    require(tx.outputs[0].nftCommitment == bytes(tx.locktime) + name);
-    // Immutable
-    require(tx.inputs[1].tokenCategory == domainCategory);
 
     // This enforces an OP_RETURN output.
     require(tx.outputs[2].value == 0);
@@ -98,46 +66,42 @@ contract Domain(bytes name, bytes32 domainCategory) {
   }
 
   /**
-   * Allows domain owner to renounce ownership by burning both NFTs
+   * Allows domain owner Or anyone to burn the domain by burning NFTs that control this contract.
    * 
-   * This function enables permanent domain abandonment by:
-   * - Burning both the domain ownership NFT and heartbeat NFT
-   * - Returning any BCH value as change
-   * - Making the domain available for re-registration
+   * If the internalAuth NFT has not been used for > 730 days i.e 2 years, then allow anyone to burn the domain.
+   * else allow the owner to burn the domain NFTs
    *
    * @inputs
-   * - Input0: Heartbeat NFT from domain contract
-   * - Input1: Domain ownership NFT from owner
+   * - Input0: Internal Auth NFT
+   * - Input1: External Auth NFT
+   * - Input2: Domain ownership NFT from owner (Optional)
    *
    * @outputs 
-   * - Output0: BCH change (if any)
+   * - Output0: BCH change
    *
-   * Requirements:
-   * - Both NFTs must be from same registration
-   * - NFTs must have correct categories and capabilities
-   * - Only BCH change output allowed
    */
-  function renounceOwnership(){
-    require(tx.inputs.length == 2);
+  function burn(){
+    require(tx.inputs.length == 2 || tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 
-    bytes activeLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
-    require(tx.outputs[0].lockingBytecode == activeLockingBytecode);
+    if(tx.inputs.length == 2){
+      // Allow anyone to burn.
+      require(tx.inputs[1].sequenceNumber >= 730 days);
+    }
 
-    bytes heartbeatCategory, bytes heartbeatCapability = tx.inputs[0].tokenCategory.split(32);
-    require(heartbeatCategory == domainCategory);
-    require(heartbeatCapability == 0x01); // Mutable
+    bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
 
-        // Pure BCH
+    require(tx.inputs[0].nftCommitment == 0x);
+    require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
+
+    if(tx.inputs.length == 3){
+      require(tx.inputs[2].tokenCategory == tx.inputs[0].tokenCategory);
+      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
+    }
+
+    // Return the BCH as change.
     require(tx.outputs[0].tokenCategory == 0x);
-
-    // Immutable ownership NFT
-    require(tx.inputs[1].tokenCategory == domainCategory);
-
-    bytes heartbeatRegistrationId = tx.inputs[0].nftCommitment.split(8)[0];
-    bytes registrationId = tx.inputs[1].nftCommitment.split(8)[0];
-
-    require(heartbeatRegistrationId == registrationId);
   }
 }
