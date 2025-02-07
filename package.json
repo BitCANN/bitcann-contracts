@@ -9,8 +9,10 @@
     "compile:domain": "cashc contracts/Domain.cash -o artifacts/Domain.json",
     "compile:auction": "cashc contracts/Auction.cash -o artifacts/Auction.json",
     "compile:domainfactory": "cashc contracts/DomainFactory.cash -o artifacts/DomainFactory.json",
-    "compile:guard": "cashc contracts/Guard.cash -o artifacts/Guard.json",
-    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:guard && npm run compile:domainfactory && npm run compile:domain",
+    "compile:auctionnameenforcer": "cashc contracts/AuctionNameEnforcer.cash -o artifacts/AuctionNameEnforcer.json",
+    "compile:domainownershipguard": "cashc contracts/DomainOwnershipGuard.cash -o artifacts/DomainOwnershipGuard.json",
+    "compile:auctionconflictresolver": "cashc contracts/AuctionConflictResolver.cash -o artifacts/AuctionConflictResolver.json",
+    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:domain",
     "build": "npm run compile && node index.js"
   },
   "dependencies": {

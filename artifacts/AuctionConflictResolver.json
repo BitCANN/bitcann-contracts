@@ -1,0 +1,88 @@
+{
+  "contractName": "AuctionConflictResolver",
+  "constructorInputs": [],
+  "abi": [
+    {
+      "name": "conflict",
+      "inputs": []
+    }
+  ],
+  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_0 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_2 OP_UTXOVALUE OP_2 OP_OUTPUTVALUE OP_NUMEQUALVERIFY OP_2 OP_UTXOTOKENCATEGORY OP_3 OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_3 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_EQUALVERIFY OP_2 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_LESSTHAN OP_VERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUALVERIFY OP_4 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUAL",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract AuctionConflictResolver() {\n  /**\n   * Resolves a conflict between two competing registration auctions for the same name\n   * \n   * If any new auction is created when an auction already exists then the new auction is open for penalization.\n   * Anyone can provide the proof of an active auction's existance and take away the funds from the \"new\" invalid auction\n   * as a form of reward for keeping the system secure and predictable.\n   * Therefore, it's the responsibility of the application to check for any running auctions for the same name.\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: valid auctionNFT\n   * - Input3: Invalid auctionNFT\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: Valid auctionNFT\n   * - Output3: BCH change/reward to caller\n   */\n  function conflict() {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 4);\n\n        // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);\n    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);    \n    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);\n    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];\n\n    bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);\n    require(validAuctionCategory == domainCategory);\n    require(validAuctionCapability == 0x01); // Mutable\n\n    require(tx.inputs[2].value == tx.outputs[2].value);\n    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);\n    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);\n    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);\n\n    // Send the tokenAmount to the registry contract\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);\n    require(tx.outputs[4].tokenCategory == 0x);\n  }\n}",
+  "debug": {
+    "bytecode": "c3549c69c4549c69c0519c69c0c7c0cd876900c700c75179876952c75179876953c75179876952cd517a876900d101207f7552ce01207f517a527a8769007a51876952c652cc9c6952ce53ce876952cf01147f7753cf01147f77876952d053d09f6900d300d053d0939c6954d10087",
+    "sourceMap": "25:12:25:28;:32::33;:12:::1;:4::35;26:12:26:29:0;:33::34;:12:::1;:4::36;29:12:29:33:0;:37::38;:12:::1;:4::40;30:22:30:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;33:47:33:48:0;:37::65:1;34:22:34:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;35:22:35:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;36:22:36:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;37:23:37:24:0;:12::41:1;:45::69:0;;:12:::1;:4::71;40:38:40:39:0;:27::54:1;:61::63:0;:27::64:1;:::67;42:73:42:74:0;:63::89:1;:96::98:0;:63::99:1;43:12:43:32:0;;:36::50;;:12:::1;:4::52;44:12:44:34:0;;:38::42;:12:::1;:4::44;46:22:46:23:0;:12::30:1;:45::46:0;:34::53:1;:12;:4::55;47:22:47:23:0;:12::38:1;:52::53:0;:42::68:1;:12;:4::70;48:22:48:23:0;:12::38:1;:45::47:0;:12::48:1;:::51;:65::66:0;:55::81:1;:88::90:0;:55::91:1;:::94;:12;:4::96;49:22:49:23:0;:12::36:1;:49::50:0;:39::63:1;:12;:4::65;52:23:52:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12;:4::94;53:23:53:24:0;:12::39:1;:43::45:0;:12:::1",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 3,
+        "line": 25
+      },
+      {
+        "ip": 7,
+        "line": 26
+      },
+      {
+        "ip": 11,
+        "line": 29
+      },
+      {
+        "ip": 17,
+        "line": 30
+      },
+      {
+        "ip": 25,
+        "line": 34
+      },
+      {
+        "ip": 31,
+        "line": 35
+      },
+      {
+        "ip": 37,
+        "line": 36
+      },
+      {
+        "ip": 43,
+        "line": 37
+      },
+      {
+        "ip": 58,
+        "line": 43
+      },
+      {
+        "ip": 63,
+        "line": 44
+      },
+      {
+        "ip": 69,
+        "line": 46
+      },
+      {
+        "ip": 75,
+        "line": 47
+      },
+      {
+        "ip": 87,
+        "line": 48
+      },
+      {
+        "ip": 93,
+        "line": 49
+      },
+      {
+        "ip": 102,
+        "line": 52
+      },
+      {
+        "ip": 107,
+        "line": 53
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.11.0-next.0"
+  },
+  "updatedAt": "2025-02-07T16:38:57.345Z"
+}
