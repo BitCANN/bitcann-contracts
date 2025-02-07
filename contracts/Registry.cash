@@ -1,6 +1,8 @@
 pragma cashscript ^0.11.0;
 
-
+/**
+  * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
+ */
 contract Registry(bytes domainCategory) {
   /**
    * The Registry contract serves as both a source and storage for authorized NFTs.
@@ -25,60 +27,25 @@ contract Registry(bytes domainCategory) {
    * - Output0: Registry contract's NFT returned unchanged
    * - Output1: Authorized contract's UTXO returned unchanged
    */
-  // function call() {
-  //   // Registry Contract
-
-  //   bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-  //   require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
-  //   require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-
-  //   // Make sure that the NFT stays with the contract.
-  //   require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
-  //   require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
-  //   require(tx.inputs[0].value == tx.outputs[0].value);
-  //   // Just check the length of tokenCategory to be 32 as immutable NFTs do not have capability.
-  //   require(tx.inputs[0].tokenCategory == domainCategory);
-
-  //   // Script Contract (Contract Composition)
-
-  //   // Expect the NFT commitment that contains the lockingBytecode of the eligible contract.
-  //   require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
-  //   // Ensure the utxo from the contract goes back to the it.
-  //   require(tx.inputs[1].lockingBytecode == tx.outputs[1].lockingBytecode);
-  //   // Ensure that the value is the same (Removes the risk of getting funds stuck by attaching them to an incorrect output)
-  //   require(tx.inputs[1].value == tx.outputs[1].value);
-  //   // Note: Since the inputs and outputs are strictly locked, there is no need to check for
-  //   // token category, token amount and nftCommitment for inputs[1] and outputs[1].
-
-  //   // With these pre-requisites met, we just need to make sure that all the contracts that are deployed are written and initialized
-  //   // properly, and they expect this structure and handle the inputs and outputs as expected.
-  // }
-
   function call() {
     // Registry Contract
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.outputs[1].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
 
     // Make sure that the NFT stays with the contract.
-    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
-    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
-    require(tx.inputs[1].value == tx.outputs[1].value);
-    // Just check the length of tokenCategory to be 32 as immutable NFTs do not have capability.
-    require(tx.inputs[1].tokenCategory == domainCategory);
-
-    // Script Contract (Contract Composition)
-
-    // Expect the NFT commitment that contains the lockingBytecode of the eligible contract.
-    require(tx.inputs[0].lockingBytecode == tx.inputs[1].nftCommitment);
-    // Ensure the utxo from the contract goes back to the it.
-    require(tx.inputs[0].lockingBytecode == tx.outputs[0].lockingBytecode);
-    // Ensure that the value is the same (Removes the risk of getting funds stuck by attaching them to an incorrect output)
+    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
+    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
     require(tx.inputs[0].value == tx.outputs[0].value);
-    // Note: Since the inputs and outputs are strictly locked, there is no need to check for
-    // token category, token amount and nftCommitment for inputs[1] and outputs[1].
+    // Just check the length of tokenCategory to be 32 as immutable NFTs do not have capability.
+    require(tx.inputs[0].tokenCategory == domainCategory);
+    // Note: Not checking the tokenAmount as it changes.
 
+    // Authorized Contract
+
+    // Expect the NFT commitment that contains the lockingBytecode of the authorized contract.
+    require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
     // With these pre-requisites met, we just need to make sure that all the contracts that are deployed are written and initialized
     // properly, and they expect this structure and handle the inputs and outputs as expected.
   }

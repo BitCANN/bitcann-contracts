@@ -102,15 +102,10 @@ const auction = async () => {
 
 
   const transaction = await new TransactionBuilder({ provider })
-  .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  // .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
+  .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
   .addInput(registrationCounterUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
-  .addOutput({
-    to: auctionContract.tokenAddress,
-    amount: auctionContractUTXO.satoshis
-  })
   .addOutput({
     to: registryContract.tokenAddress,
     amount: threadNFTUTXO.satoshis,
@@ -122,6 +117,10 @@ const auction = async () => {
         commitment: threadNFTUTXO.token.nft.commitment
       }
     }
+  })
+  .addOutput({
+    to: auctionContract.tokenAddress,
+    amount: auctionContractUTXO.satoshis
   })
   .addOutput({
     to: registryContract.tokenAddress,

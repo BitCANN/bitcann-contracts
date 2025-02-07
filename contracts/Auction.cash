@@ -1,11 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract Auction(bytes registryContractScriptHash) {
-
-  function withdraw(){
-    require(2+2 == 4);
-  }
-
+contract Auction() {
   /**
    * Starts a new domain registration auction
    * @param name The name being registered.
@@ -14,7 +9,7 @@ contract Auction(bytes registryContractScriptHash) {
    * - Starting bid >= 0.025 BCH
    * - Registration auction duration runs for 144 blocks (~1 day), if a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.
    * - A successful registration initiations results in an auctionNFT representing the auction state:
-   *   capability: (Mutable) 
+   *   capability: (Mutable)
    *   category: domainCategory
    *   tokenAmount: (Represents the registrationId)
    *   satoshiValue: (Represents the bid amount)
@@ -45,17 +40,21 @@ contract Auction(bytes registryContractScriptHash) {
    * - Output4: OP_RETURN output containing the name
    * - Output5: Optional change in BCH
    */
-  function start(bytes name){
+  function call(bytes name){
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 6);
-    // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[1].lockingBytecode == registryContractScriptHash);
 
-    // Input2 and Output2 are counter
-    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == registryContractScriptHash);
-    // New auctionNFT
-    require(tx.outputs[3].lockingBytecode == registryContractScriptHash);
+    // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+
+    // Logic
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
+    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
+    require(tx.outputs[3].lockingBytecode == parentContractScriptHash);
 
     // Registration ID increases by 1 with each transaction.
     int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());
@@ -77,7 +76,7 @@ contract Auction(bytes registryContractScriptHash) {
     require(tx.outputs[3].nftCommitment == pkh + name);
 
     // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[1].tokenCategory;
+    bytes domainCategory = tx.outputs[0].tokenCategory;
 
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
@@ -92,77 +91,9 @@ contract Auction(bytes registryContractScriptHash) {
     require(tx.outputs[4].value == 0);
     require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
 
-    //  // If OP_RETURN then value must be 0
-    //         if (tx.outputs[0].lockingBytecode.split(1)[0] == 0x6a) {
-    //             require(tx.outputs[0].value == 0);
-    //         }
-
-
     if(tx.outputs.length == 6){
       // If any change then it must be pure BCH
       require(tx.outputs[5].tokenCategory == 0x);
-    }
-  }
-
-  /**
-   * Places a new bid on an active domain registration auction
-   * 
-   * The function allows placing a new bid with:
-   * - Minimum 5% increase over previous bid
-   * - Auction is extended by 72 blocks if a new bid is placed when the auction is less than 72 blocks away from ending.
-   * - Previous bidder receives their bid amount back in the same transaction,
-   * - A successful bid updates the auctionNFT by updating the PKH and satoshiValue
-   *   capability:   Mutable
-   *   category:     DomainCategory
-   *   tokenAmount:  Represents the registrationId
-   *   satoshiValue: Represents the bid amount
-   *   commitment:   Bidder's PKH(20 bytes) + name(bytes)
-   *
-   * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
-   * - Input1: Any input from this contract
-   * - Input2: auctionNFT to the Registry contract
-   * - Input3: Funding UTXO from new bidder
-   * 
-   * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract
-   * - Output1: Input1 back to this contract without any change
-   * - Output2: auctionNFT to the Registry contract
-   * - Output3: Previous bid amount returned to previous bidder
-   * - Output4: Optional change in BCH to new bidder
-   */
-  function bid(){
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length <= 5);
-    // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == registryContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == registryContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == tx.inputs[2].lockingBytecode);
-
-    // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
-
-    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
-    // The second part of the pair changes with each new bid, hence it's marked as mutable.
-    // Enforcing the structure of the pair results in predictable behaviour.
-    bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);
-    require(auctionCategory == domainCategory);
-    require(auctionCapability == 0x01); // Mutable
-
-    bytes20 previousPKH, bytes name = tx.inputs[2].nftCommitment.split(20);
-    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
-    require(tx.outputs[2].nftCommitment == pkh + name);
-    require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
-    require(tx.outputs[2].value >= tx.inputs[2].value * 105 / 100);
-
-    // Locking bytecode of the previous bidder
-    require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH));
-    // The amount being sent back to the previous bidder
-    require(tx.outputs[3].value == tx.inputs[2].value);
-
-    if(tx.outputs.length == 5){
-      // If any change then it must be pure BCH
-      require(tx.outputs[4].tokenCategory == 0x);
     }
   }
 }
