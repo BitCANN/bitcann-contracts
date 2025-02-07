@@ -32,16 +32,16 @@ contract DomainOwnershipGuard(
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
-    bytes parentDomainCategory = tx.inputs[0].tokenCategory;
-    require(tx.inputs[3].tokenCategory == parentDomainCategory);
+    bytes parentCategory = tx.inputs[0].tokenCategory;
+    require(tx.inputs[3].tokenCategory == parentCategory);
 
-    require(tx.inputs[2].tokenCategory == parentDomainCategory);
-    require(tx.outputs[2].tokenCategory == parentDomainCategory);
+    require(tx.inputs[2].tokenCategory == parentCategory);
+    require(tx.outputs[2].tokenCategory == parentCategory);
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
     require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is use and not the internalAuth NFT.
 
     bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;
-    bytes domainBytecode =  bytes(fullName.length) + fullName + domainContractPartialBytecode;
+    bytes domainBytecode =  bytes(fullName.length) + fullName + 0x20 + parentCategory + domainContractPartialBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     require(tx.inputs[2].lockingBytecode == domainLockingBytecode);

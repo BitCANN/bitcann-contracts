@@ -22,7 +22,7 @@ const options = { provider, addressType }
 
 const aliceTemplate = new SignatureTemplate(alicePriv);
 
-const domainCategory = '5a48189d187490936959c04f28c70d26a4e4c5102b98866bf94b5a31ecdb4fb4'
+const domainCategory = 'cc91626c67661ca9001ab2abbec384ead8b43e8c0daadd96aa623ca023effc9d'
 const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
@@ -35,12 +35,11 @@ const nameHex = Buffer.from('test').toString('hex')
 console.log('INFO: nameHex', nameHex)
 const name = hexToBin(nameHex)
 
-
-console.log('INFO: domainCategory', domainCategory)
 console.log('INFO: aliceAddress', aliceAddress)
-console.log('let registryContractAddress = ', registryContract.address)
-console.log('let auctionContractAddress = ', auctionContract.address)
-console.log('let auctionLockingBytecode = ', auctionLockingBytecodeHex)
+console.log("let domainTokenCategory = '", domainCategory + "';")
+console.log("let registryContractAddress = '", registryContract.address + "';")
+console.log("let auctionContractAddress = '", auctionContract.address + "';")
+console.log("let auctionLockingBytecode = '", auctionLockingBytecodeHex + "';")
 
 
 const getUtxos = async () => {
@@ -102,7 +101,7 @@ const auction = async () => {
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(auctionContractUTXO, auctionContract.unlock.start(name))
+  .addInput(auctionContractUTXO, auctionContract.unlock.call(name))
   .addInput(registrationCounterUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
   .addOutput({

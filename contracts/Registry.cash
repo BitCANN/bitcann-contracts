@@ -2,10 +2,10 @@ pragma cashscript ^0.11.0;
 
 /**
   * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
-
+  *
   * The Registry has two minting NFTs:
-  * 1. registrationMintingNFT which has tokenAmount and nftCommitment
-  * 2. domainMintingNFT which does not have any tokenAmount or nftCommitment
+  * 1. RegistrationMintingNFT which has tokenAmount and nftCommitment
+  * 2. DomainMintingNFT which does not have any tokenAmount or nftCommitment
  */
 contract Registry(bytes domainCategory) {
   /**
@@ -55,7 +55,6 @@ contract Registry(bytes domainCategory) {
     // properly, and they expect this structure and handle the inputs and outputs as expected.
   }
 
-
   // /**
   //  * @inputs
   //  * - Input0: Minting NFT + tokenAmount0
@@ -69,9 +68,5 @@ contract Registry(bytes domainCategory) {
   // function accumulateTokens(){
   //   // require(tx.inputs.length == 2);
   //   // require(tx.outputs.length == 3);
-
-  //   // TEMP
-  //   require(tx.inputs.length >= 1);
-  //   require(tx.outputs.length >= 1);
   // }
 }
