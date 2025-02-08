@@ -21,7 +21,10 @@ import {
 const selectAuctionInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionUTXOs } = await getUtxos()
 
-  const userUTXO = userUTXOs.find(utxo => !utxo.token && utxo.satoshis > 4000);
+  const userUTXO = userUTXOs.reduce((max, utxo) => 
+    (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, 
+    null
+  );
   if (!userUTXO) throw new Error('Could not find user UTXO without token');
 
   console.log('INFO: userUTXO', userUTXO)
@@ -63,11 +66,16 @@ const selectAuctionInputs = async () =>{
   }
 }
 
+
 export const auction = async () => {
   const { userUTXO, auctionContractUTXO, threadNFTUTXO, registrationCounterUTXO } = await selectAuctionInputs()
 
-  let newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
-  newRegistrationId = newRegistrationId.toString(16).padStart(16, '0')
+  const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
+  const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0')
+
+  const auctionAmount = BigInt(5000)
+  const minerFee = BigInt(2000)
+  const change = userUTXO.satoshis - auctionAmount - minerFee
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
@@ -95,19 +103,19 @@ export const auction = async () => {
     amount: registrationCounterUTXO.satoshis,
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: registrationCounterUTXO.token.amount  - BigInt(2),
+      amount: registrationCounterUTXO.token.amount  - BigInt(newRegistrationId),
       nft: {
         capability: registrationCounterUTXO.token.nft.capability,
-        commitment: newRegistrationId
+        commitment: newRegistrationIdCommitment
       }
     }
   })
   .addOutput({
     to: registryContract.tokenAddress,
-    amount: BigInt(1000),
+    amount: auctionAmount,
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: BigInt(2),
+      amount: BigInt(newRegistrationId),
       nft: {
         capability: 'mutable',
         commitment: binToHex(alicePkh) + binToHex(nameBin)
@@ -117,7 +125,7 @@ export const auction = async () => {
   .addOpReturnOutput([name])
   .addOutput({
     to: aliceAddress,
-    amount: userUTXO.satoshis - BigInt(3300),
+    amount: change,
   })
   .send();
 

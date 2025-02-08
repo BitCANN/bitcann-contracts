@@ -7,7 +7,7 @@ import {
   registryContract,
   auctionConflictResolverContract,
   getUtxos,
-  auctionLockingBytecodeHex,
+  auctionConflictResolverLockingBytecodeHex,
   domainCategory,
   provider,
   aliceAddress,
@@ -24,7 +24,7 @@ const selectInputs = async () =>{
 
   // Utxo from registry contract that has auctionContract's lockingbytecode in the nftCommitment
   const threadNFTUTXO = registryUTXOs.find(utxo => 
-    utxo.token?.nft?.commitment === auctionLockingBytecodeHex &&
+    utxo.token?.nft?.commitment === auctionConflictResolverLockingBytecodeHex &&
     utxo.token?.nft?.capability === 'none' &&
     utxo.token?.category === domainCategory
   );
@@ -32,13 +32,13 @@ const selectInputs = async () =>{
   console.log('INFO: threadNFTUTXO', threadNFTUTXO)
   console.log('INFO: registryUTXOs', registryUTXOs)
 
-  // Find all auction UTXOs from registry contract
+  // Find all auction UTXOs from registry contract, sorted by satoshi value
   const auctionUTXOs = registryUTXOs.filter(utxo => 
     utxo.token?.nft?.capability === 'mutable' &&
     utxo.token?.category === domainCategory &&
     utxo.token?.nft?.commitment &&
     utxo.token?.amount > 0
-  );
+  ).sort((a, b) => Number(b.satoshis) - Number(a.satoshis));
 
   // Find two auction UTXOs with the same name in their commitment
   let auctionUTXOValid, auctionUTXOInvalid;
@@ -70,6 +70,10 @@ const selectInputs = async () =>{
     throw new Error('Could not find two auction UTXOs with the same name');
   }
 
+  console.log('INFO: auctionUTXOValid', auctionUTXOValid)
+  console.log('INFO: auctionUTXOInvalid', auctionUTXOInvalid)
+  console.log(auctionConflictResolverUTXOs)
+
   if (!threadNFTUTXO) throw new Error('Could not find auctionThreadNFT with matching commitment');
 
   return {
@@ -83,6 +87,8 @@ const selectInputs = async () =>{
 
 export const auctionConflictResolver = async () => {
   const { threadNFTUTXO, auctionUTXOValid, auctionUTXOInvalid, auctionConflictResolverUTXO } = await selectInputs()
+
+  const minerFee = BigInt(3000)
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
@@ -119,7 +125,7 @@ export const auctionConflictResolver = async () => {
   })
   .addOutput({
     to: aliceAddress,
-    amount: auctionUTXOValid.satoshis - BigInt(3300),
+    amount: auctionUTXOInvalid.satoshis - minerFee,
   })
   .send();
 
