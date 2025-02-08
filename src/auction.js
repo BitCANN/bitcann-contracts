@@ -68,7 +68,7 @@ export const auction = async () => {
   const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
   const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0')
 
-  const auctionAmount = BigInt(5000)
+  const auctionAmount = BigInt(4000)
   const minerFee = BigInt(2000)
   const change = userUTXO.satoshis - auctionAmount - minerFee
 
@@ -122,7 +122,7 @@ export const auction = async () => {
     to: aliceAddress,
     amount: change,
   })
-  .build();
+  .send();
 
   console.log('INFO: transaction', transaction)
 }

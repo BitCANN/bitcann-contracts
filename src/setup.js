@@ -32,7 +32,7 @@ export const options = { provider, addressType }
 
 export const aliceTemplate = new SignatureTemplate(alicePriv);
 
-export const name = 'test'
+export const name = 'tes&t'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
 export const tld = '.sats'

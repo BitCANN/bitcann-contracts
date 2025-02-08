@@ -34,13 +34,9 @@ contract AuctionNameEnforcer() {
 
     // Lock this contract to only be used with the registry type contract.
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
-
-    // Lock this contract to only be used with the registry contract.
-    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
     require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
 
-    require(tx.outputs[0].tokenCategory == tx.outputs[2].tokenCategory);
-
+    require(tx.inputs[0].tokenCategory == tx.inputs[2].tokenCategory.split(32)[0]);
     // Send the tokenAmount to the registry contract
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount);
 
@@ -50,13 +46,14 @@ contract AuctionNameEnforcer() {
     bytes character = characterSplitBytes.split(characterNumber)[1];
     int charVal = int(character);
 
-    // If the character is invalid.
-    require(
-      !within(charVal, 97, 123) ||
-      !within(charVal, 65, 91) ||
-      !within(charVal, 48, 58) ||
-      charVal != 45
-    );
+    // Character is not a hyphen.
+    require(charVal != 45); 
+    // Character is not from a-z.
+    require(!within(charVal, 97, 123));
+    // Character is not from A-Z.
+    require(!within(charVal, 65, 91));
+    // Character is not from 0-9.
+    require(!within(charVal, 48, 58));
 
     // Pure BCH
     require(tx.outputs[2].tokenCategory == 0x);
