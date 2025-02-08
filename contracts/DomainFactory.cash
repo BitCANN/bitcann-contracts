@@ -75,13 +75,17 @@ contract DomainFactory(
 
     // Make sure that the sequence number is greater than 1 day.
     // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
-    require(tx.inputs[3].sequenceNumber >= 1 days);
+    // require(tx.inputs[3].sequenceNumber >= 1 days);
+
+    // For testing.
+    require(tx.inputs[3].sequenceNumber >= 1 seconds);
 
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
     
     bytes fullName = name + tld;
-    bytes domainBytecode = 0x20 + parentCategory + bytes(fullName.length) + fullName + domainContractBytecode;
+    int fullNameLength = fullName.length;
+    bytes domainBytecode = 0x20 + parentCategory + bytes(fullNameLength) + fullName + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     

@@ -1,7 +1,7 @@
 pragma cashscript ^0.11.0;
 
 contract DomainOwnershipGuard(
-  bytes domainContractPartialBytecode,
+  bytes domainContractBytecode,
   bytes tld
 ) {
   /**
@@ -41,9 +41,12 @@ contract DomainOwnershipGuard(
     require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is use and not the internalAuth NFT.
 
     bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;
-    bytes domainBytecode =  0x20 + parentCategory + bytes(fullName.length) + fullName + domainContractPartialBytecode;
+    int fullNameLength = fullName.length;
+
+    bytes domainBytecode = 0x20 + parentCategory + bytes(fullNameLength) + fullName + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+
     require(tx.inputs[2].lockingBytecode == domainLockingBytecode);
     require(tx.outputs[2].lockingBytecode == domainLockingBytecode);
 

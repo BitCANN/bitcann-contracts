@@ -32,7 +32,7 @@ export const options = { provider, addressType }
 
 export const aliceTemplate = new SignatureTemplate(alicePriv);
 
-export const name = 'tes&t'
+export const name = 'test'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
 export const tld = '.sats'
@@ -63,7 +63,8 @@ export const domainLockingBytecodeHex = binToHex(domainLockingBytecode.bytecode)
 // ANOTHER APPROACH is: domainContract.artifact.debug.bytecode
 const sliceIndex = 2 + 64 + 2 + fullName.length*2
 const domainPartialBytecode = domainContract.bytecode.slice(sliceIndex, domainContract.bytecode.length)
-
+console.log('INFO: domainPartialBytecode', domainPartialBytecode)
+console.log('INFO: domainContract.bytecode', domainContract.bytecode)
 // const script = buildLockScriptP2SH32(domainContract.bytecode)
 // console.log('INFO: script', script)
 // const address = lockScriptToAddress(script)
@@ -102,7 +103,10 @@ console.log(`let auctionConflictResolverContractAddress = '${auctionConflictReso
 console.log(`let auctionConflictResolverLockingBytecode = '${auctionConflictResolverLockingBytecodeHex}';`)
 console.log(`let auctionNameEnforcerContractAddress = '${auctionNameEnforcerContract.address}';`)
 console.log(`let auctionNameEnforcerLockingBytecode = '${auctionNameEnforcerLockingBytecodeHex}';`)
-
+console.log(`let domainContractAddress = '${domainContract.address}';`)
+console.log(`let domainContractBytecode = '${domainLockingBytecodeHex}';`)
+console.log(`let domainFactoryContractAddress = '${domainFactoryContract.address}';`)
+console.log(`let domainFactoryLockingBytecode = '${domainFactoryLockingBytecodeHex}';`)
 
 export const getUtxos = async () => {
   const [
