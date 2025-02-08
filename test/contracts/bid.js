@@ -1,7 +1,7 @@
 import {
   TransactionBuilder,
 // } from 'cashscript';
-} from '../cashscript/packages/cashscript/dist/index.js';
+} from '../../cashscript/packages/cashscript/dist/index.js';
 import {
   hexToBin,
   binToHex,
@@ -19,8 +19,8 @@ import {
   alicePkh,
   aliceAddress,
   nameBin
-} from './setup.js'
-import { findPureUTXO } from './utils.js'
+} from '../setup.js'
+import { findPureUTXO } from '../utils.js'
 
 const selectInputs = async () => {
   const { userUTXOs, registryUTXOs, bidUTXOs } = await getUtxos()

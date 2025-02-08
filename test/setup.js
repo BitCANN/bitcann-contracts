@@ -14,7 +14,7 @@ import {
 
 // import { buildLockScriptP2SH32, lockScriptToAddress} from './utils.js';
 
-import { alicePriv, aliceAddress, alicePkh } from '../test/common.js';
+import { alicePriv, aliceAddress, alicePkh } from './common.js';
 export { alicePriv, aliceAddress, alicePkh };
 
 export const artifactRegistry = compileFile(new URL('../contracts/Registry.cash', import.meta.url));

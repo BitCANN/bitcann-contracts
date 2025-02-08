@@ -1,7 +1,7 @@
 import {
   TransactionBuilder,
 // } from 'cashscript';
-} from '../cashscript/packages/cashscript/dist/index.js';
+} from '../../cashscript/packages/cashscript/dist/index.js';
 import {
   registryContract,
   auctionConflictResolverContract as authorizedContract,
@@ -10,8 +10,8 @@ import {
   domainCategory,
   provider,
   aliceAddress,
-} from './setup.js'
-import { findPureUTXO } from './utils.js'
+} from '../setup.js'
+import { findPureUTXO } from '../utils.js'
 
 const selectInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionConflictResolverUTXOs } = await getUtxos()
