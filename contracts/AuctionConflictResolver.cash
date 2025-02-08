@@ -32,15 +32,12 @@ contract AuctionConflictResolver() {
     // Lock this contract to only be used with the registry type contract.
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
     require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);    
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
     require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
 
-    // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory.split(32)[0];
-
     bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);
-    require(validAuctionCategory == domainCategory);
+    require(validAuctionCategory == tx.outputs[0].tokenCategory);
     require(validAuctionCapability == 0x01); // Mutable
 
     require(tx.inputs[2].value == tx.outputs[2].value);
@@ -50,6 +47,6 @@ contract AuctionConflictResolver() {
 
     // Send the tokenAmount to the registry contract
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
-    require(tx.outputs[4].tokenCategory == 0x);
+    require(tx.outputs[3].tokenCategory == 0x);
   }
 }

@@ -95,7 +95,7 @@ export const auction = async () => {
     amount: registrationCounterUTXO.satoshis,
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: registrationCounterUTXO.token.amount  - BigInt(1),
+      amount: registrationCounterUTXO.token.amount  - BigInt(2),
       nft: {
         capability: registrationCounterUTXO.token.nft.capability,
         commitment: newRegistrationId
@@ -107,7 +107,7 @@ export const auction = async () => {
     amount: BigInt(1000),
     token: {
       category: registrationCounterUTXO.token.category,
-      amount: BigInt(1),
+      amount: BigInt(2),
       nft: {
         capability: 'mutable',
         commitment: binToHex(alicePkh) + binToHex(nameBin)
@@ -119,7 +119,7 @@ export const auction = async () => {
     to: aliceAddress,
     amount: userUTXO.satoshis - BigInt(3300),
   })
-  .build();
+  .send();
 
   console.log('INFO: transaction', transaction)
 }

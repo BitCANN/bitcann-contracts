@@ -105,14 +105,30 @@ console.log(`let auctionNameEnforcerLockingBytecode = '${auctionNameEnforcerLock
 
 
 export const getUtxos = async () => {
-  const userUTXOs = await provider.getUtxos(aliceAddress)
-  const registryUTXOs = await provider.getUtxos(registryContract.address)
-  const auctionUTXOs = await provider.getUtxos(auctionContract.address)
-  const bidUTXOs = await provider.getUtxos(bidContract.address)
+  const [
+    userUTXOs,
+    registryUTXOs,
+    auctionUTXOs,
+    bidUTXOs,
+    auctionConflictResolverUTXOs,
+    auctionNameEnforcerUTXOs,
+    domainOwnershipGuardUTXOs
+  ] = await Promise.all([
+    provider.getUtxos(aliceAddress),
+    provider.getUtxos(registryContract.address),
+    provider.getUtxos(auctionContract.address),
+    provider.getUtxos(bidContract.address),
+    provider.getUtxos(auctionConflictResolverContract.address),
+    provider.getUtxos(auctionNameEnforcerContract.address),
+    provider.getUtxos(domainOwnershipGuardContract.address)
+  ])
   return {
     userUTXOs,
     registryUTXOs,
     auctionUTXOs,
-    bidUTXOs
+    bidUTXOs,
+    auctionConflictResolverUTXOs,
+    auctionNameEnforcerUTXOs,
+    domainOwnershipGuardUTXOs
   }
 }
