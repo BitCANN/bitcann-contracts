@@ -7,6 +7,15 @@ import {
   binToHex
 } from '@bitauth/libauth';
 
+export const findPureUTXO = (utxos) => {
+  const utxo = utxos.reduce((max, utxo) => 
+    (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, 
+    null
+  );
+  if (!utxo) throw new Error('Could not find user UTXO without token');
+
+  return utxo
+}
 
 export const lockScriptToAddress = function(lockScript){
 	// Convert the lock script to a cashaddress (with bitcoincash: prefix).

@@ -2,29 +2,26 @@ import {
   TransactionBuilder,
 // } from 'cashscript';
 } from '../cashscript/packages/cashscript/dist/index.js';
-import { binToHex } from '@bitauth/libauth';
 import {
   registryContract,
-  auctionConflictResolverContract,
+  auctionConflictResolverContract as authorizedContract,
   getUtxos,
-  auctionConflictResolverLockingBytecodeHex,
+  auctionConflictResolverLockingBytecodeHex as authorizedContractLockingBytecodeHex,
   domainCategory,
   provider,
   aliceAddress,
 } from './setup.js'
-
+import { findPureUTXO } from './utils.js'
 
 const selectInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionConflictResolverUTXOs } = await getUtxos()
 
-  const userUTXO = userUTXOs.find(utxo => !utxo.token && utxo.satoshis > 4000);
-  if (!userUTXO) throw new Error('Could not find user UTXO without token');
-
+  const userUTXO = findPureUTXO(userUTXOs)
   console.log('INFO: userUTXO', userUTXO)
 
-  // Utxo from registry contract that has auctionContract's lockingbytecode in the nftCommitment
+  // Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
   const threadNFTUTXO = registryUTXOs.find(utxo => 
-    utxo.token?.nft?.commitment === auctionConflictResolverLockingBytecodeHex &&
+    utxo.token?.nft?.commitment === authorizedContractLockingBytecodeHex &&
     utxo.token?.nft?.capability === 'none' &&
     utxo.token?.category === domainCategory
   );
@@ -72,27 +69,26 @@ const selectInputs = async () =>{
 
   console.log('INFO: auctionUTXOValid', auctionUTXOValid)
   console.log('INFO: auctionUTXOInvalid', auctionUTXOInvalid)
-  console.log(auctionConflictResolverUTXOs)
 
-  if (!threadNFTUTXO) throw new Error('Could not find auctionThreadNFT with matching commitment');
+  if (!threadNFTUTXO) throw new Error('Could not find threadNFT with matching commitment');
 
   return {
     userUTXO,
     threadNFTUTXO,
     auctionUTXOValid,
     auctionUTXOInvalid,
-    auctionConflictResolverUTXO: auctionConflictResolverUTXOs[0]
+    authorizedContractUTXO: auctionConflictResolverUTXOs[0]
   }
 }
 
 export const auctionConflictResolver = async () => {
-  const { threadNFTUTXO, auctionUTXOValid, auctionUTXOInvalid, auctionConflictResolverUTXO } = await selectInputs()
+  const { threadNFTUTXO, auctionUTXOValid, auctionUTXOInvalid, authorizedContractUTXO } = await selectInputs()
 
   const minerFee = BigInt(3000)
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(auctionConflictResolverUTXO, auctionConflictResolverContract.unlock.call())
+  .addInput(authorizedContractUTXO, authorizedContract.unlock.call())
   .addInput(auctionUTXOValid, registryContract.unlock.call())
   .addInput(auctionUTXOInvalid, registryContract.unlock.call())
   .addOutput({
@@ -108,8 +104,8 @@ export const auctionConflictResolver = async () => {
     }
   })
   .addOutput({
-    to: auctionConflictResolverContract.tokenAddress,
-    amount: auctionConflictResolverUTXO.satoshis
+    to: authorizedContract.tokenAddress,
+    amount: authorizedContractUTXO.satoshis
   })
   .addOutput({
     to: registryContract.tokenAddress,
@@ -127,7 +123,7 @@ export const auctionConflictResolver = async () => {
     to: aliceAddress,
     amount: auctionUTXOInvalid.satoshis - minerFee,
   })
-  .send();
+  .build();
 
   console.log('INFO: transaction', transaction)
 }

@@ -10,9 +10,9 @@ import {
 
 import {
   registryContract,
-  bidContract,
+  bidContract as authorizedContract,
   getUtxos,
-  bidLockingBytecodeHex,
+  bidLockingBytecodeHex as authorizedContractLockingBytecodeHex,
   domainCategory,
   provider,
   aliceTemplate,
@@ -20,19 +20,17 @@ import {
   aliceAddress,
   nameBin
 } from './setup.js'
+import { findPureUTXO } from './utils.js'
 
-
-const selectBidInputs = async () => {
+const selectInputs = async () => {
   const { userUTXOs, registryUTXOs, bidUTXOs } = await getUtxos()
 
-  const userUTXO = userUTXOs.find(utxo => !utxo.token && utxo.satoshis > 4000);
-  if (!userUTXO) throw new Error('Could not find user UTXO without token');
-
+  const userUTXO = findPureUTXO(userUTXOs)
   console.log('INFO: userUTXO', userUTXO)
 
-  // Utxo from registry contract that has bidContract's lockingbytecode in the nftCommitment
+  // Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
   const threadNFTUTXO = registryUTXOs.find(utxo => 
-    utxo.token?.nft?.commitment === bidLockingBytecodeHex &&
+    utxo.token?.nft?.commitment === authorizedContractLockingBytecodeHex &&
     utxo.token?.nft?.capability === 'none' &&
     utxo.token?.category === domainCategory
   );
@@ -65,28 +63,28 @@ const selectBidInputs = async () => {
   console.log('INFO: name', name)
 
   // The necessary UTXO to be used from the auction contract
-  const bidContractUTXO = bidUTXOs[0]
+  const authorizedContractUTXO = bidUTXOs[0]
 
-  console.log('INFO: bidContractUTXO', bidContractUTXO)
+  console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
 
-  if(!bidContractUTXO) throw new Error('Could not find bid contract UTXO');
-  if (!threadNFTUTXO) throw new Error('Could not find auctionThreadNFT with matching commitment');
+  if(!authorizedContractUTXO) throw new Error('Could not find bid contract UTXO');
+  if (!threadNFTUTXO) throw new Error('Could not find threadNFT with matching commitment');
   if (!runningAuctionUTXO) throw new Error('Could not find counter UTXO with mutable capability');
 
   return {
     userUTXO,
-    bidContractUTXO,
     threadNFTUTXO,
-    runningAuctionUTXO
+    runningAuctionUTXO,
+    authorizedContractUTXO,
   }
 }
 
 export const bid = async () => {
-  const { userUTXO, bidContractUTXO, threadNFTUTXO, runningAuctionUTXO } = await selectBidInputs()
+  const { userUTXO, threadNFTUTXO, runningAuctionUTXO, authorizedContractUTXO } = await selectInputs()
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(bidContractUTXO, bidContract.unlock.call())
+  .addInput(authorizedContractUTXO, authorizedContract.unlock.call())
   .addInput(runningAuctionUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
   .addOutput({
@@ -102,8 +100,8 @@ export const bid = async () => {
     }
   })
   .addOutput({
-    to: bidContract.tokenAddress,
-    amount: runningAuctionUTXO.satoshis
+    to: authorizedContract.tokenAddress,
+    amount: authorizedContractUTXO.satoshis
   })
   .addOutput({
     to: registryContract.tokenAddress,

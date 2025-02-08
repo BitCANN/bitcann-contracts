@@ -5,9 +5,9 @@ import {
 import { binToHex } from '@bitauth/libauth';
 import {
   registryContract,
-  auctionContract,
+  auctionContract as authorizedContract,
   getUtxos,
-  auctionLockingBytecodeHex,
+  auctionLockingBytecodeHex as authorizedContractLockingBytecodeHex,
   domainCategory,
   provider,
   aliceTemplate,
@@ -16,28 +16,23 @@ import {
   name,
   nameBin
 } from './setup.js'
-
+import { findPureUTXO } from './utils.js'
 
 const selectAuctionInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionUTXOs } = await getUtxos()
 
-  const userUTXO = userUTXOs.reduce((max, utxo) => 
-    (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, 
-    null
-  );
-  if (!userUTXO) throw new Error('Could not find user UTXO without token');
-
+  const userUTXO = findPureUTXO(userUTXOs)
   console.log('INFO: userUTXO', userUTXO)
 
   // The necessary UTXO to be used from the auction contract
-  const auctionContractUTXO = auctionUTXOs[0]
+  const authorizedContractUTXO = auctionUTXOs[0]
 
-  console.log('INFO: auctionContractUTXO', auctionContractUTXO)
-  if(!auctionContractUTXO) throw new Error('Could not find auction contract UTXO');
+  console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
+  if(!authorizedContractUTXO) throw new Error('Could not find auction contract UTXO');
 
-  // Utxo from registry contract that has auctionContract's lockingbytecode in the nftCommitment
+  // Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
   const threadNFTUTXO = registryUTXOs.find(utxo => 
-    utxo.token?.nft?.commitment === auctionLockingBytecodeHex &&
+    utxo.token?.nft?.commitment === authorizedContractLockingBytecodeHex &&
     utxo.token?.nft?.capability === 'none' &&
     utxo.token?.category === domainCategory
   );
@@ -55,20 +50,20 @@ const selectAuctionInputs = async () =>{
 
   console.log('INFO: registrationCounterUTXO', registrationCounterUTXO)
 
-  if (!threadNFTUTXO) throw new Error('Could not find auctionThreadNFT with matching commitment');
+  if (!threadNFTUTXO) throw new Error('Could not find threadNFT with matching commitment');
   if (!registrationCounterUTXO) throw new Error('Could not find counter UTXO with minting capability');
 
   return {
     userUTXO,
-    auctionContractUTXO,
     threadNFTUTXO,
-    registrationCounterUTXO
+    registrationCounterUTXO,
+    authorizedContractUTXO,
   }
 }
 
 
 export const auction = async () => {
-  const { userUTXO, auctionContractUTXO, threadNFTUTXO, registrationCounterUTXO } = await selectAuctionInputs()
+  const { userUTXO, threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO } = await selectAuctionInputs()
 
   const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
   const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0')
@@ -79,7 +74,7 @@ export const auction = async () => {
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(auctionContractUTXO, auctionContract.unlock.call(nameBin))
+  .addInput(authorizedContractUTXO, authorizedContract.unlock.call(nameBin))
   .addInput(registrationCounterUTXO, registryContract.unlock.call())
   .addInput(userUTXO, aliceTemplate.unlockP2PKH())
   .addOutput({
@@ -95,8 +90,8 @@ export const auction = async () => {
     }
   })
   .addOutput({
-    to: auctionContract.tokenAddress,
-    amount: auctionContractUTXO.satoshis
+    to: authorizedContract.tokenAddress,
+    amount: authorizedContractUTXO.satoshis
   })
   .addOutput({
     to: registryContract.tokenAddress,
@@ -127,7 +122,7 @@ export const auction = async () => {
     to: aliceAddress,
     amount: change,
   })
-  .send();
+  .build();
 
   console.log('INFO: transaction', transaction)
 }
