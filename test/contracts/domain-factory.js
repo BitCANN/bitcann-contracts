@@ -83,6 +83,7 @@ const selectInputs = async () =>{
 
 
 export const  main = async () => {
+  const blockHeight = await provider.getBlockHeight()
   const { userUTXO, threadNFTUTXO, domainMintingUTXO, authorizedContractUTXO, auctionUTXO } = await selectInputs()
 
   const auctionAmount = auctionUTXO.satoshis
@@ -93,10 +94,10 @@ export const  main = async () => {
   const registrationId = auctionUTXO.token.amount.toString(16).padStart(16, '0')
 
   const transaction = await new TransactionBuilder({ provider })
-  .addInput(threadNFTUTXO, registryContract.unlock.call())
-  .addInput(authorizedContractUTXO, authorizedContract.unlock.call())
-  .addInput(domainMintingUTXO, registryContract.unlock.call())
-  .addInput(auctionUTXO, registryContract.unlock.call())
+  .addInput(threadNFTUTXO, registryContract.unlock.call(), { sequence: 0 })
+  .addInput(authorizedContractUTXO, authorizedContract.unlock.call(), { sequence: 0 })
+  .addInput(domainMintingUTXO, registryContract.unlock.call(), { sequence: 0 })
+  .addInput(auctionUTXO, registryContract.unlock.call(), { sequence: 1 })
   .addOutput({
     to: registryContract.tokenAddress,
     amount: threadNFTUTXO.satoshis,

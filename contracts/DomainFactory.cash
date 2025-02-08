@@ -75,8 +75,9 @@ contract DomainFactory(
     // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
     // require(tx.inputs[3].sequenceNumber >= 1 days);
 
-    // For testing.
-    require(tx.inputs[3].sequenceNumber >= 1 seconds);
+    // Enables timelocks
+    require(tx.age >= 0);
+    require(tx.inputs[3].sequenceNumber >= 1 && tx.inputs[3].sequenceNumber <= 4294967290);
 
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
