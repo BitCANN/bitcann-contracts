@@ -14,8 +14,8 @@ import {
 
 // import { buildLockScriptP2SH32, lockScriptToAddress} from './utils.js';
 
-import { alicePriv, aliceAddress, alicePkh } from './common.js';
-export { alicePriv, aliceAddress, alicePkh };
+import { alicePriv, aliceAddress, aliceTokenAddress, alicePkh } from './common.js';
+export { alicePriv, aliceAddress, aliceTokenAddress, alicePkh };
 
 export const artifactRegistry = compileFile(new URL('../contracts/Registry.cash', import.meta.url));
 export const artifactAuction = compileFile(new URL('../contracts/Auction.cash', import.meta.url));
@@ -32,7 +32,7 @@ export const options = { provider, addressType }
 
 export const aliceTemplate = new SignatureTemplate(alicePriv);
 
-export const name = 'test'
+export const name = 'testing0'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
 export const tld = '.sats'
@@ -116,7 +116,9 @@ export const getUtxos = async () => {
     bidUTXOs,
     auctionConflictResolverUTXOs,
     auctionNameEnforcerUTXOs,
-    domainOwnershipGuardUTXOs
+    domainOwnershipGuardUTXOs,
+    domainFactoryUTXOs,
+    domainContractUTXOs
   ] = await Promise.all([
     provider.getUtxos(aliceAddress),
     provider.getUtxos(registryContract.address),
@@ -124,7 +126,9 @@ export const getUtxos = async () => {
     provider.getUtxos(bidContract.address),
     provider.getUtxos(auctionConflictResolverContract.address),
     provider.getUtxos(auctionNameEnforcerContract.address),
-    provider.getUtxos(domainOwnershipGuardContract.address)
+    provider.getUtxos(domainOwnershipGuardContract.address),
+    provider.getUtxos(domainFactoryContract.address),
+    provider.getUtxos(domainContract.address)
   ])
   return {
     userUTXOs,
@@ -133,6 +137,8 @@ export const getUtxos = async () => {
     bidUTXOs,
     auctionConflictResolverUTXOs,
     auctionNameEnforcerUTXOs,
-    domainOwnershipGuardUTXOs
+    domainOwnershipGuardUTXOs,
+    domainFactoryUTXOs,
+    domainContractUTXOs
   }
 }

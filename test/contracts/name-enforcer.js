@@ -71,7 +71,7 @@ const selectInputs = async () =>{
   }
 }
 
-export const nameEnforcer = async () => {
+export const main = async () => {
   const { threadNFTUTXO, auctionUTXO, authorizedContractUTXO } = await selectInputs()
 
   const authorizedContract = auctionNameEnforcerContract;

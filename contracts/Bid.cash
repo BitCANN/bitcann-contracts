@@ -40,13 +40,12 @@ contract Bid() {
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
 
     // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
     require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
     require(tx.outputs[2].lockingBytecode == parentContractScriptHash);    
 
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
 
-    bytes domainCategory = tx.outputs[0].tokenCategory;
+    bytes domainCategory = tx.inputs[0].tokenCategory;
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
     // Enforcing the structure of the pair results in predictable behaviour.
     bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);

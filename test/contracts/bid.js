@@ -45,7 +45,6 @@ const selectInputs = async () => {
     utxo.token?.amount > 0
   );
 
-
   console.log('INFO: runningAuctionUTXO', runningAuctionUTXO)
 
   const nftCommitment = runningAuctionUTXO.token.nft.commitment
@@ -67,7 +66,7 @@ const selectInputs = async () => {
 
   console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
 
-  if(!authorizedContractUTXO) throw new Error('Could not find bid contract UTXO');
+  if(!authorizedContractUTXO) throw new Error('Could not find authorized contract UTXO');
   if (!threadNFTUTXO) throw new Error('Could not find threadNFT with matching commitment');
   if (!runningAuctionUTXO) throw new Error('Could not find counter UTXO with mutable capability');
 
@@ -79,7 +78,7 @@ const selectInputs = async () => {
   }
 }
 
-export const bid = async () => {
+export const main = async () => {
   const { userUTXO, threadNFTUTXO, runningAuctionUTXO, authorizedContractUTXO } = await selectInputs()
 
   const transaction = await new TransactionBuilder({ provider })

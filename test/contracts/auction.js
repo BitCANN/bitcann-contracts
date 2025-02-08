@@ -18,7 +18,7 @@ import {
 } from '../setup.js'
 import { findPureUTXO } from '../utils.js'
 
-const selectAuctionInputs = async () =>{
+const selectInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionUTXOs } = await getUtxos()
 
   const userUTXO = findPureUTXO(userUTXOs)
@@ -28,7 +28,7 @@ const selectAuctionInputs = async () =>{
   const authorizedContractUTXO = auctionUTXOs[0]
 
   console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
-  if(!authorizedContractUTXO) throw new Error('Could not find auction contract UTXO');
+  if(!authorizedContractUTXO) throw new Error('Could not find authorized contract UTXO');
 
   // Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
   const threadNFTUTXO = registryUTXOs.find(utxo => 
@@ -62,14 +62,14 @@ const selectAuctionInputs = async () =>{
 }
 
 
-export const auction = async () => {
-  const { userUTXO, threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO } = await selectAuctionInputs()
+export const main = async () => {
+  const { userUTXO, threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO } = await selectInputs()
 
   const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
   const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0')
 
-  const auctionAmount = BigInt(4000)
-  const minerFee = BigInt(2000)
+  const auctionAmount = BigInt(10000)
+  const minerFee = BigInt(1500)
   const change = userUTXO.satoshis - auctionAmount - minerFee
 
   const transaction = await new TransactionBuilder({ provider })

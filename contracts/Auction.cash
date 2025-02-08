@@ -56,7 +56,7 @@ contract Auction() {
     // Every auction begins with a base value of atleast 0.025 BCH.
     // require(tx.outputs[3].value >= 2500000);
     // FOR TESTS: Every auction begins with a base value of atleast 0.000008 BCH.
-    require(tx.outputs[3].value >= 800);
+    require(tx.outputs[3].value >= 10000);
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
     
@@ -65,7 +65,7 @@ contract Auction() {
     require(tx.outputs[3].nftCommitment == pkh + name);
 
     // All the token categories in the transaction should be the same.
-    bytes domainCategory = tx.outputs[0].tokenCategory;
+    bytes domainCategory = tx.inputs[0].tokenCategory;
 
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);

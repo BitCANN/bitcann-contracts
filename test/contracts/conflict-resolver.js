@@ -81,7 +81,7 @@ const selectInputs = async () =>{
   }
 }
 
-export const auctionConflictResolver = async () => {
+export const main = async () => {
   const { threadNFTUTXO, auctionUTXOValid, auctionUTXOInvalid, authorizedContractUTXO } = await selectInputs()
 
   const minerFee = BigInt(3000)

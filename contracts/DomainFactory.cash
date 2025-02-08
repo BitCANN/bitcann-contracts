@@ -21,7 +21,6 @@ contract DomainFactory(
    * - Input1: Any input from this contract
    * - Input2: Minting NFT from Registry contract
    * - Input3: auctionNFT
-   * - Input4: Funding UTXO
    *
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
@@ -34,7 +33,7 @@ contract DomainFactory(
    *
    */
   function call(){
-    require(tx.inputs.length == 5);
+    require(tx.inputs.length == 4);
     // For the first 4 years, the platform collects 50% of the fees
     if (tx.locktime > 1093240) {
       require(tx.outputs.length == 6);
@@ -42,7 +41,7 @@ contract DomainFactory(
       require(tx.outputs.length == 7);
       require(tx.outputs[6].lockingBytecode == new LockingBytecodeP2PKH(platformPKH));
       // Enforce that the other half goes to the miners.
-      require(tx.outputs[6].value == tx.inputs[2].value / 2);
+      require(tx.outputs[6].value == tx.inputs[3].value / 2);
     }
 
     // This contract can only be used at input1 and it should return to itself.
@@ -55,7 +54,6 @@ contract DomainFactory(
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
     bytes parentCategory = tx.inputs[0].tokenCategory;
-    require(tx.outputs[0].tokenCategory == parentCategory);
     require(tx.outputs[3].tokenCategory == parentCategory);
     require(tx.outputs[4].tokenCategory == parentCategory);
     require(tx.outputs[5].tokenCategory == parentCategory);
@@ -95,7 +93,7 @@ contract DomainFactory(
     require(tx.outputs[3].nftCommitment == 0x);
     require(tx.outputs[3].value == 1000);
 
-    bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount);
+    bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount).reverse();
     require(tx.outputs[4].nftCommitment == registrationId);
     require(tx.outputs[4].value == 1000);
 
