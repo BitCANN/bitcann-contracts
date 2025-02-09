@@ -84,6 +84,7 @@ contract Domain(bytes name, bytes domainCategory) {
    *
    */
   function burn(){
+    require(tx.version == 2);
     require(tx.inputs.length == 2 || tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 

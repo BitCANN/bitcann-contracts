@@ -63,14 +63,15 @@ const selectInputs = async () =>{
   console.log('INFO: domainMintingUTXO', domainMintingUTXO);
   console.log('INFO: auctionUTXO', auctionUTXO);
 
+  // console.log('INFO: domainFactoryUTXOs', domainFactoryUTXOs)
     // The necessary UTXO to be used from the auction contract
-    const authorizedContractUTXO = domainFactoryUTXOs[0]
-
-    console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
+  const authorizedContractUTXO = domainFactoryUTXOs[domainFactoryUTXOs.length-1]
   
   if(!authorizedContractUTXO) throw new Error('Could not find authorized contract UTXO');
   if (!auctionUTXO) throw new Error('Could not find auction UTXO with matching name');
   if (!threadNFTUTXO) throw new Error('Could not find threadNFT with matching commitment');
+
+  console.log('INFO: authorizedContractUTXO', authorizedContractUTXO)
 
   return {
     userUTXO,
@@ -84,6 +85,7 @@ const selectInputs = async () =>{
 
 export const  main = async () => {
   const blockHeight = await provider.getBlockHeight()
+  console.log('INFO: blockHeight', blockHeight)
   const { userUTXO, threadNFTUTXO, domainMintingUTXO, authorizedContractUTXO, auctionUTXO } = await selectInputs()
 
   const auctionAmount = auctionUTXO.satoshis
@@ -94,10 +96,10 @@ export const  main = async () => {
   const registrationId = auctionUTXO.token.amount.toString(16).padStart(16, '0')
 
   const transaction = await new TransactionBuilder({ provider })
-  .addInput(threadNFTUTXO, registryContract.unlock.call(), { sequence: 0 })
-  .addInput(authorizedContractUTXO, authorizedContract.unlock.call(), { sequence: 0 })
-  .addInput(domainMintingUTXO, registryContract.unlock.call(), { sequence: 0 })
-  .addInput(auctionUTXO, registryContract.unlock.call(), { sequence: 1 })
+  .addInput(threadNFTUTXO, registryContract.unlock.call(), { sequence: 1073741824 })
+  .addInput(authorizedContractUTXO, authorizedContract.unlock.call(), { sequence: 1073741824 })
+  .addInput(domainMintingUTXO, registryContract.unlock.call(), { sequence: 1073741840 })
+  .addInput(auctionUTXO, registryContract.unlock.call(), { sequence: 1073741840 })
   .addOutput({
     to: registryContract.tokenAddress,
     amount: threadNFTUTXO.satoshis,

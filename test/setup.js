@@ -43,7 +43,7 @@ export const fullName = name + tld
 export const fullNameHex = Buffer.from(fullName).toString('hex')
 export const fullNameBin = hexToBin(fullNameHex)
 
-export const domainCategory = '10bf2e660d975ad8783dc5fc40214b6df410d0af9b08c4e182e18fad876163bb'
+export const domainCategory = '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218'
 export const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 export const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
@@ -118,7 +118,7 @@ export const getUtxos = async () => {
     auctionNameEnforcerUTXOs,
     domainOwnershipGuardUTXOs,
     domainFactoryUTXOs,
-    domainContractUTXOs
+    domainUTXOs
   ] = await Promise.all([
     provider.getUtxos(aliceAddress),
     provider.getUtxos(registryContract.address),
@@ -139,6 +139,6 @@ export const getUtxos = async () => {
     auctionNameEnforcerUTXOs,
     domainOwnershipGuardUTXOs,
     domainFactoryUTXOs,
-    domainContractUTXOs
+    domainUTXOs
   }
 }

@@ -33,10 +33,9 @@ contract DomainOwnershipGuard(
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
     bytes parentCategory = tx.inputs[0].tokenCategory;
-    require(tx.inputs[3].tokenCategory == parentCategory);
-
     require(tx.inputs[2].tokenCategory == parentCategory);
     require(tx.outputs[2].tokenCategory == parentCategory);
+    require(tx.inputs[3].tokenCategory.split(32)[0] == parentCategory);
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
     require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is use and not the internalAuth NFT.
 

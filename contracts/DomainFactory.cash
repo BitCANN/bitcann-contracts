@@ -33,6 +33,7 @@ contract DomainFactory(
    *
    */
   function call(){
+    require(tx.version == 2);
     require(tx.inputs.length == 4);
     // For the first 4 years, the platform collects 50% of the fees
     if (tx.locktime > 1093240) {
@@ -71,13 +72,30 @@ contract DomainFactory(
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    // Make sure that the sequence number is greater than 1 day.
-    // 1 unit is 512 seconds. 1 day is 86400 seconds. 86400 / 512 = ~168. or 1 days
-    // require(tx.inputs[3].sequenceNumber >= 1 days);
-
-    // Enables timelocks
+    // Using block based
     require(tx.age >= 0);
-    require(tx.inputs[3].sequenceNumber >= 1 && tx.inputs[3].sequenceNumber <= 4294967290);
+    // Using block based
+    require(tx.inputs[3].sequenceNumber >= 1 && tx.inputs[3].sequenceNumber <= 1073741823);
+    // require(tx.inputs[3].sequenceNumber >= 144 && tx.inputs[3].sequenceNumber <= 1073741823);
+
+
+    // If CSV is specified in terms of blocks, then so must nSequence.
+    // https://documentation.cash/protocol/forks/bip-0112.html
+    // https://documentation.cash/protocol/forks/bip-0068.html
+    // https://bitcointalk.org/index.php?topic=1765597.msg62651680#msg62651680
+    // https://bitcoin.stackexchange.com/questions/87372/what-does-the-sequence-in-a-transaction-input-mean
+    // https://prestwi.ch/bitcoin-time-locks/
+    // https://learnmeabitcoin.com/technical/transaction/input/sequence/
+    //
+    // 0xFFFFFFFE ot less enables locktime
+    // 0x00000000 to 0x0000FFFF Block
+    // 0x00400000 to 0x0040FFFF Time
+    // Should CSV also be
+    
+    // // Using time based
+    // require(tx.age >= 0);
+    // // Using time based
+    // require(tx.inputs[3].sequenceNumber >= 1073741825 && tx.inputs[3].sequenceNumber <= 2147483640);
 
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);

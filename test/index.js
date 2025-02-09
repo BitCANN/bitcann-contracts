@@ -3,13 +3,15 @@ import { main as bid } from './contracts/bid.js'
 import { main as auctionConflictResolver } from './contracts/conflict-resolver.js'
 import { main as nameEnforcer } from './contracts/name-enforcer.js'
 import { main as domainFactory } from './contracts/domain-factory.js'
+import { main as ownershipGuard } from './contracts/ownership-guard.js'
 
 const main = async () => {
   // await auction()
   // await bid()
   // await auctionConflictResolver()
   // await nameEnforcer()
-  await domainFactory()
+  // await domainFactory()
+  await ownershipGuard()
 }
 
 main()
