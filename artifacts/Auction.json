@@ -12,11 +12,11 @@
       ]
     }
   ],
-  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_LESSTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_REVERSEBYTES OP_BIN2NUM OP_2 OP_OUTPUTTOKENCOMMITMENT OP_REVERSEBYTES OP_BIN2NUM OP_DUP OP_ROT OP_1ADD OP_NUMEQUALVERIFY OP_2 OP_OUTPUTTOKENAMOUNT OP_2 OP_UTXOTOKENAMOUNT OP_2 OP_PICK OP_SUB OP_NUMEQUALVERIFY OP_3 OP_OUTPUTTOKENAMOUNT OP_NUMEQUALVERIFY OP_3 OP_OUTPUTVALUE 1027 OP_GREATERTHANOREQUAL OP_VERIFY OP_3 OP_UTXOTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_3 OP_SPLIT OP_NIP 14 OP_SPLIT OP_DROP OP_3 OP_OUTPUTTOKENCOMMITMENT OP_SWAP OP_2 OP_PICK OP_CAT OP_EQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_OUTPUTTOKENCATEGORY OP_2 OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY OP_2 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_4 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY OP_4 OP_OUTPUTBYTECODE 6a OP_ROT OP_SIZE OP_DUP 4b OP_GREATERTHAN OP_IF 4c OP_SWAP OP_CAT OP_ENDIF OP_SWAP OP_CAT OP_CAT OP_EQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_NUMEQUAL OP_IF OP_5 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_ENDIF OP_1",
-  "source": "pragma cashscript ^0.11.0;\n\ncontract Auction() {\n  /**\n   * Starts a new domain registration auction.\n   * @param name The name being registered.\n   * \n   * The function creates a new auction with:\n   * - Starting bid >= 0.025 BCH.\n   * - Registration auction duration runs for 144 blocks (~1 day). If a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.\n   * - A successful registration initiation results in an auctionNFT representing the auction state:\n   *   capability: (Mutable)\n   *   category: domainCategory\n   *   tokenAmount: (Represents the registrationId)\n   *   satoshiValue: (Represents the bid amount)\n   *   commitment: bidder's PKH (20 bytes) + name (bytes)\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.\n   * - Input1: Any input from this contract.\n   * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output).\n   * - Input3: Funding UTXO.\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract.\n   * - Output1: Input1 back to this contract without any change.\n   * - Output2: Minting Counter NFT going back to the Registry contract.\n   * - Output3: auctionNFT to the Registry contract.\n   * - Output4: OP_RETURN output containing the name.\n   * - Output5: Optional change in BCH.\n   */\n  function call(bytes name) {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length <= 6);\n\n    // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n\n    // Logic\n    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);\n    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);\n    require(tx.outputs[3].lockingBytecode == parentContractScriptHash);\n\n    // Registration ID increases by 1 with each transaction.\n    int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());\n    int nextRegistrationId = int(tx.outputs[2].nftCommitment.reverse());\n    require(nextRegistrationId == prevRegistrationId + 1);\n\n    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);\n    require(tx.outputs[3].tokenAmount == nextRegistrationId);\n\n    // Every auction begins with a base value of at least 0.025 BCH.\n    // require(tx.outputs[3].value >= 2500000);\n    // FOR TESTS: Every auction begins with a base value of at least 0.000008 BCH.\n    require(tx.outputs[3].value >= 10000);\n    // Funding UTXO/ Bid UTXO\n    require(tx.inputs[3].tokenCategory == 0x);\n    \n    // <pkh> + name > 20 bytes\n    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];\n    require(tx.outputs[3].nftCommitment == pkh + name);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.inputs[0].tokenCategory;\n\n    require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);\n    bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);\n    require(counterCategory == domainCategory);\n    require(counterCapability == 0x02); // Minting\n\n    bytes auctionCategory, bytes auctionCapability = tx.outputs[3].tokenCategory.split(32);\n    require(auctionCategory == domainCategory);\n    require(auctionCapability == 0x01); // Mutable\n\n    // Enforce an OP_RETURN output.\n    require(tx.outputs[4].value == 0);\n    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));\n\n    if (tx.outputs.length == 6) {\n      // If any change, then it must be pure BCH.\n      require(tx.outputs[5].tokenCategory == 0x);\n    }\n  }\n}",
+  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_LESSTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY OP_3 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_REVERSEBYTES OP_BIN2NUM OP_2 OP_OUTPUTTOKENCOMMITMENT OP_REVERSEBYTES OP_BIN2NUM OP_DUP OP_ROT OP_1ADD OP_NUMEQUALVERIFY OP_2 OP_OUTPUTTOKENAMOUNT OP_2 OP_UTXOTOKENAMOUNT OP_2 OP_PICK OP_SUB OP_NUMEQUALVERIFY OP_3 OP_OUTPUTTOKENAMOUNT OP_NUMEQUALVERIFY OP_3 OP_OUTPUTVALUE 1027 OP_GREATERTHANOREQUAL OP_VERIFY OP_3 OP_UTXOTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_3 OP_UTXOBYTECODE OP_3 OP_SPLIT OP_NIP 14 OP_SPLIT OP_DROP OP_3 OP_OUTPUTTOKENCOMMITMENT OP_SWAP OP_2 OP_PICK OP_CAT OP_EQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_OUTPUTTOKENCATEGORY OP_2 OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_2 OP_PICK OP_EQUALVERIFY OP_2 OP_EQUALVERIFY OP_3 OP_OUTPUTTOKENCATEGORY 20 OP_SPLIT OP_SWAP OP_ROT OP_EQUALVERIFY OP_1 OP_EQUALVERIFY OP_4 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY OP_4 OP_OUTPUTBYTECODE 6a OP_ROT OP_SIZE OP_DUP 4b OP_GREATERTHAN OP_IF 4c OP_SWAP OP_CAT OP_ENDIF OP_SWAP OP_CAT OP_CAT OP_EQUALVERIFY OP_TXOUTPUTCOUNT OP_6 OP_NUMEQUAL OP_IF OP_5 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_ENDIF OP_1",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract Auction() {\n  /**\n   * Starts a new domain registration auction.\n   * @param name The name being registered.\n   * \n   * The function creates a new auction with:\n   * - Starting bid >= 0.025 BCH.\n   * - Registration auction duration runs for 144 blocks (~1 day). If a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.\n   * - A successful registration initiation results in an auctionNFT representing the auction state:\n   *   capability: (Mutable)\n   *   category: domainCategory\n   *   tokenAmount: (Represents the registrationId)\n   *   satoshiValue: (Represents the bid amount)\n   *   commitment: bidder's PKH (20 bytes) + name (bytes)\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.\n   * - Input1: Any input from this contract.\n   * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output).\n   * - Input3: Funding UTXO.\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract.\n   * - Output1: Input1 back to this contract without any change.\n   * - Output2: Minting Counter NFT going back to the Registry contract.\n   * - Output3: auctionNFT to the Registry contract.\n   * - Output4: OP_RETURN output containing the name.\n   * - Output5: Optional change in BCH.\n   */\n  function call(bytes name) {\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length <= 6);\n\n    // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n\n    // Logic\n    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);\n    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);\n    require(tx.outputs[3].lockingBytecode == parentContractScriptHash);\n\n    // Registration ID increases by 1 with each transaction.\n    int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());\n    int nextRegistrationId = int(tx.outputs[2].nftCommitment.reverse());\n    require(nextRegistrationId == prevRegistrationId + 1);\n\n    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);\n    require(tx.outputs[3].tokenAmount == nextRegistrationId);\n\n    // Every auction begins with a base value of at least 0.025 BCH.\n    // require(tx.outputs[3].value >= 2500000);\n    // FOR TESTS: Every auction begins with a base value of at least 0.000008 BCH.\n    require(tx.outputs[3].value >= 10000);\n    // Funding UTXO/ Bid UTXO\n    require(tx.inputs[3].tokenCategory == 0x);\n    \n    // <pkh> + name > 20 bytes\n    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];\n    require(tx.outputs[3].nftCommitment == pkh + name);\n\n    // All the token categories in the transaction should be the same.\n    bytes domainCategory = tx.inputs[0].tokenCategory;\n\n    require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);\n    bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);\n    require(counterCategory == domainCategory);\n    require(counterCapability == 0x02); // Minting\n\n    bytes auctionCategory, bytes auctionCapability = tx.outputs[3].tokenCategory.split(32);\n    require(auctionCategory == domainCategory);\n    require(auctionCapability == 0x01); // Mutable\n\n    // Enforce an OP_RETURN output.\n    require(tx.outputs[4].value == 0);\n    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));\n\n    if (tx.outputs.length == 6) {\n      // If any change, then it must be pure BCH.\n      require(tx.outputs[5].tokenCategory == 0x);\n    }\n  }\n}",
   "debug": {
-    "bytecode": "c3549c69c456a169c0519c69c0c7c0cd876900c752c75179876952cd5179876953cd517a876952cfbc8152d2bc810079527a51939c6952d352d05279949c6953d3517a9c6953cc021027a26953ce00876953c7537f7701147f7553d2517a52797e876900ce52d152ce876952d101207f517a52798769007a52876953d101207f517a527a8769007a51876954cc009c6954cd016a527a8276014ba063014c7c7e687c7e7e8769c4569c6355d10087696851",
-    "sourceMap": "33:12:33:28;:32::33;:12:::1;:4::35;34:12:34:29:0;:33::34;:12:::1;:4::36;37:12:37:33:0;:37::38;:12:::1;:4::40;38:22:38:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;41:47:41:48:0;:37::65:1;44:22:44:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;45:23:45:24:0;:12::41:1;:45::69:0;;:12:::1;:4::71;46:23:46:24:0;:12::41:1;:45::69:0;;:12:::1;:4::71;49:43:49:44:0;:33::59:1;:::69;:29::70;50:44:50:45:0;:33::60:1;:::70;:29::71;51:12:51:30:0;;:34::52;;:55::56;:34:::1;:12;:4::58;53:23:53:24:0;:12::37:1;:51::52:0;:41::65:1;:68::86:0;;:41:::1;:12;:4::88;54:23:54:24:0;:12::37:1;:41::59:0;;:12:::1;:4::61;59:23:59:24:0;:12::31:1;:35::40:0;:12:::1;:4::42;61:22:61:23:0;:12::38:1;:42::44:0;:12:::1;:4::46;64:26:64:27:0;:16::44:1;:51::52:0;:16::53:1;:::56;:63::65:0;:16::66:1;:::69;65:23:65:24:0;:12::39:1;:43::46:0;;:49::53;;:43:::1;:12;:4::55;68:37:68:38:0;:27::53:1;70:23:70:24:0;:12::39:1;:53::54:0;:43::69:1;:12;:4::71;71:64:71:65:0;:53::80:1;:87::89:0;:53::90:1;72:12:72:27:0;;:31::45;;:12:::1;:4::47;73:12:73:29:0;;:33::37;:12:::1;:4::39;75:64:75:65:0;:53::80:1;:87::89:0;:53::90:1;76:12:76:27:0;;:31::45;;:12:::1;:4::47;77:12:77:29:0;;:33::37;:12:::1;:4::39;80:23:80:24:0;:12::31:1;:35::36:0;:12:::1;:4::38;81:23:81:24:0;:12::41:1;:45::80:0;:74::78;;::::1;;;;;;;;;;;;:12::80;:4::82;83:8:83:25:0;:29::30;:8:::1;:32:86:5:0;85:25:85:26;:14::41:1;:45::47:0;:14:::1;:6::49;83:32:86:5;32:2:87:3",
+    "bytecode": "c3549c69c456a169c0519c69c0c7c0cd8769c0d100876900c752c75179876952cd5179876953cd517a876952cfbc8152d2bc810079527a51939c6952d352d05279949c6953d3517a9c6953cc021027a26953ce00876953c7537f7701147f7553d2517a52797e876900ce52d152ce876952d101207f517a52798769007a52876953d101207f517a527a8769007a51876954cc009c6954cd016a527a8276014ba063014c7c7e687c7e7e8769c4569c6355d10087696851",
+    "sourceMap": "33:12:33:28;:32::33;:12:::1;:4::35;34:12:34:29:0;:33::34;:12:::1;:4::36;37:12:37:33:0;:37::38;:12:::1;:4::40;38:22:38:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;39:23:39:44:0;:12::59:1;:63::65:0;:12:::1;:4::67;42:47:42:48:0;:37::65:1;45:22:45:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;46:23:46:24:0;:12::41:1;:45::69:0;;:12:::1;:4::71;47:23:47:24:0;:12::41:1;:45::69:0;;:12:::1;:4::71;50:43:50:44:0;:33::59:1;:::69;:29::70;51:44:51:45:0;:33::60:1;:::70;:29::71;52:12:52:30:0;;:34::52;;:55::56;:34:::1;:12;:4::58;54:23:54:24:0;:12::37:1;:51::52:0;:41::65:1;:68::86:0;;:41:::1;:12;:4::88;55:23:55:24:0;:12::37:1;:41::59:0;;:12:::1;:4::61;60:23:60:24:0;:12::31:1;:35::40:0;:12:::1;:4::42;62:22:62:23:0;:12::38:1;:42::44:0;:12:::1;:4::46;65:26:65:27:0;:16::44:1;:51::52:0;:16::53:1;:::56;:63::65:0;:16::66:1;:::69;66:23:66:24:0;:12::39:1;:43::46:0;;:49::53;;:43:::1;:12;:4::55;69:37:69:38:0;:27::53:1;71:23:71:24:0;:12::39:1;:53::54:0;:43::69:1;:12;:4::71;72:64:72:65:0;:53::80:1;:87::89:0;:53::90:1;73:12:73:27:0;;:31::45;;:12:::1;:4::47;74:12:74:29:0;;:33::37;:12:::1;:4::39;76:64:76:65:0;:53::80:1;:87::89:0;:53::90:1;77:12:77:27:0;;:31::45;;:12:::1;:4::47;78:12:78:29:0;;:33::37;:12:::1;:4::39;81:23:81:24:0;:12::31:1;:35::36:0;:12:::1;:4::38;82:23:82:24:0;:12::41:1;:45::80:0;:74::78;;::::1;;;;;;;;;;;;:12::80;:4::82;84:8:84:25:0;:29::30;:8:::1;:32:87:5:0;86:25:86:26;:14::41:1;:45::47:0;:14:::1;:6::49;84:32:87:5;32:2:88:3",
     "logs": [],
     "requires": [
       {
@@ -36,56 +36,56 @@
         "line": 38
       },
       {
-        "ip": 25,
-        "line": 44
+        "ip": 22,
+        "line": 39
       },
       {
-        "ip": 31,
+        "ip": 30,
         "line": 45
       },
       {
-        "ip": 37,
+        "ip": 36,
         "line": 46
       },
       {
-        "ip": 53,
-        "line": 51
+        "ip": 42,
+        "line": 47
       },
       {
-        "ip": 62,
-        "line": 53
+        "ip": 58,
+        "line": 52
       },
       {
-        "ip": 68,
+        "ip": 67,
         "line": 54
       },
       {
         "ip": 73,
-        "line": 59
+        "line": 55
       },
       {
         "ip": 78,
-        "line": 61
+        "line": 60
       },
       {
-        "ip": 95,
-        "line": 65
+        "ip": 83,
+        "line": 62
       },
       {
-        "ip": 103,
-        "line": 70
+        "ip": 100,
+        "line": 66
       },
       {
-        "ip": 113,
-        "line": 72
+        "ip": 108,
+        "line": 71
       },
       {
         "ip": 118,
         "line": 73
       },
       {
-        "ip": 128,
-        "line": 76
+        "ip": 123,
+        "line": 74
       },
       {
         "ip": 133,
@@ -93,15 +93,19 @@
       },
       {
         "ip": 138,
-        "line": 80
+        "line": 78
       },
       {
-        "ip": 157,
+        "ip": 143,
         "line": 81
       },
       {
-        "ip": 166,
-        "line": 85
+        "ip": 162,
+        "line": 82
+      },
+      {
+        "ip": 171,
+        "line": 86
       }
     ]
   },
@@ -109,5 +113,5 @@
     "name": "cashc",
     "version": "0.11.0-next.0"
   },
-  "updatedAt": "2025-02-09T20:46:47.205Z"
+  "updatedAt": "2025-02-09T20:49:21.878Z"
 }

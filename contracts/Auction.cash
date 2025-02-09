@@ -36,6 +36,7 @@ contract Auction() {
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
 
     // Lock this contract to only be used with the registry type contract.
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
