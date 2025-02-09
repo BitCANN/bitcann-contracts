@@ -40,6 +40,29 @@ Bitcoin Cash for Assigned Names and Numbers
    - [What is the structure of the Domain contract?](#what-is-the-structure-of-the-domain-contract)
    - [What type of record can be added?](#what-type-of-record-can-be-added)
 
+### Moving parts
+
+Note: All the NFTs belong to the same Category i.e `domainCategory`
+
+1. **RegistrationNFTs**: A pair of minting NFTs that reside within the `Registry.cash` contract, consisting of:
+   1.1 **CounterNFT**: A minting NFT initialized with the maximum possible token amount of `9223372036854775807` that interacts with `Auction.cash` to facilitate the creation of new auction NFTs.
+   1.2 **DomainMintingNFT**: A minting NFT that works with `DomainFactory.cash` to issue new Domain NFTs.
+
+2. **DomainNFTs**: A set of three immutable NFTs that are minted during the registration of each new domain:
+   2.1 **OwnershipNFT**: The primary token that represents and proves ownership of a specific domain, which remains in possession of the domain owner.
+   2.2 **InternalAuthNFT**: A specialized authorization token that resides within the Domain contract and must be used together with the OwnershipNFT to enable the owner's interaction with `Domain.cash`.
+   2.3 **ExternalAuthNFT**: A versatile token that, while residing in the Domain contract, can be attached to any transaction, particularly utilized by `DomainOwnershipGuard.cash` to validate existing domain registrations and enforce penalties on illegal auction attempts.
+
+3. **AuctionNFT**: A mutable NFT created for each new auction that remains within `Registry.cash`, containing comprehensive auction information through the following attributes:
+   3.1 nftCommitment: A combination of bidderPKH< 20 bytes > + name < bytes >
+   3.2 tokenAmount: The unique registrationID
+   3.3 capability: Set as mutable
+   3.4 satoshis: The current bid amount
+   3.5 category: The designated domainCategory
+   A new bid simply updates the pkh in the nftCommitment and updates the satoshi value to the new bid's amount.
+
+4. **AuthorizedThreadNFTs**: Each authorized contract's lockingbytecode(Excluding `Domain.cash`) is added to a immutable NFT commitment. These immutable NFTs stay with `Registry.cash`. Any interaction with the registry must include one of these thread NFTs to create a transaction.
+
 ### Features
 
 - Decentralised domain names like `.sat` and `.bch`
