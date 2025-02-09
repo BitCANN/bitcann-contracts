@@ -66,7 +66,7 @@ The architecture is built around a series of smart contracts, categorized into t
 
 ### Registry
 
-The Registry contract functions as the control and storage hub. Both Operational and Guard contracts must execute their transactions in conjunction with the Registry contract.
+The Registry contract functions as the control and storage hub. Operational, Guard, and Accumulator contracts must execute their transactions in conjunction with the Registry contract.
 This contract holds [RegistrationNFTs](#registrationnfts), [AuctionNFTs](#auctionnft), and [AuthorizedThreadNFTs](#authorizedthreadnfts).
 
 
@@ -100,7 +100,7 @@ Transaction Structure:
 
 #### Bid
 
-The bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the bid amount and the pkh in the nftCommitment. The only condition is that the new Bid amount must be at least 5% higher.
+The bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the `satoshisValue` and the `pkh` in the `nftCommitment`. The only condition is that the new Bid amount must be at least 5% higher.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -119,19 +119,18 @@ The DomainFactory burns the auctionNFT and issues 3 new NFTs [DomainNFTs](#domai
 Transaction Structure:
 | # | Inputs | Outputs |
 |---|--------|---------|
-| 0 | [AuthorizedThreadNFT](#authorizedthreadnfts) NFT with authorized contract's locking bytecode as commitment from [Registry Contract](#registry) | [AuthorizedThreadNFT](#authorizedthreadnfts) back to [Registry Contract](#registry) |
+| 0 | [AuthorizedThreadNFT](#authorizedthreadnfts) NFT with authorized contract's locking bytecode as commitment from [Registry Contract](#registry) | [AuthorizedThreadNFT](#authorizedthreadnfts) back to [Registry Contract](#registry) + tokenAmount from auctionNFT input|
 | 1 | Any UTXO from self | Back to self |
 | 2 | [RegistrationNFT](#registrationnfts) Domain Minting NFT | [RegistrationNFT](#registrationnfts) Domain Minting NFT back to registry contract |
-| 3 | [AuctionNFT](#auctionnft) | [DomainNFT](#domainnfts) Ownership NFT |
-| 4 | | [DomainNFT](#domainnfts) Internal Auth NFT|
-| 5 | | [DomainNFT](#domainnfts) External Auth NFT |
+| 3 | [AuctionNFT](#auctionnft) | [DomainNFT](#domainnfts) External Auth NFT |
+| 4 | | [DomainNFT](#domainnfts) Internal Auth NFT |
+| 5 | | [DomainNFT](#domainnfts) Ownership NFT|
 | 6 | | Platform fee (For a restricted amount of time) and rest to miners |
-
 
 
 ### Guard Contracts
 
-These contracts serve the purpose of incentivizing the enforcement of the rules. For example, if someone were to start a registration for a domain that is already owned then the `IllegalRegistration` contract will authorize anyone to provide proof of ownership of the domain and penalize the illegal auction by burning the auctionNFT and giving the funds to the proof provider.
+These contracts serve the purpose of incentivizing the enforcement of the rules. For example, if someone were to start a registration for a domain that is already owned then the [DomainOwnershipGuard](#domainownershipguard) contract will authorize anyone to provide proof of ownership of the domain using [External Auth DomainNFT](#domainnfts) and penalize the illegal auction by burning the auctionNFT and giving the funds to the proof provider.
 
 Similarly, other contracts also provide a way to authorize anyone to penalize anyone who attempts to break the rules of the system
 
@@ -156,7 +155,7 @@ Transaction Structure:
 
 #### DomainOwnershipGuard
 
-This prevents registrations for domains that have already been registered and have owners. Anyone can provide proof of valid ownership and burn the auctionNFT and claim the funds as a reward.
+This prevents registrations for domains that have already been registered and have owners. Anyone can provide proof of valid ownership([External Auth DomainNFT](#domainnfts)) and burn the auctionNFT and claim the funds as a reward.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -169,8 +168,10 @@ Transaction Structure:
 
 #### AuctionConflictResolver
 
-If two registration auctions exist the one with the higher registrationID is invalid. Since registration is a single-threaded operation such scenarios are highly unlikely to occur.
-This contract allows anyone to prove the registration Pair NFTs of both auctions, burning the invalid auction pair in the process and taking away the funds as a reward for keeping the system in check.
+If two registration auctions exist for the same domain name, the one with the higher registrationID i.e the tokenAmount is invalid. (Since registration is a single-threaded operation such scenarios are unlikely to occur willingly.)
+> **Important**: Applications must verify the presence of auctionNFTs in the registry contract before permitting any new registrations. Due to BCH's UTXO-based system, there is no 'Contract Storage' to confirm the existence of an ongoing auction and transaction cannot fail.
+
+This contract allows anyone to prove that an auction is invalid and burn the invalid auctionNFT in the process and taking away the funds as a reward for keeping the system in check.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -182,7 +183,7 @@ Transaction Structure:
 
 ### Domain
 
-The Domain contract allows the owner to perform a few operations after they are claimed from [DomainFactory](#domainfactory). There exists a unique domain contract for each unique domain name.
+The Domain contract allows the owner to perform a few operations after [DomainNFTs](#domainnfts) are issued from [DomainFactory](#domainfactory). There exists a unique domain contract for each unique domain name.
 
 There are 3 functions in each Domain Contract:
 - **addRecord**: This allows the owner of the domain to add records.
@@ -229,7 +230,7 @@ Transaction Structure:
 
 ### Cashtokens
 
-The contracts talk to each other through cashtokens. There are 4 types of cashtokens:
+The contracts talk to each other through cashtokens. There are 4 types in this system:
 - [RegistrationNFTs](#registrationnfts)
 - [AuctionNFT](#auctionnft)
 - [AuthorizedThreadNFTs](#authorizedthreadnfts)
