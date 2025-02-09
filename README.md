@@ -1,7 +1,7 @@
 # BitCANN
-BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on Bitcoin Cash Blockchain.
+BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
 
-- Decentralised Domain Names like `.sat` and `.bch` and more.
+- Decentralized Domain Names like `.sat` and `.bch` and more.
 - Add Records, RPA Pay Codes, Add Currency Addresses, Text Records, Custom Records, Social, Email, and more.
 - No Renewals or Expiry*
 - NFT Domain ownership, enabling secondary market trading.
@@ -14,16 +14,17 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
 
 ## Table of Contents
 1. [Contracts](#contracts)
+   - [Registry](#registry)
    - [Operational Contracts](#operational-contracts)
-      - [Registry](#registry)
       - [Auction](#auction)
       - [Bid](#bid)
       - [DomainFactory](#domainfactory)
    - [Guard Contracts](#guard-contracts)
-      - [DomainNameShield](#domainnameshield)
-      - [IllegalRegistration](#illegalregistration)
-      - [RegistrationConflict](#registrationconflict)
+      - [AuctionNameEnforcer](#auctionnameenforcer)
+      - [DomainOwnershipGuard](#domainownershipguard)
+      - [AuctionConflictResolver](#auctionconflictresolver)
    - [Domain](#3-domain)
+   - [Accumulator](#accumulator)
 2. [Cashtokens](#cashtokens)
    - [RegistrationNFTs](#registrationnfts)
    - [AuctionNFT](#auctionnft)
@@ -34,11 +35,11 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
    - [How is the correctness of the name verified?](#how-is-the-correctness-of-the-name-verified)
    - [How are auctions created?](#how-are-auctions-created)
-   - [What if two auctions from the same name are running?](#what-if-two-auctions-from-the-same-name-are-running)
+   - [What if two auctions for the same name are running?](#what-if-two-auctions-for-the-same-name-are-running)
    - [I won the bidding contest, how do I claim the domain?](#i-won-the-bidding-contest-how-do-i-claim-the-domain)
    - [Why Internal Auth NFT and External Auth NFT in each Domain Contract?](#why-internal-auth-nft-and-external-auth-nft-in-each-domain-contract)
    - [What if the tokenAmount in the CounterNFT runs out?](#what-if-the-tokenamount-in-the-counternft-runs-out)
-   - [An illegal registration auction has started for a domain that is owner by someone, will there be two owners?](#an-illegal-registration-auction-has-started-for-a-domain-that-is-owner-by-someone-will-there-be-two-owners)
+   - [An illegal registration auction has started for a domain that is owned by someone, will there be two owners?](#an-illegal-registration-auction-has-started-for-a-domain-that-is-owned-by-someone-will-there-be-two-owners)
    - [Can a bid be cancelled?](#can-a-bid-be-cancelled)
    - [Can anyone renounce ownership of a domain?](#can-anyone-renounce-ownership-of-a-domain)
    - [What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?](#what-happens-to-the-ownershipnft-when-the-ownership-is-renounced-or-the-domain-is-abandoned)
@@ -60,6 +61,8 @@ The architecture is built around a series of smart contracts, categorized into t
 
 - **Domain Contract**: [Domain.cash](#3-domain)
 
+- **Accumulator Contract**: [Accumulator.cash](#accumulator)
+
 
 ### Registry
 
@@ -73,7 +76,7 @@ Transaction Structure:
 | 0 | [AuthorizedThreadNFT](#authorizedthreadnfts) NFT with authorized contract's locking bytecode as commitment from self | [AuthorizedThreadNFT](#authorizedthreadnfts) back to self + (optionally tokenAmount from auctionNFT input) |
 | 1 | Any UTXO from Authorized contract | UTXO back to Authorized contract |
 
-Note: The actual number and structure of inputs/outputs and covanents beyond this pair is controlled by the authorized contract being used.
+Note: The actual number and structure of inputs/outputs and covenants beyond this pair is controlled by the authorized contract being used.
 
 ### Operational Contracts
 
@@ -81,8 +84,8 @@ Note: The actual number and structure of inputs/outputs and covanents beyond thi
 
 The Auction contract lets anyone start a new auction.
 Each auction requires:
-   - A minimum starting bid of atleast 0.025 BCH
-   - It must run for atleast a day, (the timer resets with new bid)
+   - A minimum starting bid of at least 0.025 BCH
+   - It must run for at least a day, (the timer resets with a new bid)
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -97,7 +100,7 @@ Transaction Structure:
 
 #### Bid
 
-The bid contract allows anyone to bid on a active auction by allowing restricted manupulation of auctionNFT. It updates the bid amount and the pkh in the nftCommitment. The only condition is that the new Bid amount must be at least 5% higher.
+The bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the bid amount and the pkh in the nftCommitment. The only condition is that the new Bid amount must be at least 5% higher.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -111,7 +114,7 @@ Transaction Structure:
 
 #### DomainFactory
 
-The DomainFactory burns the auctionNFT and issues 3 new NFTs [DomainNFTs](#domainnfts). It verifies that the actionNFT input is atleast 1 day old. It also attaches the tokenAmount from auctionNFT to the authorized contract's thread.
+The DomainFactory burns the auctionNFT and issues 3 new NFTs [DomainNFTs](#domainnfts). It verifies that the actionNFT input is at least 1 day old. It also attaches the tokenAmount from auctionNFT to the authorized contract's thread.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -122,20 +125,20 @@ Transaction Structure:
 | 3 | [AuctionNFT](#auctionnft) | [DomainNFT](#domainnfts) Ownership NFT |
 | 4 | | [DomainNFT](#domainnfts) Internal Auth NFT|
 | 5 | | [DomainNFT](#domainnfts) External Auth NFT |
-| 6 | | Platform fee (For a restructed amount of time) and rest to miners |
+| 6 | | Platform fee (For a restricted amount of time) and rest to miners |
 
 
 
 ### Guard Contracts
 
-These contracts serve the purpose is to incentivise the enforcement of the rules. For example, if someone were to start a registration for a domain that is already owned then `IllegalRegistration` contract will authorize anyone to provide proof of ownership of the domain and penalise the illegal auction by burning the auctionNFT and giving the funds to the proof provider.
+These contracts serve the purpose of incentivizing the enforcement of the rules. For example, if someone were to start a registration for a domain that is already owned then the `IllegalRegistration` contract will authorize anyone to provide proof of ownership of the domain and penalize the illegal auction by burning the auctionNFT and giving the funds to the proof provider.
 
-Similarily, other contracts also provide a way to authorize anyone to penalise anyone who attempts to breaks the rule of the system
+Similarly, other contracts also provide a way to authorize anyone to penalize anyone who attempts to break the rules of the system
 
 
 #### AuctionNameEnforcer
 
-The AuctionNameEnforcer contract allows anyone to prove that the running auction has an invalid domain name. By providing a proof (index of the invalid character) they burn the auctionNFT, taking away the entire amount as a reward.
+The AuctionNameEnforcer contract allows anyone to prove that the running auction has an invalid domain name. By providing proof (index of the invalid character) they burn the auctionNFT, taking away the entire amount as a reward.
 
 Rules: 
 - The name must consist of only these characters
@@ -153,7 +156,7 @@ Transaction Structure:
 
 #### DomainOwnershipGuard
 
-This prevents registrations for domains that have already been registered and have owners. Anyone can provide proof of a valid ownership and burn the auctionNFT and claim the funds as reward.
+This prevents registrations for domains that have already been registered and have owners. Anyone can provide proof of valid ownership and burn the auctionNFT and claim the funds as a reward.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -166,8 +169,8 @@ Transaction Structure:
 
 #### AuctionConflictResolver
 
-If two registration auctions exist the one with higher registrationID is invalid. Since registration is a single threaded operation such scenarios are highly unlikely to occur.
-This contract allows anyone to proving the registration Pair NFts of both auctions, burning the invalid auction pair in the process and taking away the funds as reward for keeping the system in check.
+If two registration auctions exist the one with the higher registrationID is invalid. Since registration is a single-threaded operation such scenarios are highly unlikely to occur.
+This contract allows anyone to prove the registration Pair NFTs of both auctions, burning the invalid auction pair in the process and taking away the funds as a reward for keeping the system in check.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -199,7 +202,7 @@ Transaction Structure:
 |---|--------|---------|
 | x | UTXO from self | Back to self |
 
-- **burn**: This allows the owner of the domain renounce ownership OR if the domain has been inactive for > 2 years then anyone can burn the domain allowing for a new auction.
+- **burn**: This allows the owner of the domain to renounce ownership OR if the domain has been inactive for > 2 years then anyone can burn the domain allowing for a new auction.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -207,6 +210,20 @@ Transaction Structure:
 | 0 | [DomainNFTs](#domainnfts) Internal Auth NFT | BCH change output |
 | 1 | [DomainNFTs](#domainnfts) External Auth NFT | |
 | 2 | Pure BCH or [DomainNFTs](#domainnfts) Domain ownership NFT from owner | |
+
+
+### Accumulator
+
+Once enough auctions have happened, there might come a time when the counterNFT's tokenAmount is not enough. Since the amount would be accumulating in the thread NFTs, this function can be used to transfer them back to the CounterNFT to keep the system functioning smoothly.
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | [AuthorizedThreadNFT](#authorizedthreadnfts) NFT with authorized contract's locking bytecode as commitment from [Registry Contract](#registry) | [AuthorizedThreadNFT](#authorizedthreadnfts) back to [Registry Contract](#registry) |
+| 1 | Any UTXO from self | Back to self |
+| 2 | [RegistrationNFTs](#registrationnfts) Counter NFT | [RegistrationNFTs](#registrationnfts) Counter NFT with tokenAmount from input3 |
+| 2 | [AuthorizedThreadNFT](#authorizedthreadnfts) Authorized contract's UTXO with tokenAmount | [AuthorizedThreadNFT](#authorizedthreadnfts) without tokenAmount back to [Registry Contract](#registry) |
+| 4 | Pure BCH | Change BCH |
 
 ---
 
@@ -239,10 +256,10 @@ A mutable hybrid NFT created for each new auction that remains within [Registry.
 #### AuthorizedThreadNFTs
 Each authorized contract's lockingbytecode(Excluding [Domain.cash](#3-domain)) is added to an immutable NFT commitment. These immutable NFTs stay with `Registry.cash`. Any interaction with the registry must include one of these thread NFTs to create a transaction.
    - `category`: domainCategory
-   - `commitment`: lokingbytecode <35 bytes>
+   - `commitment`: lockingbytecode <35 bytes>
 
-The Registry Contract has a designated number of threads for authorized contract:
-- Auction: ~5 thread
+The Registry Contract has a designated number of threads for authorized contracts:
+- Auction: ~5 threads
 - Bid: ~5 threads
 - DomainFactory: ~5 threads
 - AuctionNameEnforcer: ~5 threads
@@ -259,10 +276,10 @@ A set of three immutable NFTs minted when an auction ends:
       - `category`: domainCategory
       - `commitment`: registrationID < 8 bytes >
 
-   - **ExternalAuthNFT**: A specialized authorization NFT that resides within the Domain Contract  but can be attached to any transaction, particularly utilized by [DomainOwnershipGuard.cash](#domainownershipguard) to prove existing domain ownership and enforce penalties on illegal auction attempts.
+   - **ExternalAuthNFT**: A specialized authorization NFT that resides within the Domain Contract but can be attached to any transaction, particularly utilized by [DomainOwnershipGuard.cash](#domainownershipguard) to prove existing domain ownership and enforce penalties on illegal auction attempts.
       - `category`: domainCategory
 
-If the domain has been inactive for > 2 years then the domain is considered as abandoned and anyone can prove the inactivity and burn the Internal and external Auth NFTs to make the auction of auction possible.
+If the domain has been inactive for > 2 years then the domain is considered abandoned and anyone can prove the inactivity and burn the Internal and External Auth NFTs to make the auction of auction possible.
 
 
 ---
@@ -270,23 +287,23 @@ If the domain has been inactive for > 2 years then the domain is considered as a
 ## FAQs
 
 #### How are domains sold?
-Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once the no new bids have been made for a day, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
+Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once no new bids have been made for a day, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
 
 #### Who earns from the auction sales?
 
-For a fixed period of time, a percentage of bid amount is collected as platform fee and then the funds are distributed to the miners. After the fixed time is over 100% of the bid amount is distributed to the miners.
+For a fixed period of time, a percentage of the bid amount is collected as a platform fee and then the funds are distributed to the miners. After the fixed time is over 100% of the bid amount is distributed to the miners.
 
 #### How is the correctness of the name verified?
-Check [[AuctionNameEnforcer]](#auctionnameenforcer)
+Check [AuctionNameEnforcer](#auctionnameenforcer)
 
 #### How are auctions created?
-Check [[Auction]](#auction)
+Check [Auction](#auction)
 
-#### What if two auctions from the same name are running?
-Check [[AuctionConflictResolver]](#auctionconflictresolver)
+#### What if two auctions for the same name are running?
+Check [AuctionConflictResolver](#auctionconflictresolver)
 
 #### I won the bidding contest, how do I claim the domain?
-Check [[DomainFactory]](#domainfactory)
+Check [DomainFactory](#domainfactory)
 
 #### Why Internal Auth NFT and External Auth NFT in each Domain Contract?
 Check [DomainNFTs](#domainnfts)
@@ -295,10 +312,10 @@ Check [DomainNFTs](#domainnfts)
 As more and more registrations happen, the tokens get gathered up in the authorized contract threads. Anyone can accumulate the tokenAmounts from all these threads and send it to the counter NFT.
 
 Registry Contract has a way to accumulate all the funds used up since the beginning.
-Accumumulation of tokens, When any process ends, either through guards or from domainfactory, the tokenAmount help in the auctionNFTs is send to the active authorized thread NFT. Later these thread NFTs in combination with the CounterNFT can be used to send all the tokenAmounts back to the CounterNFT ensuring a continued registration process.
+Accumulation of tokens, When any process ends, either through guards or from domainfactory, the tokenAmount help in the auctionNFTs is sent to the active authorized thread NFT. Later these thread NFTs in combination with the CounterNFT can be used to send all the tokenAmounts back to the CounterNFT ensuring a continued registration process.
 
-#### An auction has started for a domain that is owner by someone, will there be two owners?
-Check [[DomainOwnershipGuard]](#domainownershipguard)
+#### An auction has started for a domain that is owned by someone, will there be two owners?
+Check [DomainOwnershipGuard](#domainownershipguard)
 
 #### Can a bid be cancelled?
 No, Once a bid is made, it's locked in.
@@ -327,4 +344,4 @@ Each DomainContract has a way to add records. The owner can add new records usin
 [TBD] Since the records are OP_RETURN it's not possible to remove them. However, it's possible to provide a way that can act as a standard for libraries to understand. To 'remove' a Record a new transaction with OP_RETURN(RMV + hash) of record to remove can be created.
 
 #### No Renewal or Expiry?
-To ensure that the domains are not lost forever, the Owner must do atleast 1 activity(Add or Remove records) using the domain in a span of 2 years. Once done, the cycle resets. So if the owner has not interacted with the domain for > 2 years then the system assumes that it's abandoned and allows for re-auction
+To ensure that the domains are not lost forever, the Owner must do at least 1 activity (Add or Remove records) using the domain in a span of 2 years. Once done, the cycle resets. So if the owner has not interacted with the domain for > 2 years then the system assumes that it's abandoned and allows for re-auction

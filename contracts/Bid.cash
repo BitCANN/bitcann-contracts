@@ -2,37 +2,37 @@ pragma cashscript ^0.11.0;
 
 contract Bid() {
   /**
-   * Places a new bid on an active domain registration auction
+   * Places a new bid on an active domain registration auction.
    * 
    * The function allows placing a new bid with:
-   * - Minimum 5% increase over previous bid
-   * - Auction is extended by 72 blocks if a new bid is placed when the auction is less than 72 blocks away from ending.
-   * - Previous bidder receives their bid amount back in the same transaction,
-   * - A successful bid updates the auctionNFT by updating the PKH and satoshiValue
+   * - A minimum 5% increase over the previous bid.
+   * - The auction is extended by 72 blocks if a new bid is placed when the auction is less than 72 blocks away from ending.
+   * - The previous bidder receives their bid amount back in the same transaction.
+   * - A successful bid updates the auctionNFT by updating the PKH and satoshiValue.
    *   capability:   Mutable
    *   category:     DomainCategory
    *   tokenAmount:  Represents the registrationId
    *   satoshiValue: Represents the bid amount
-   *   commitment:   Bidder's PKH(20 bytes) + name(bytes)
+   *   commitment:   Bidder's PKH (20 bytes) + name (bytes)
    *
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
-   * - Input1: Any input from this contract
-   * - Input2: auctionNFT to the Registry contract
-   * - Input3: Funding UTXO from new bidder
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.
+   * - Input1: Any input from this contract.
+   * - Input2: auctionNFT to the Registry contract.
+   * - Input3: Funding UTXO from the new bidder.
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract
-   * - Output1: Input1 back to this contract without any change
-   * - Output2: auctionNFT to the Registry contract
-   * - Output3: Previous bid amount returned to previous bidder
-   * - Output4: Optional change in BCH to new bidder
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output1: Input1 back to this contract without any change.
+   * - Output2: auctionNFT to the Registry contract.
+   * - Output3: Previous bid amount returned to the previous bidder.
+   * - Output4: Optional change in BCH to the new bidder.
    */
-  function call(){
+  function call() {
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 5);
     
-    // This contract can only be used at input1 and it's utxo should return to itself.
+    // This contract can only be used at input1 and its UTXO should return to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
 
@@ -47,7 +47,7 @@ contract Bid() {
 
     bytes domainCategory = tx.inputs[0].tokenCategory;
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
-    // Enforcing the structure of the pair results in predictable behaviour.
+    // Enforcing the structure of the pair results in predictable behavior.
     bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);
     require(auctionCategory == domainCategory);
     require(auctionCapability == 0x01); // Mutable
@@ -58,13 +58,13 @@ contract Bid() {
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
     require(tx.outputs[2].value >= tx.inputs[2].value * 105 / 100);
 
-    // Locking bytecode of the previous bidder
+    // Locking bytecode of the previous bidder.
     require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH));
-    // The amount being sent back to the previous bidder
+    // The amount being sent back to the previous bidder.
     require(tx.outputs[3].value == tx.inputs[2].value);
 
-    if(tx.outputs.length == 5){
-      // If any change then it must be pure BCH
+    if (tx.outputs.length == 5) {
+      // If any change, then it must be pure BCH.
       require(tx.outputs[4].tokenCategory == 0x);
     }
   }

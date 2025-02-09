@@ -2,34 +2,34 @@ pragma cashscript ^0.11.0;
 
 contract Auction() {
   /**
-   * Starts a new domain registration auction
+   * Starts a new domain registration auction.
    * @param name The name being registered.
    * 
    * The function creates a new auction with:
-   * - Starting bid >= 0.025 BCH
-   * - Registration auction duration runs for 144 blocks (~1 day), if a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.
-   * - A successful registration initiations results in an auctionNFT representing the auction state:
+   * - Starting bid >= 0.025 BCH.
+   * - Registration auction duration runs for 144 blocks (~1 day). If a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.
+   * - A successful registration initiation results in an auctionNFT representing the auction state:
    *   capability: (Mutable)
    *   category: domainCategory
    *   tokenAmount: (Represents the registrationId)
    *   satoshiValue: (Represents the bid amount)
-   *   commitment:   bidder's PKH(20 bytes) + name(bytes)
+   *   commitment: bidder's PKH (20 bytes) + name (bytes)
    * 
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
-   * - Input1: Any input from this contract
-   * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output) 
-   * - Input3: Funding UTXO
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.
+   * - Input1: Any input from this contract.
+   * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output).
+   * - Input3: Funding UTXO.
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract
-   * - Output1: Input1 back to this contract without any change
-   * - Output2: Minting Counter NFT going back to the Registry contract
-   * - Output3: auctionNFT to the Registry contract
-   * - Output4: OP_RETURN output containing the name
-   * - Output5: Optional change in BCH
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output1: Input1 back to this contract without any change.
+   * - Output2: Minting Counter NFT going back to the Registry contract.
+   * - Output3: auctionNFT to the Registry contract.
+   * - Output4: OP_RETURN output containing the name.
+   * - Output5: Optional change in BCH.
    */
-  function call(bytes name){
+  function call(bytes name) {
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 6);
 
@@ -53,9 +53,9 @@ contract Auction() {
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);
     require(tx.outputs[3].tokenAmount == nextRegistrationId);
 
-    // Every auction begins with a base value of atleast 0.025 BCH.
+    // Every auction begins with a base value of at least 0.025 BCH.
     // require(tx.outputs[3].value >= 2500000);
-    // FOR TESTS: Every auction begins with a base value of atleast 0.000008 BCH.
+    // FOR TESTS: Every auction begins with a base value of at least 0.000008 BCH.
     require(tx.outputs[3].value >= 10000);
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
@@ -80,8 +80,8 @@ contract Auction() {
     require(tx.outputs[4].value == 0);
     require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
 
-    if(tx.outputs.length == 6){
-      // If any change then it must be pure BCH
+    if (tx.outputs.length == 6) {
+      // If any change, then it must be pure BCH.
       require(tx.outputs[5].tokenCategory == 0x);
     }
   }

@@ -11,7 +11,7 @@ contract DomainFactory(
    * - Issuing an immutable externalAuth NFT to the domain contract
    * - Issuing an immutable internalAuth NFT to the domain contract
    * - Issuing an immutable domain NFT to the auction winner
-   * - Distributing auction fees between platform and miners
+   * - Distributing auction fees between the platform and miners
    *
    * @param domainContractBytecode - Partial bytecode of the domain contract to create
    * @param platformPKH - Public key hash of the platform's fee recipient
@@ -19,17 +19,17 @@ contract DomainFactory(
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: Minting NFT from Registry contract
+   * - Input2: Minting NFT from the Registry contract
    * - Input3: auctionNFT
    *
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
    * - Output2: Minting NFT back to the Registry contract
-   * - Output3: External Auth NFT to domain contract
-   * - Output4: Internal Auth NFT to domain contract
-   * - Output5: Domain NFT to auction winner
-   * - Output6: Platform fee (only for first 4 years)
+   * - Output3: External Auth NFT to the domain contract
+   * - Output4: Internal Auth NFT to the domain contract
+   * - Output5: Domain NFT to the auction winner
+   * - Output6: Platform fee (only for the first 4 years)
    *
    */
   function call(){
@@ -64,7 +64,7 @@ contract DomainFactory(
     require(auctionCategory == parentCategory);
     require(auctionCapability == 0x01); // Mutable
 
-    // Enfore strict restrictions on minting NFT.
+    // Enforce strict restrictions on minting NFT.
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
     require(tx.inputs[2].nftCommitment == 0x);
@@ -72,9 +72,9 @@ contract DomainFactory(
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    // Using block based
+    // Using block-based
     require(tx.age >= 0);
-    // Using block based
+    // Using block-based
     require(tx.inputs[3].sequenceNumber >= 1 && tx.inputs[3].sequenceNumber <= 1073741823);
     // require(tx.inputs[3].sequenceNumber >= 144 && tx.inputs[3].sequenceNumber <= 1073741823);
 
@@ -87,14 +87,14 @@ contract DomainFactory(
     // https://prestwi.ch/bitcoin-time-locks/
     // https://learnmeabitcoin.com/technical/transaction/input/sequence/
     //
-    // 0xFFFFFFFE ot less enables locktime
+    // 0xFFFFFFFE or less enables locktime
     // 0x00000000 to 0x0000FFFF Block
     // 0x00400000 to 0x0040FFFF Time
     // Should CSV also be
     
-    // // Using time based
+    // // Using time-based
     // require(tx.age >= 0);
-    // // Using time based
+    // // Using time-based
     // require(tx.inputs[3].sequenceNumber >= 1073741825 && tx.inputs[3].sequenceNumber <= 2147483640);
 
 

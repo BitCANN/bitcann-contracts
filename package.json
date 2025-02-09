@@ -13,7 +13,8 @@
     "compile:auctionnameenforcer": "cashc contracts/AuctionNameEnforcer.cash -o artifacts/AuctionNameEnforcer.json",
     "compile:domainownershipguard": "cashc contracts/DomainOwnershipGuard.cash -o artifacts/DomainOwnershipGuard.json",
     "compile:auctionconflictresolver": "cashc contracts/AuctionConflictResolver.cash -o artifacts/AuctionConflictResolver.json",
-    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:domain",
+    "compile:accumulator": "cashc contracts/Accumulator.cash -o artifacts/Accumulator.json",
+    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:accumulator && npm run compile:domain",
     "build": "npm run compile && node test/index.js"
   },
   "dependencies": {

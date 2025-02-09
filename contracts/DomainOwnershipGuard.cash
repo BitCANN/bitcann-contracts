@@ -5,19 +5,19 @@ contract DomainOwnershipGuard(
   bytes tld
 ) {
   /**
-   * If the Domain being auctions already has an 'externalAuth' NFT, with the same category then the auction is invalid.
-   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as reward.
+   * If the domain being auctioned already has an 'externalAuth' NFT with the same category, then the auction is invalid.
+   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.
    * 
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: External Auth NFT from Domain contract
+   * - Input2: External Auth NFT from the domain contract
    * - Input3: auctionNFT
    * 
    * @outputs
    * - Output0: Registry Contract's immutable NFT back to the Registry contract
    * - Output1: Input1 back to this contract without any change
-   * - Output2: External Auth NFT back to Domain contract
+   * - Output2: External Auth NFT back to the domain contract
    * - Output3: BCH change/reward to caller
    */
   function call(){
@@ -37,7 +37,7 @@ contract DomainOwnershipGuard(
     require(tx.outputs[2].tokenCategory == parentCategory);
     require(tx.inputs[3].tokenCategory.split(32)[0] == parentCategory);
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
-    require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is use and not the internalAuth NFT.
+    require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is used and not the internalAuth NFT.
 
     bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;
     int fullNameLength = fullName.length;

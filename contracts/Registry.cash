@@ -4,8 +4,8 @@ pragma cashscript ^0.11.0;
   * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
   *
   * The Registry has two minting NFTs:
-  * 1. RegistrationMintingNFT which has tokenAmount and nftCommitment
-  * 2. DomainMintingNFT which does not have any tokenAmount or nftCommitment
+  * 1. RegistrationMintingNFT, which has tokenAmount and nftCommitment.
+  * 2. DomainMintingNFT, which does not have any tokenAmount or nftCommitment.
  */
 contract Registry(bytes domainCategory) {
   /**
@@ -51,22 +51,7 @@ contract Registry(bytes domainCategory) {
 
     // Expect the NFT commitment that contains the lockingBytecode of the authorized contract.
     require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
-    // With these pre-requisites met, we just need to make sure that all the contracts that are deployed are written and initialized
+    // With these prerequisites met, we just need to make sure that all the contracts that are deployed are written and initialized
     // properly, and they expect this structure and handle the inputs and outputs as expected.
   }
-
-  // /**
-  //  * @inputs
-  //  * - Input0: Minting NFT + tokenAmount0
-  //  * - Input1: Authorized contract's UTXO + tokenAmount1
-  //  * 
-  //  * @outputs
-  //  * - Output0: Minting NFT back to the Registry contract + tokenAmount (tokenAmount0 + tokenAmount1)
-  //  * - Output1: Authorized contract's UTXO back to the Registry contract
-  //  * - Output2: Change BCH
-  //  */
-  // function accumulateTokens(){
-  //   // require(tx.inputs.length == 2);
-  //   // require(tx.outputs.length == 3);
-  // }
 }

@@ -2,7 +2,7 @@ pragma cashscript ^0.11.0;
 
 contract Domain(bytes name, bytes domainCategory) {
   /**
-   * Adds or removes a record associated with this domain
+   * Adds or removes a record associated with this domain.
    * 
    * Records are stored in OP_RETURN outputs and can be added or removed by the domain owner.
    * To add a record, include the record data directly in the OP_RETURN output.
@@ -10,12 +10,12 @@ contract Domain(bytes name, bytes domainCategory) {
    * 
    * @inputs
    * - Input0: Internal Auth NFT
-   * - Input1: Domain ownership NFT from owner
+   * - Input1: Domain ownership NFT from the owner
    * - Input2: Funding UTXO (Can come from anywhere)
    * 
    * @outputs  
    * - Output0: Internal Auth NFT returned to this contract
-   * - Output1: Domain NFT returned to owner
+   * - Output1: Domain NFT returned to the owner
    * - Output2: OP_RETURN containing record data or removal hash
    * - Output3: BCH change output
    * 
@@ -47,9 +47,9 @@ contract Domain(bytes name, bytes domainCategory) {
   }
 
   /*
-   * Allow this to be attached to other contracts and prove that the domain is owned.
+   * Allows this to be attached to other contracts and prove that the domain is owned.
    */
-  function externalUse(){
+  function externalUse() {
     require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
     require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
 
@@ -60,35 +60,35 @@ contract Domain(bytes name, bytes domainCategory) {
   }
 
   /**
-   * Allows domain owner Or anyone to burn the domain by burning NFTs that control this contract.
+   * Allows the domain owner or anyone to burn the domain by burning NFTs that control this contract.
    * 
-   * If the internalAuth NFT has not been used for > 730 days i.e 2 years, then allow anyone to burn the domain.
-   * Always allow the owner to burn the domain NFTs
+   * If the internalAuth NFT has not been used for more than 730 days, i.e., 2 years, then allow anyone to burn the domain.
+   * Always allow the owner to burn the domain NFTs.
    *
    * @inputs
    * - Input0: Internal Auth NFT
    * - Input1: External Auth NFT
-   * - Input2: Pure BCH or Domain ownership NFT from owner
+   * - Input2: Pure BCH or Domain ownership NFT from the owner
    *
    * @outputs 
    * - Output0: BCH change
    *
    */
-  function burn(){
+  function burn() {
     require(tx.version == 2);
 
     require(tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 
-    if(tx.inputs[2].tokenCategory == 0x){
-      // If pure BCH input then allow anyone to burn given the timelimit has passed.
-      // Using block based
+    if (tx.inputs[2].tokenCategory == 0x) {
+      // If pure BCH input, then allow anyone to burn given the time limit has passed.
+      // Using block-based
       require(tx.age >= 0);
-      // Using block based
+      // Using block-based
       // 105120 blocks = 2 years
       require(tx.inputs[1].sequenceNumber >= 105120 && tx.inputs[3].sequenceNumber <= 1073741823);
-    } else{
-      // If domain ownership NFT input then allow the owner to burn anytime.
+    } else {
+      // If domain ownership NFT input, then allow the owner to burn anytime.
       require(tx.inputs[2].tokenCategory == domainCategory);
       require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
     }

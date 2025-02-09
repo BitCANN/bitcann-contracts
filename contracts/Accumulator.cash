@@ -1,0 +1,57 @@
+pragma cashscript ^0.11.0;
+
+contract Accumulator() {
+  /**
+   * @description Once enough auctions have happened, there might come a time when the counterNFT's tokenAmount is not enough.
+   * Since the amount would be accumulating in the thread NFTs, this function can be used to transfer them back to the
+   * Counter NFT to keep the system functioning smoothly.
+   * 
+   * @inputs
+   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input1: Any input from this contract
+   * - Input2: Minting NFT + tokenAmount0
+   * - Input3: Authorized contract's UTXO + tokenAmount1
+   * - Input4: Pure BCH
+   * 
+   * @outputs
+   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output1: Input1 back to this contract without any change.
+   * - Output2: Minting NFT back to the Registry contract + tokenAmount (tokenAmount0 + tokenAmount1)
+   * - Output3: Authorized contract's UTXO back to the Registry contract
+   * - Output4: Change BCH
+   */
+  function call(){
+    require(tx.inputs.length == 5);
+    require(tx.outputs.length == 5);
+
+    // This contract can only be used at input1 and it should return to itself.
+    require(this.activeInputIndex == 1);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+
+    // Lock this contract to only be used with the registry type contract.
+    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
+    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
+    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
+    require(tx.outputs[3].lockingBytecode == parentContractScriptHash);
+
+    require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
+    require(tx.outputs[3].tokenCategory == tx.inputs[3].tokenCategory);
+
+    bytes domainCategory = tx.inputs[0].tokenCategory;
+    require(tx.inputs[3].tokenCategory == domainCategory);
+    
+    bytes counterCategory, bytes counterCapability = tx.inputs[2].tokenCategory.split(32);
+    require(counterCategory == domainCategory);
+    require(counterCapability == 0x02);
+
+    // Locking bytecode of the authorized contract is 35 bytes long.
+    require(tx.inputs[3].nftCommitment.length == 35);
+    require(tx.inputs[2].tokenAmount > 0); // Ensure that the counter minting NFT is used.
+    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount + tx.inputs[3].tokenAmount);
+
+    // Pure BCH input and output.
+    require(tx.inputs[4].tokenCategory == 0x);
+    require(tx.outputs[4].tokenCategory == 0x);
+  }
+}
