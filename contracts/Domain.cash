@@ -1,26 +1,6 @@
 pragma cashscript ^0.11.0;
 
 contract Domain(bytes name, bytes domainCategory) {
-
-  // Allow the owner to withdraw any funds but the immutable NFTs.
-  function withdrawFunds() {
-    require(tx.inputs[this.activeInputIndex].tokenCategory != domainCategory);
-  }
-
-  /*
-   * Allow this to be attached to other contracts and prove that the domain is owned.
-   */
-  function externalUse(){
-    require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
-    require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
-
-    require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
-    require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
-    require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);
-    require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);
-  }
-
-
   /**
    * Adds or removes a record associated with this domain
    * 
@@ -31,7 +11,7 @@ contract Domain(bytes name, bytes domainCategory) {
    * @inputs
    * - Input0: Internal Auth NFT
    * - Input1: Domain ownership NFT from owner
-   * - Input2: Funding UTXO
+   * - Input2: Funding UTXO (Can come from anywhere)
    * 
    * @outputs  
    * - Output0: Internal Auth NFT returned to this contract
@@ -63,21 +43,32 @@ contract Domain(bytes name, bytes domainCategory) {
 
     // This enforces an OP_RETURN output.
     require(tx.outputs[2].value == 0);
-
-    require(tx.inputs[2].tokenCategory == 0x);
     require(tx.outputs[3].tokenCategory == 0x);
+  }
+
+  /*
+   * Allow this to be attached to other contracts and prove that the domain is owned.
+   */
+  function externalUse(){
+    require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
+    require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
+
+    require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+    require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
+    require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);
+    require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);
   }
 
   /**
    * Allows domain owner Or anyone to burn the domain by burning NFTs that control this contract.
    * 
    * If the internalAuth NFT has not been used for > 730 days i.e 2 years, then allow anyone to burn the domain.
-   * else allow the owner to burn the domain NFTs
+   * Always allow the owner to burn the domain NFTs
    *
    * @inputs
    * - Input0: Internal Auth NFT
    * - Input1: External Auth NFT
-   * - Input2: Domain ownership NFT from owner (Optional)
+   * - Input2: Pure BCH or Domain ownership NFT from owner
    *
    * @outputs 
    * - Output0: BCH change
@@ -85,12 +76,21 @@ contract Domain(bytes name, bytes domainCategory) {
    */
   function burn(){
     require(tx.version == 2);
-    require(tx.inputs.length == 2 || tx.inputs.length == 3);
+
+    require(tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 
-    if(tx.inputs.length == 2){
-      // Allow anyone to burn.
-      require(tx.inputs[1].sequenceNumber >= 730 days);
+    if(tx.inputs[2].tokenCategory == 0x){
+      // If pure BCH input then allow anyone to burn given the timelimit has passed.
+      // Using block based
+      require(tx.age >= 0);
+      // Using block based
+      // 105120 blocks = 2 years
+      require(tx.inputs[1].sequenceNumber >= 105120 && tx.inputs[3].sequenceNumber <= 1073741823);
+    } else{
+      // If domain ownership NFT input then allow the owner to burn anytime.
+      require(tx.inputs[2].tokenCategory == domainCategory);
+      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
     }
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
@@ -100,11 +100,6 @@ contract Domain(bytes name, bytes domainCategory) {
     require(tx.inputs[0].nftCommitment == 0x);
     require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
     require(tx.inputs[0].tokenCategory == domainCategory);
-
-    if(tx.inputs.length == 3){
-      require(tx.inputs[2].tokenCategory == domainCategory);
-      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
-    }
 
     // Return the BCH as change.
     require(tx.outputs[0].tokenCategory == 0x);
