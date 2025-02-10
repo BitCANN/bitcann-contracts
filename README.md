@@ -30,7 +30,7 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [AuctionNFT](#auctionnft)
    - [AuthorizedThreadNFTs](#authorizedthreadnfts)
    - [DomainNFTs](#domainnfts)
-3. [TLD](#tld)
+3. [TLDs](#tlds)
 4. [FAQs](#faqs)
    - [How are domains sold?](#how-are-domains-sold)
    - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
@@ -308,9 +308,9 @@ A set of three immutable NFTs minted when an auction ends:
 If the domain has been inactive for > 2 years then the domain is considered abandoned and anyone can prove the inactivity and burn the Internal and External Auth NFTs to make the auction of auction possible.
 
 
-## TLD
+## TLDs
 
-Top Level Domains (TLDs) do not exist within the contract system. During the genesis phase, the Registry.cash contract is created using the domainCategory. The authHead should add the symbol as the domainName, making it the first and only entry in the authchain. Once this is done, the authHead should be burned by creating an OP_RETURN output as the first output.
+Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract system directly i.e in any nftCommitment or Contract. However, during the genesis phase, the Registry.cash contract is created using the `domainCategory`. The `authHead` should add the symbol and name as the TLD so it can be read by all the applications. This will make it the first and only entry in the `authChain`. Once this is done, the `authHead` should be burned by creating an OP_RETURN output as the first output.
 
 ---
 
