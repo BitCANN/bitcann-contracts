@@ -125,7 +125,7 @@ Transaction Structure:
 | 3 | [AuctionNFT](#auctionnft) | [DomainNFT](#domainnfts) External Auth NFT |
 | 4 | | [DomainNFT](#domainnfts) Internal Auth NFT |
 | 5 | | [DomainNFT](#domainnfts) Ownership NFT|
-| 6 | | Platform fee (For a restricted amount of time) and rest to miners |
+| 6 | | Platform fee and rest to miners |
 
 
 ### Guard Contracts
@@ -266,6 +266,7 @@ The Registry Contract has a designated number of threads for authorized contract
 - AuctionNameEnforcer: ~5 threads
 - DomainOwnershipGuard: ~5 threads
 - AuctionConflictResolver: ~5 threads
+- Accumulator: 1 thread
 
 #### DomainNFTs
 A set of three immutable NFTs minted when an auction ends:
@@ -292,7 +293,7 @@ Domains are sold through an auction. The auction starts using the [Auction](#auc
 
 #### Who earns from the auction sales?
 
-For a fixed period of time, a percentage of the bid amount is collected as a platform fee and then the funds are distributed to the miners. After the fixed time is over 100% of the bid amount is distributed to the miners.
+Anyone can attach their own address to the platform fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract.
 
 #### How is the correctness of the name verified?
 Check [AuctionNameEnforcer](#auctionnameenforcer)

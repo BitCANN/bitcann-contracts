@@ -1,6 +1,6 @@
 pragma cashscript ^0.11.0;
 
-contract Domain(bytes name, bytes domainCategory) {
+contract Domain(bytes4 inactivityExpiryTime, bytes name, bytes domainCategory) {
   /**
    * Adds or removes a record associated with this domain.
    * 
@@ -85,8 +85,8 @@ contract Domain(bytes name, bytes domainCategory) {
       // Using block-based
       require(tx.age >= 0);
       // Using block-based
-      // 105120 blocks = 2 years
-      require(tx.inputs[1].sequenceNumber >= 105120 && tx.inputs[3].sequenceNumber <= 1073741823);
+      // inactivityExpiryTime = 105120 blocks = 2 years
+      require(tx.inputs[1].sequenceNumber >= int(inactivityExpiryTime) && tx.inputs[3].sequenceNumber <= 4294967294);
     } else {
       // If domain ownership NFT input, then allow the owner to burn anytime.
       require(tx.inputs[2].tokenCategory == domainCategory);

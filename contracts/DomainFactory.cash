@@ -3,7 +3,8 @@ pragma cashscript ^0.11.0;
 contract DomainFactory(
   bytes domainContractBytecode,
   bytes tld,
-  bytes20 platformPKH
+  bytes4 minWaitTime,
+  int maxPlatformFeePercentage
 ) {
   /**
    * This function finalizes a domain registration auction by:
@@ -35,20 +36,10 @@ contract DomainFactory(
   function call(){
     require(tx.version == 2);
     require(tx.inputs.length == 4);
-    // For the first 4 years, the platform collects 50% of the fees
-    if (tx.locktime > 1093240) {
-      require(tx.outputs.length == 6);
-    } else {
-      require(tx.outputs.length == 7);
-      require(tx.outputs[6].lockingBytecode == new LockingBytecodeP2PKH(platformPKH));
-      // Enforce that the other half goes to the miners.
-      require(tx.outputs[6].value == tx.inputs[3].value / 2);
-    }
 
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
 
     // Lock this contract to only be used with the registry type contract.
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
@@ -56,6 +47,8 @@ contract DomainFactory(
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
     bytes parentCategory = tx.inputs[0].tokenCategory;
+    require(tx.outputs[this.activeInputIndex].tokenCategory != parentCategory);
+
     require(tx.outputs[3].tokenCategory == parentCategory);
     require(tx.outputs[4].tokenCategory == parentCategory);
     require(tx.outputs[5].tokenCategory == parentCategory);
@@ -73,13 +66,6 @@ contract DomainFactory(
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    // Using block-based
-    require(tx.age >= 0);
-    // Using block-based
-    require(tx.inputs[3].sequenceNumber >= 1 && tx.inputs[3].sequenceNumber <= 1073741823);
-    // require(tx.inputs[3].sequenceNumber >= 144 && tx.inputs[3].sequenceNumber <= 1073741823);
-
-
     // If CSV is specified in terms of blocks, then so must nSequence.
     // https://documentation.cash/protocol/forks/bip-0112.html
     // https://documentation.cash/protocol/forks/bip-0068.html
@@ -87,17 +73,9 @@ contract DomainFactory(
     // https://bitcoin.stackexchange.com/questions/87372/what-does-the-sequence-in-a-transaction-input-mean
     // https://prestwi.ch/bitcoin-time-locks/
     // https://learnmeabitcoin.com/technical/transaction/input/sequence/
-    //
-    // 0xFFFFFFFE or less enables locktime
-    // 0x00000000 to 0x0000FFFF Block
-    // 0x00400000 to 0x0040FFFF Time
-    // Should CSV also be
-    
-    // // Using time-based
-    // require(tx.age >= 0);
-    // // Using time-based
-    // require(tx.inputs[3].sequenceNumber >= 1073741825 && tx.inputs[3].sequenceNumber <= 2147483640);
 
+    require(tx.age >= 0);
+    require(tx.inputs[3].sequenceNumber >= int(minWaitTime) && tx.inputs[3].sequenceNumber <= 4294967294);
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
     
@@ -123,6 +101,11 @@ contract DomainFactory(
     require(tx.outputs[5].value == 1000);
 
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
+
+    // Output can be added by anyone (Mostly platforms)
+    require(tx.outputs[6].tokenCategory == 0x);
+    // Enforce that the other half goes to the miners.
+    require(tx.outputs[6].value <= (tx.inputs[3].value / 100) * maxPlatformFeePercentage);
   }
 
 }
