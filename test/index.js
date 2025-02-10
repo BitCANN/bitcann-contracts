@@ -11,7 +11,7 @@ const main = async () => {
   // await auctionConflictResolver()
   // await nameEnforcer()
   // await domainFactory()
-  await ownershipGuard()
+  // await ownershipGuard()
 }
 
 main()

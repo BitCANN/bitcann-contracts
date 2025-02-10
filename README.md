@@ -30,7 +30,8 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [AuctionNFT](#auctionnft)
    - [AuthorizedThreadNFTs](#authorizedthreadnfts)
    - [DomainNFTs](#domainnfts)
-3. [FAQs](#faqs)
+3. [TLD](#tld)
+4. [FAQs](#faqs)
    - [How are domains sold?](#how-are-domains-sold)
    - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
    - [How is the correctness of the name verified?](#how-is-the-correctness-of-the-name-verified)
@@ -69,6 +70,8 @@ The architecture is built around a series of smart contracts, categorized into t
 The Registry contract functions as the control and storage hub. Operational, Guard, and Accumulator contracts must execute their transactions in conjunction with the Registry contract.
 This contract holds [RegistrationNFTs](#registrationnfts), [AuctionNFTs](#auctionnft), and [AuthorizedThreadNFTs](#authorizedthreadnfts).
 
+Constructor:
+- `domainCategory`: The category of the domain. (e.g `.bch` or `.sat`). All the NFTs in the system belong to this category.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -87,6 +90,9 @@ Each auction requires:
    - A minimum starting bid of at least 0.025 BCH
    - It must run for at least a day, (the timer resets with a new bid)
 
+Constructor:
+- `minStartingBid`: The minimum starting bid of the auction.
+
 Transaction Structure:
 | # | Inputs | Outputs |
 |---|--------|---------|
@@ -102,6 +108,9 @@ Transaction Structure:
 
 The bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the `satoshisValue` and the `pkh` in the `nftCommitment`. The only condition is that the new Bid amount must be at least 5% higher.
 
+Constructor:
+- `minBidIncreasePercentage`: The minimum percentage increase in the bid amount.
+
 Transaction Structure:
 | # | Inputs | Outputs |
 |---|--------|---------|
@@ -115,6 +124,11 @@ Transaction Structure:
 #### DomainFactory
 
 The DomainFactory burns the auctionNFT and issues 3 new NFTs [DomainNFTs](#domainnfts). It verifies that the actionNFT input is at least 1 day old. It also attaches the tokenAmount from auctionNFT to the authorized contract's thread.
+
+Constructor:
+- `domainContractBytecode`: The partial bytecode of the domain contract that has an Owner.
+- `minWaitTime`: The minimum wait time in blocks to consider an auction ended.
+- `maxPlatformFeePercentage`: The maximum fee percentage that can be charged by the platform.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -139,6 +153,8 @@ Similarly, other contracts also provide a way to authorize anyone to penalize an
 
 The AuctionNameEnforcer contract allows anyone to prove that the running auction has an invalid domain name. By providing proof (index of the invalid character) they burn the auctionNFT, taking away the entire amount as a reward.
 
+> **INFO:** The nature of this architecture is that it allows for more types of restrictions. These rules can be modified to allow for more or fewer restrictions.
+
 Rules: 
 - The name must consist of only these characters
    - Letters (a-z or A-Z)
@@ -157,13 +173,16 @@ Transaction Structure:
 
 This prevents registrations for domains that have already been registered and have owners. Anyone can provide proof of valid ownership([External Auth DomainNFT](#domainnfts)) and burn the auctionNFT and claim the funds as a reward.
 
+Constructor:
+- `domainContractBytecode`: The partial bytecode of the domain contract that has an Owner.
+
 Transaction Structure:
 | # | Inputs | Outputs |
 |---|--------|---------|
 | 0 | [AuthorizedThreadNFT](#authorizedthreadnfts) NFT with authorized contract's locking bytecode as commitment from [Registry Contract](#registry) | [AuthorizedThreadNFT](#authorizedthreadnfts) back to [Registry Contract](#registry) + tokenAmount from auctionNFT input|
 | 1 | Any UTXO from self | Back to self |
 | 2 | [DomainNFT](#domainnfts) External Auth NFT | [DomainNFT](#domainnfts) External Auth NFT back to the Domain Contract |
-| 2 | [AuctionNFT](#auctionnft) | Reward output |
+| 3 | [AuctionNFT](#auctionnft) | Reward output |
 
 
 #### AuctionConflictResolver
@@ -184,6 +203,11 @@ Transaction Structure:
 ### Domain
 
 The Domain contract allows the owner to perform a few operations after [DomainNFTs](#domainnfts) are issued from [DomainFactory](#domainfactory). There exists a unique domain contract for each unique domain name.
+
+Constructor:
+- `inactivityExpiryTime`: The time in blocks after which the domain is considered inactive.
+- `name`: The name of the domain.
+- `domainCategory`: The category of the domain.
 
 There are 3 functions in each Domain Contract:
 - **addRecord**: This allows the owner of the domain to add records.
@@ -283,6 +307,10 @@ A set of three immutable NFTs minted when an auction ends:
 
 If the domain has been inactive for > 2 years then the domain is considered abandoned and anyone can prove the inactivity and burn the Internal and External Auth NFTs to make the auction of auction possible.
 
+
+## TLD
+
+Top Level Domains (TLDs) do not exist within the contract system. During the genesis phase, the Registry.cash contract is created using the domainCategory. The authHead should add the symbol as the domainName, making it the first and only entry in the authchain. Once this is done, the authHead should be burned by creating an OP_RETURN output as the first output.
 
 ---
 

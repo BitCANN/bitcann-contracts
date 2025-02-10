@@ -2,7 +2,6 @@ pragma cashscript ^0.11.0;
 
 contract DomainFactory(
   bytes domainContractBytecode,
-  bytes tld,
   bytes4 minWaitTime,
   int maxPlatformFeePercentage
 ) {
@@ -14,8 +13,9 @@ contract DomainFactory(
    * - Issuing an immutable domain NFT to the auction winner
    * - Distributing auction fees between the platform and miners
    *
-   * @param domainContractBytecode - Partial bytecode of the domain contract to create
-   * @param platformPKH - Public key hash of the platform's fee recipient
+   * `domainContractBytecode` - Partial bytecode of the domain contract
+   * `minWaitTime` - Minimum wait time to consider an auction ended
+   * `maxPlatformFeePercentage` - Maximum platform fee percentage
    *
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
@@ -40,6 +40,7 @@ contract DomainFactory(
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value);
 
     // Lock this contract to only be used with the registry type contract.
     bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
@@ -47,6 +48,7 @@ contract DomainFactory(
     require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
 
     bytes parentCategory = tx.inputs[0].tokenCategory;
+    // To prevent minting.
     require(tx.outputs[this.activeInputIndex].tokenCategory != parentCategory);
 
     require(tx.outputs[3].tokenCategory == parentCategory);
@@ -79,9 +81,8 @@ contract DomainFactory(
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
     
-    bytes fullName = name + tld;
-    int fullNameLength = fullName.length;
-    bytes domainBytecode = 0x20 + parentCategory + bytes(fullNameLength) + fullName + domainContractBytecode;
+    int nameLength = name.length;
+    bytes domainBytecode = 0x20 + parentCategory + bytes(nameLength) + name + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     

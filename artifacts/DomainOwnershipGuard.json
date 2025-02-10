@@ -4,10 +4,6 @@
     {
       "name": "domainContractBytecode",
       "type": "bytes"
-    },
-    {
-      "name": "tld",
-      "type": "bytes"
     }
   ],
   "abi": [
@@ -16,63 +12,63 @@
       "inputs": []
     }
   ],
-  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_UTXOTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_OVER OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_2 OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_0 OP_EQUALVERIFY OP_3 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_3 OP_ROLL OP_CAT OP_DUP OP_SIZE OP_NIP 20 OP_3 OP_ROLL OP_CAT OP_SWAP OP_CAT OP_SWAP OP_CAT OP_SWAP OP_CAT OP_HASH256 aa20 OP_SWAP OP_CAT 87 OP_CAT OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUAL",
-  "source": "pragma cashscript ^0.11.0;\n\ncontract DomainOwnershipGuard(\n  bytes domainContractBytecode,\n  bytes tld\n) {\n  /**\n   * If the domain being auctioned already has an 'externalAuth' NFT with the same category, then the auction is invalid.\n   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: External Auth NFT from the domain contract\n   * - Input3: auctionNFT\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: External Auth NFT back to the domain contract\n   * - Output3: BCH change/reward to caller\n   */\n  function call(){\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 4);\n    \n    // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);\n\n    bytes parentCategory = tx.inputs[0].tokenCategory;\n    require(tx.inputs[2].tokenCategory == parentCategory);\n    require(tx.outputs[2].tokenCategory == parentCategory);\n    require(tx.inputs[3].tokenCategory.split(32)[0] == parentCategory);\n    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);\n    require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is used and not the internalAuth NFT.\n\n    bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;\n    int fullNameLength = fullName.length;\n\n    bytes domainBytecode = 0x20 + parentCategory + bytes(fullNameLength) + fullName + domainContractBytecode;\n    bytes32 scriptHash = hash256(domainBytecode);\n    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);\n\n    require(tx.inputs[2].lockingBytecode == domainLockingBytecode);\n    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);\n\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);\n  }\n}",
+  "bytecode": "OP_TXINPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_4 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOBYTECODE OP_3 OP_UTXOBYTECODE OP_EQUALVERIFY OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_UTXOTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY OP_OVER OP_EQUALVERIFY OP_3 OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_OVER OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_2 OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY OP_2 OP_UTXOTOKENCOMMITMENT OP_0 OP_EQUALVERIFY OP_3 OP_UTXOTOKENCOMMITMENT 14 OP_SPLIT OP_NIP OP_DUP OP_SIZE OP_NIP 20 OP_3 OP_ROLL OP_CAT OP_SWAP OP_CAT OP_SWAP OP_CAT OP_SWAP OP_CAT OP_HASH256 aa20 OP_SWAP OP_CAT 87 OP_CAT OP_2 OP_UTXOBYTECODE OP_OVER OP_EQUALVERIFY OP_2 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENAMOUNT OP_0 OP_UTXOTOKENAMOUNT OP_3 OP_UTXOTOKENAMOUNT OP_ADD OP_NUMEQUAL",
+  "source": "pragma cashscript ^0.11.0;\n\ncontract DomainOwnershipGuard(bytes domainContractBytecode) {\n  /**\n   * If the domain being auctioned already has an 'externalAuth' NFT with the same category, then the auction is invalid.\n   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.\n   * \n   * `domainContractBytecode` is the partial bytecode of the domain contract that has an Owner..\n   * \n   * @inputs\n   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract\n   * - Input1: Any input from this contract\n   * - Input2: External Auth NFT from the domain contract\n   * - Input3: auctionNFT\n   * \n   * @outputs\n   * - Output0: Registry Contract's immutable NFT back to the Registry contract\n   * - Output1: Input1 back to this contract without any change\n   * - Output2: External Auth NFT back to the domain contract\n   * - Output3: BCH change/reward to caller\n   */\n  function call(){\n    require(tx.inputs.length == 4);\n    require(tx.outputs.length == 4);\n    \n    // This contract can only be used at input1 and it should return to itself.\n    require(this.activeInputIndex == 1);\n    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);\n\n    // Lock this contract to only be used with the registry type contract.\n    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;\n    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);\n\n    bytes parentCategory = tx.inputs[0].tokenCategory;\n    require(tx.inputs[2].tokenCategory == parentCategory);\n    require(tx.outputs[2].tokenCategory == parentCategory);\n    require(tx.inputs[3].tokenCategory.split(32)[0] == parentCategory);\n    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);\n    // Ensure that the externalAuth NFT is used and not the internalAuth NFT.\n    require(tx.inputs[2].nftCommitment == 0x);\n\n    bytes name = tx.inputs[3].nftCommitment.split(20)[1];\n    int nameLength = name.length;\n\n    bytes domainBytecode = 0x20 + parentCategory + bytes(nameLength) + name + domainContractBytecode;\n    bytes32 scriptHash = hash256(domainBytecode);\n    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);\n\n    require(tx.inputs[2].lockingBytecode == domainLockingBytecode);\n    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);\n\n    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);\n  }\n}",
   "debug": {
-    "bytecode": "c3549c69c4549c69c0519c69c0c7c0cd876900c753c7517a876900ce52ce5179876952d15179876953ce01207f755179876952cf52d2876952cf00876953cf01147f77537a7e007982770120537a7e517a7e517a7e517a7e007aaa02aa20517a7e01877e52c75179876952cd517a876900d300d053d0939c",
-    "sourceMap": "24:12:24:28;:32::33;:12:::1;:4::35;25:12:25:29:0;:33::34;:12:::1;:4::36;28:12:28:33:0;:37::38;:12:::1;:4::40;29:22:29:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;32:47:32:48:0;:37::65:1;33:22:33:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;35:37:35:38:0;:27::53:1;36:22:36:23:0;:12::38:1;:42::56:0;;:12:::1;:4::58;37:23:37:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;38:22:38:23:0;:12::38:1;:45::47:0;:12::48:1;:::51;:55::69:0;;:12:::1;:4::71;39:22:39:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;40:22:40:23:0;:12::38:1;:42::44:0;:12:::1;:4::46;42:31:42:32:0;:21::47:1;:54::56:0;:21::57:1;:::60;:63::66:0;;:21:::1;43:25:43:33:0;;:::40:1;;45:27:45:31:0;:34::48;;:27:::1;:57::71:0;;:27::72:1;:75::83:0;;:27:::1;:86::108:0;;:27:::1;46:33:46:47:0;;:25::48:1;47:36:47:73:0;:62::72;;:36::73:1;;;49:22:49:23:0;:12::40:1;:44::65:0;;:12:::1;:4::67;50:23:50:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;52:23:52:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12",
+    "bytecode": "c3549c69c4549c69c0519c69c0c7c0cd876900c753c7517a876900ce52ce5179876952d15179876953ce01207f755179876952cf52d2876952cf00876953cf01147f77007982770120537a7e517a7e517a7e517a7e007aaa02aa20517a7e01877e52c75179876952cd517a876900d300d053d0939c",
+    "sourceMap": "23:12:23:28;:32::33;:12:::1;:4::35;24:12:24:29:0;:33::34;:12:::1;:4::36;27:12:27:33:0;:37::38;:12:::1;:4::40;28:22:28:43:0;:12::60:1;:75::96:0;:64::113:1;:12;:4::115;31:47:31:48:0;:37::65:1;32:22:32:23:0;:12::40:1;:44::68:0;;:12:::1;:4::70;34:37:34:38:0;:27::53:1;35:22:35:23:0;:12::38:1;:42::56:0;;:12:::1;:4::58;36:23:36:24:0;:12::39:1;:43::57:0;;:12:::1;:4::59;37:22:37:23:0;:12::38:1;:45::47:0;:12::48:1;:::51;:55::69:0;;:12:::1;:4::71;38:22:38:23:0;:12::38:1;:53::54:0;:42::69:1;:12;:4::71;40:22:40:23:0;:12::38:1;:42::44:0;:12:::1;:4::46;42:27:42:28:0;:17::43:1;:50::52:0;:17::53:1;:::56;43:21:43:25:0;;:::32:1;;45:27:45:31:0;:34::48;;:27:::1;:57::67:0;;:27::68:1;:71::75:0;;:27:::1;:78::100:0;;:27:::1;46:33:46:47:0;;:25::48:1;47:36:47:73:0;:62::72;;:36::73:1;;;49:22:49:23:0;:12::40:1;:44::65:0;;:12:::1;:4::67;50:23:50:24:0;:12::41:1;:45::66:0;;:12:::1;:4::68;52:23:52:24:0;:12::37:1;:51::52:0;:41::65:1;:78::79:0;:68::92:1;:41;:12",
     "logs": [],
     "requires": [
       {
-        "ip": 5,
+        "ip": 4,
+        "line": 23
+      },
+      {
+        "ip": 8,
         "line": 24
       },
       {
-        "ip": 9,
-        "line": 25
+        "ip": 12,
+        "line": 27
       },
       {
-        "ip": 13,
+        "ip": 18,
         "line": 28
       },
       {
-        "ip": 19,
-        "line": 29
+        "ip": 26,
+        "line": 32
       },
       {
-        "ip": 27,
-        "line": 33
+        "ip": 34,
+        "line": 35
       },
       {
-        "ip": 35,
+        "ip": 40,
         "line": 36
       },
       {
-        "ip": 41,
+        "ip": 49,
         "line": 37
       },
       {
-        "ip": 50,
+        "ip": 55,
         "line": 38
       },
       {
-        "ip": 56,
-        "line": 39
-      },
-      {
-        "ip": 61,
+        "ip": 60,
         "line": 40
       },
       {
-        "ip": 101,
+        "ip": 97,
         "line": 49
       },
       {
-        "ip": 107,
+        "ip": 103,
         "line": 50
       },
       {
-        "ip": 116,
+        "ip": 112,
         "line": 52
       }
     ]
@@ -81,5 +77,5 @@
     "name": "cashc",
     "version": "0.11.0-next.0"
   },
-  "updatedAt": "2025-02-10T10:28:43.895Z"
+  "updatedAt": "2025-02-10T13:35:23.078Z"
 }

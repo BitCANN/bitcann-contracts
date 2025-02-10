@@ -1,12 +1,11 @@
 pragma cashscript ^0.11.0;
 
-contract Bid() {
+contract Bid(int minBidIncreasePercentage) {
   /**
    * Places a new bid on an active domain registration auction.
    * 
    * The function allows placing a new bid with:
-   * - A minimum 5% increase over the previous bid.
-   * - The auction is extended by 72 blocks if a new bid is placed when the auction is less than 72 blocks away from ending.
+   * - A minimum `minBidIncreasePercentage` increase over the previous bid.
    * - The previous bidder receives their bid amount back in the same transaction.
    * - A successful bid updates the auctionNFT by updating the PKH and satoshiValue.
    *   capability:   Mutable
@@ -56,7 +55,8 @@ contract Bid() {
     bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
     require(tx.outputs[2].nftCommitment == pkh + name);
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
-    require(tx.outputs[2].value >= tx.inputs[2].value * 105 / 100);
+
+    require(tx.outputs[2].value * 100 >= tx.inputs[2].value * (100 + minBidIncreasePercentage));
 
     // Locking bytecode of the previous bidder.
     require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH));

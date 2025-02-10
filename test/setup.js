@@ -32,30 +32,23 @@ export const aliceTemplate = new SignatureTemplate(alicePriv);
 export const name = 'test'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
-export const tld = '.sat'
-export const tldHex = Buffer.from(tld).toString('hex')
-export const tldBin = hexToBin(tldHex)
-
-export const fullName = name + tld
-export const fullNameHex = Buffer.from(fullName).toString('hex')
-export const fullNameBin = hexToBin(fullNameHex)
 
 export const domainCategory = '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218'
 export const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 export const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
 
-export const auctionContract = new Contract(artifactAuction, [], options);
+export const auctionContract = new Contract(artifactAuction, [BigInt(10000)], options);
 export const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address)
 export const auctionLockingBytecodeHex = binToHex(auctionLockingBytecode.bytecode)
 
-export const bidContract = new Contract(artifactBid, [], options);
+export const bidContract = new Contract(artifactBid, [BigInt(5)], options);
 export const bidLockingBytecode = cashAddressToLockingBytecode(bidContract.address)
 export const bidLockingBytecodeHex = binToHex(bidLockingBytecode.bytecode)
 
 // 104736 in decimals, 00019920 in hex (~2 years)
 export const inactivityExpiryTimeHex = binToHex(hexToBin('00019920'));
-export const domainContract = new Contract(artifactDomain, [inactivityExpiryTimeHex, fullNameHex, reverseDomainTokenCategory], options);
+export const domainContract = new Contract(artifactDomain, [inactivityExpiryTimeHex, nameHex, reverseDomainTokenCategory], options);
 export const domainLockingBytecode = cashAddressToLockingBytecode(domainContract.address)
 export const domainLockingBytecodeHex = binToHex(domainLockingBytecode.bytecode)
 
@@ -72,11 +65,11 @@ console.log('INFO: domainContract.bytecode', domainContract.bytecode)
 // 144 in decimals, 90 in hex (~1 day)
 export const waitTimeHex = binToHex(hexToBin('00000090'));
 
-export const domainFactoryContract = new Contract(artifactDomainFactory, [domainPartialBytecode, tldHex, waitTimeHex, BigInt(50)], options);
+export const domainFactoryContract = new Contract(artifactDomainFactory, [domainPartialBytecode, waitTimeHex, BigInt(50)], options);
 export const domainFactoryLockingBytecode = cashAddressToLockingBytecode(domainFactoryContract.address)
 export const domainFactoryLockingBytecodeHex = binToHex(domainFactoryLockingBytecode.bytecode)
 
-export const domainOwnershipGuardContract = new Contract(artifactDomainOwnershipGuard, [domainPartialBytecode, tldHex], options);
+export const domainOwnershipGuardContract = new Contract(artifactDomainOwnershipGuard, [domainPartialBytecode], options);
 export const domainOwnershipGuardLockingBytecode = cashAddressToLockingBytecode(domainOwnershipGuardContract.address)
 export const domainOwnershipGuardLockingBytecodeHex = binToHex(domainOwnershipGuardLockingBytecode.bytecode)
 

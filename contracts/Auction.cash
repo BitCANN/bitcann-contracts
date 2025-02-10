@@ -1,19 +1,18 @@
 pragma cashscript ^0.11.0;
 
-contract Auction() {
+contract Auction(int minStartingBid) {
   /**
    * Starts a new domain registration auction.
    * @param name The name being registered.
    * 
    * The function creates a new auction with:
-   * - Starting bid >= 0.025 BCH.
-   * - Registration auction duration runs for 144 blocks (~1 day). If a new bid is made with less than 72 blocks left, the auction duration is extended by 72 blocks.
+   * - Starting bid >= `minStartingBid` BCH.
    * - A successful registration initiation results in an auctionNFT representing the auction state:
-   *   capability: (Mutable)
-   *   category: parentCategory
-   *   tokenAmount: (Represents the registrationId)
-   *   satoshiValue: (Represents the bid amount)
-   *   commitment: bidder's PKH (20 bytes) + name (bytes)
+   *   - capability: (Mutable)
+   *   - category: parentCategory
+   *   - tokenAmount: (Represents the registrationId)
+   *   - satoshiValue: (Represents the bid amount)
+   *   - commitment: bidder's PKH (20 bytes) + name (bytes)
    * 
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.
@@ -54,10 +53,8 @@ contract Auction() {
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);
     require(tx.outputs[3].tokenAmount == nextRegistrationId);
 
-    // Every auction begins with a base value of at least 0.025 BCH.
-    // require(tx.outputs[3].value >= 2500000);
-    // FOR TESTS: Every auction begins with a base value of at least 0.000008 BCH.
-    require(tx.outputs[3].value >= 10000);
+    // Every auction begins with a base value of at least minStartingBid satoshis.
+    require(tx.outputs[3].value >= minStartingBid);
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
     

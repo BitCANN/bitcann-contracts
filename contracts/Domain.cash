@@ -1,12 +1,17 @@
 pragma cashscript ^0.11.0;
 
-contract Domain(bytes4 inactivityExpiryTime, bytes name, bytes domainCategory) {
+contract Domain(
+  bytes4 inactivityExpiryTime,
+  bytes name,
+  bytes domainCategory
+  ) {
   /**
-   * Adds or removes a record associated with this domain.
+   * Adds or invalidates a record associated with this domain.
    * 
-   * Records are stored in OP_RETURN outputs and can be added or removed by the domain owner.
+   * Records are created using OP_RETURN outputs.
    * To add a record, include the record data directly in the OP_RETURN output.
-   * To remove a record, prefix "RM" followed by the hash of the record content in the OP_RETURN output.
+   * To invalidate a record, prefix "RMV" followed by the hash of the record content in the OP_RETURN output.
+   * This will signal the library/indexers to exclude the record from the valid records.
    * 
    * @inputs
    * - Input0: Internal Auth NFT
@@ -16,7 +21,7 @@ contract Domain(bytes4 inactivityExpiryTime, bytes name, bytes domainCategory) {
    * @outputs  
    * - Output0: Internal Auth NFT returned to this contract
    * - Output1: Domain NFT returned to the owner
-   * - Output2: OP_RETURN containing record data or removal hash
+   * - Output2: OP_RETURN containing record data or invalidation hash
    * - Output3: BCH change output
    * 
    */

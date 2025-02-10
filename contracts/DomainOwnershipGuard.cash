@@ -1,12 +1,11 @@
 pragma cashscript ^0.11.0;
 
-contract DomainOwnershipGuard(
-  bytes domainContractBytecode,
-  bytes tld
-) {
+contract DomainOwnershipGuard(bytes domainContractBytecode) {
   /**
    * If the domain being auctioned already has an 'externalAuth' NFT with the same category, then the auction is invalid.
    * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.
+   * 
+   * `domainContractBytecode` is the partial bytecode of the domain contract that has an Owner..
    * 
    * @inputs
    * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
@@ -37,12 +36,13 @@ contract DomainOwnershipGuard(
     require(tx.outputs[2].tokenCategory == parentCategory);
     require(tx.inputs[3].tokenCategory.split(32)[0] == parentCategory);
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
-    require(tx.inputs[2].nftCommitment == 0x); // Ensure that the externalAuth NFT is used and not the internalAuth NFT.
+    // Ensure that the externalAuth NFT is used and not the internalAuth NFT.
+    require(tx.inputs[2].nftCommitment == 0x);
 
-    bytes fullName = tx.inputs[3].nftCommitment.split(20)[1] + tld;
-    int fullNameLength = fullName.length;
+    bytes name = tx.inputs[3].nftCommitment.split(20)[1];
+    int nameLength = name.length;
 
-    bytes domainBytecode = 0x20 + parentCategory + bytes(fullNameLength) + fullName + domainContractBytecode;
+    bytes domainBytecode = 0x20 + parentCategory + bytes(nameLength) + name + domainContractBytecode;
     bytes32 scriptHash = hash256(domainBytecode);
     bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
