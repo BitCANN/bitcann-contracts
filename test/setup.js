@@ -10,6 +10,7 @@ import {
   binToHex,
   cashAddressToLockingBytecode,
 } from '@bitauth/libauth';
+import { buildLockScriptP2SH32, lockScriptToAddress } from './utils.js';
 
 import { alicePriv, aliceAddress, aliceTokenAddress, alicePkh } from './common.js';
 export { alicePriv, aliceAddress, aliceTokenAddress, alicePkh };
@@ -53,14 +54,19 @@ export const domainLockingBytecode = cashAddressToLockingBytecode(domainContract
 export const domainLockingBytecodeHex = binToHex(domainLockingBytecode.bytecode)
 
 // ANOTHER APPROACH is: domainContract.artifact.debug.bytecode
-const sliceIndex = 2 + 64 + 2 + fullName.length*2
+const sliceIndex = 2 + 64 + 2 + name.length*2
 const domainPartialBytecode = domainContract.bytecode.slice(sliceIndex, domainContract.bytecode.length)
 console.log('INFO: domainPartialBytecode', domainPartialBytecode)
 console.log('INFO: domainContract.bytecode', domainContract.bytecode)
-// const script = buildLockScriptP2SH32(domainContract.bytecode)
-// console.log('INFO: script', script)
-// const address = lockScriptToAddress(script)
-// console.log('INFO: address', address)
+const script = buildLockScriptP2SH32(domainContract.bytecode)
+console.log('INFO: script', script)
+const address = lockScriptToAddress(script)
+console.log('INFO: address', address)
+
+
+// 2018d264ac2756ef77b630ad839e9c4a1fdb50a5855a5a4b63934af8b3c090458b
+// 04
+// 74657374
 
 // 144 in decimals, 90 in hex (~1 day)
 export const waitTimeHex = binToHex(hexToBin('00000090'));
@@ -81,8 +87,8 @@ export const auctionNameEnforcerContract = new Contract(artifactAuctionNameEnfor
 export const auctionNameEnforcerLockingBytecode = cashAddressToLockingBytecode(auctionNameEnforcerContract.address)
 export const auctionNameEnforcerLockingBytecodeHex = binToHex(auctionNameEnforcerLockingBytecode.bytecode)
 
+console.log('nameHex', nameHex)
 console.log('INFO: name', name, nameHex, nameBin)
-console.log('INFO: tld', tld, tldHex, tldBin)
 console.log('INFO: aliceAddress', aliceAddress)
 console.log('INFO: alicePkh', binToHex(alicePkh))
 console.log(`let domainTokenCategory = '${domainCategory}';`)

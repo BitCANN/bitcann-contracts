@@ -7,6 +7,21 @@ import {
   binToHex
 } from '@bitauth/libauth';
 
+export function pushDataHex(data) {
+  const hexData = Buffer.from(data, 'utf8').toString('hex');
+  const length = hexData.length / 2;
+  
+  if (length <= 75) {
+      return length.toString(16).padStart(2, '0') + hexData;
+  } else if (length <= 255) {
+      return '4c' + length.toString(16).padStart(2, '0') + hexData;
+  } else if (length <= 65535) {
+      return '4d' + length.toString(16).padStart(4, '0') + hexData;
+  } else {
+      return '4e' + length.toString(16).padStart(8, '0') + hexData;
+  }
+}
+
 export const findPureUTXO = (utxos) => {
   const utxo = utxos.reduce((max, utxo) => 
     (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, 

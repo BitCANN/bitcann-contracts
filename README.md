@@ -327,13 +327,60 @@ During the genesis phase, the Registry.cash contract is initialized with the `do
 ## FAQs
 
 #### How are domains sold?
-Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once no new bids have been made for a day, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
+Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once no new bids have been made for a `minWaitTime` period, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
+
+#### Can a bid be cancelled?
+No, Once a bid is made, it's locked in.
 
 #### Who earns from the auction sales?
 
-Anyone can attach their own address to the platform fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract.
+Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract. The can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
 
-#### How is the correctness of the name verified?
+#### How do domain or record lookups work?
+Let's assume there exists a library called `bitcann.js`. There is how it might look like:
+
+```js
+const bitcann = require('bitcann.js');
+
+const domain = bitcann.getDomain('example.bch');
+const records = bitcann.getRecords(domain);
+```
+
+- `getDomain()` will return the address of the domain contract.
+```js
+function getDomain(fullName) {
+   const name, tld = fullName.split('.')
+   const domainCategory = getCategoryForTLD(tld)
+   const domainCategoryReversed = binToHex(hexToBin(domainCategory).reverse())
+   const scriptHash = buildLockScriptP2SH32(20 +  domainCategoryReversed + pushDataHex(name) + domainContractBytecode)
+   const address = lockScriptToAddress(scriptHash)
+   return address
+}
+```
+
+- `getRecords()` will return the records of the domain. Getting the records is as easy as fetching the transaction history of the domain contract and checking the OP_RETURN outputs.
+
+
+#### Can anyone renounce ownership of a domain?
+Yes, The owner must call the `renounceOwnership` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
+
+#### What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?
+Since the ownershipNFT's first 8 bytes are registrationID, they cannot influence the domain contract as the new internal Auth NFT will have a different registrationID. The existing ownershipNFT renders useless.
+
+#### How does ownership transfer work? 
+Ownership transfer is handled simply by transferring the ownership DomainNFT to the new owner.
+
+#### How to add records?
+Each DomainContract has a way to add records. The owner can add new records using the `addRecord` function of the DomainContract. Records are added as OP_RETURN outputs. Records can be found by checking transaction history.
+
+#### How to remove/invalidate records?
+
+Since the records are OP_RETURN it's not possible to remove them. However, it's possible to provide a way that can act as a standard for libraries to understand. To 'invalidate' a Record a new transaction with OP_RETURN(RMV + hash) of record to signal.
+
+#### No Renewal or Expiry?
+To prevent domains from being lost indefinitely, the owner must perform at least one activity (such as adding or invalidating records) within the `inactivityExpiryTime` period. Each activity resets the inactivity timer. If the owner does not interact with the domain within the `inactivityExpiryTime`, the system will consider the domain abandoned and make it available for re-auction.
+
+#### How is the name verified?
 Check [AuctionNameEnforcer](#auctionnameenforcer)
 
 #### How are auctions created?
@@ -349,39 +396,7 @@ Check [DomainFactory](#domainfactory)
 Check [DomainNFTs](#domainnfts)
 
 #### What if the tokenAmount in the CounterNFT runs out?
-As more and more registrations happen, the tokens get gathered up in the authorized contract threads. Anyone can accumulate the tokenAmounts from all these threads and send it to the counter NFT.
-
-Registry Contract has a way to accumulate all the funds used up since the beginning.
-Accumulation of tokens, When any process ends, either through guards or from domainfactory, the tokenAmount help in the auctionNFTs is sent to the active authorized thread NFT. Later these thread NFTs in combination with the CounterNFT can be used to send all the tokenAmounts back to the CounterNFT ensuring a continued registration process.
+Check [Accumulator](#accumulator)
 
 #### An auction has started for a domain that is owned by someone, will there be two owners?
 Check [DomainOwnershipGuard](#domainownershipguard)
-
-#### Can a bid be cancelled?
-No, Once a bid is made, it's locked in.
-
-#### Can anyone renounce ownership of a domain?
-Yes, The owner must call the `renounceOwnership` function of their respective Domain contract.
-The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
-
-#### What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?
-Since the ownershipNFT's first 8 bytes are registrationID, they cannot influence the domain contract as the new internal Auth NFT will have a different registrationID. The existing ownershipNFT renders useless.
-
-#### How do domain or record lookups work?
-Domain lookups can be done in multiple ways:
-- Find domain contract: Take name, calculate hash256, attach domain contract bytecode, hash to get address
-- Find owner: Check who owns the domain NFT
-- Find records: Get transaction history of domain contract and check OP_RETURN outputs
-
-#### How does ownership transfer work? 
-Ownership transfer is handled simply by transferring the domain NFT to the new owner. The NFT proves ownership rights to the domain.
-
-#### How to add records?
-Each DomainContract has a way to add records. The owner can add new records using the `addRecord` function of the DomainContract. Records are added as OP_RETURN outputs. Records can be found by checking transaction history
-
-#### How to remove records?
-
-[TBD] Since the records are OP_RETURN it's not possible to remove them. However, it's possible to provide a way that can act as a standard for libraries to understand. To 'remove' a Record a new transaction with OP_RETURN(RMV + hash) of record to remove can be created.
-
-#### No Renewal or Expiry?
-To ensure that the domains are not lost forever, the Owner must do at least 1 activity (Add or Remove records) using the domain in a span of 2 years. Once done, the cycle resets. So if the owner has not interacted with the domain for > 2 years then the system assumes that it's abandoned and allows for re-auction
