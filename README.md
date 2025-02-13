@@ -369,7 +369,7 @@ function getDomain(fullName) {
 
 
 #### Can anyone renounce ownership of a domain?
-Yes, The owner must call the `renounceOwnership` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
+Yes, The owner must call the `burn` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
 
 #### What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?
 Since the ownershipNFT's first 8 bytes are registrationID, they cannot influence the domain contract as the new internal Auth NFT will have a different registrationID. The existing ownershipNFT renders useless.
