@@ -52,7 +52,14 @@ contract Domain(
   }
 
   /*
-   * Allows this to be attached to other contracts and prove that the domain is owned.
+   * Allows this to be attached to any transaction, primarily used by DomainOwnershipGuard
+   * to and prove that the domain is owned and burn the illegal auctionNFT.
+   *
+   * @inputs
+   * - Inputx: External Auth NFT
+   *
+   * @outputs
+   * - outputx: External Auth NFT back to seld
    */
   function externalUse() {
     require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
@@ -65,14 +72,55 @@ contract Domain(
   }
 
   /**
-   * Allows the domain owner or anyone to burn the domain by burning NFTs that control this contract.
-   * 
-   * If the internalAuth NFT has not been used for more than 730 days, i.e., 2 years, then allow anyone to burn the domain.
-   * Always allow the owner to burn the domain NFTs.
+   * If the incentive system fails i.e the `DomainOwnershipGuard` fails to prevent a new owner for this domain
+   * resulting in two or more owners.
+   * This function will allow anyone to burn both the Auth NFTs of the NEW owner.
+   * A new owner must come only via the correct route i.e by auction when no owner exists.
    *
    * @inputs
-   * - Input0: Internal Auth NFT
-   * - Input1: External Auth NFT
+   * - Input0: Valid External Auth NFT
+   * - Input1: Valid Internal Auth NFT
+   * - Input2: Invalid External Auth NFT
+   * - Input3: Invalid Internal Auth NFT
+   * - Input4: BCH input from anyone
+   * 
+   * @outputs  
+   * - Output0: Valid External Auth NFT back to self
+   * - Output1: Valid Internal Auth NFT back to self
+   * - Output3: BCH change output
+   */
+  function resolveOwnerConflict(){
+    require(tx.inputs.length == 5);
+    require(tx.outputs.length == 3);
+
+    require(tx.inputs[4].tokenCategory == 0x);
+    require(tx.outputs[2].tokenCategory == 0x);
+
+    bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[2].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[3].lockingBytecode == selfLockingBytecode);
+
+    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.outputs[1].lockingBytecode == selfLockingBytecode);
+
+    // External Auth NFTs
+    require(tx.inputs[0].nftCommitment == 0x);
+    require(tx.inputs[2].nftCommitment == 0x);
+
+    require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
+  }
+
+  /**
+   * Allows the domain owner or anyone to burn the domain by burning AuthNFTs that control this contract.
+   * 
+   * - Owner can burn the AuthNFTs anytime.
+   * - External party can burn the AuthNFTs when the internalAuth NFT has not been used for more than `inactivityExpiryTime`.
+   *
+   * @inputs
+   * - Input0: External Auth NFT
+   * - Input1: Internal Auth NFT
    * - Input2: Pure BCH or Domain ownership NFT from the owner
    *
    * @outputs 
