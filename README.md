@@ -246,6 +246,17 @@ Transaction Structure:
 | 1 | [DomainNFTs](#domainnfts) External Auth NFT | |
 | 2 | Pure BCH or [DomainNFTs](#domainnfts) Domain ownership NFT from owner | |
 
+- **resolveOwnerConflict**: Ideally, this function will never be triggered as no one would want to keep the free money on the table by not triggering the transaction that earns them money. Having said that, it's important to have a safeguard for such an unforceable future where these incentive system are unable to catch a registration conflict or burn two competing auctionNFTs for the same name at the same time period resulting in more than 1 owner for a domain. The owner with the lowest registrationID must be the only owner for a domain. To help enforce this rule, this function will allow anyone to burn both the Auth NFTs of the NEW invalid owner.
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | Valid External Auth [DomainNFT](#domainnfts) | Valid External Auth [DomainNFT](#domainnfts) back to self |
+| 1 | Valid Internal Auth [DomainNFT](#domainnfts) | Valid Internal Auth [DomainNFT](#domainnfts) back to self |
+| 2 | Invalid External Auth [DomainNFT](#domainnfts) | BCH change output |
+| 3 | Invalid Internal Auth [DomainNFT](#domainnfts) | |
+| 4 | BCH input from anyone | |
+
 
 ### Accumulator
 
@@ -366,7 +377,6 @@ function getDomain(fullName) {
 ```
 
 - `getRecords()` will return the records of the domain. Getting the records is as easy as fetching the transaction history of the domain contract and checking the OP_RETURN outputs.
-
 
 #### Can anyone renounce ownership of a domain?
 Yes, The owner must call the `burn` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.

@@ -72,10 +72,11 @@ contract Domain(
   }
 
   /**
-   * If the incentive system fails i.e the `DomainOwnershipGuard` fails to prevent a new owner for this domain
-   * resulting in two or more owners.
-   * This function will allow anyone to burn both the Auth NFTs of the NEW owner.
-   * A new owner must come only via the correct route i.e by auction when no owner exists.
+   * If the incentive system fails, i.e `DomainOwnershipGuard` or `AuctionConflictResolver` fails to prevent a
+   * a owner conflict. Which means there are more than 1 owner for this domain.
+   * 
+   * The owner with the lowest registrationID must be the only owner for this domain.
+   * To help enforce this rule, this function will allow anyone to burn both the Auth NFTs of the NEW owner.
    *
    * @inputs
    * - Input0: Valid External Auth NFT
@@ -108,6 +109,19 @@ contract Domain(
     // External Auth NFTs
     require(tx.inputs[0].nftCommitment == 0x);
     require(tx.inputs[2].nftCommitment == 0x);
+
+    // Commitments of Valid Auth NFts back to self
+    require(tx.outputs[0].nftCommitment == 0x);
+    require(tx.outputs[1].nftCommitment == tx.inputs[1].nftCommitment);
+
+    // Ensure that all the token inputs and outputs have domainCategory
+    require(tx.inputs[0].tokenCategory == domainCategory);
+    require(tx.inputs[1].tokenCategory == domainCategory);
+    require(tx.inputs[2].tokenCategory == domainCategory);
+    require(tx.inputs[3].tokenCategory == domainCategory);
+
+    require(tx.outputs[0].tokenCategory == domainCategory);
+    require(tx.outputs[1].tokenCategory == domainCategory);
 
     require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
   }
@@ -153,6 +167,7 @@ contract Domain(
     require(tx.inputs[0].nftCommitment == 0x);
     require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
     require(tx.inputs[0].tokenCategory == domainCategory);
+    require(tx.inputs[1].tokenCategory == domainCategory);
 
     // Return the BCH as change.
     require(tx.outputs[0].tokenCategory == 0x);
