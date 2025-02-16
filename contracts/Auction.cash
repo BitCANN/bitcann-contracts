@@ -15,13 +15,13 @@ contract Auction(int minStartingBid) {
    *   - commitment: bidder's PKH (20 bytes) + name (bytes)
    * 
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.
+   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract.
    * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output).
    * - Input3: Funding UTXO.
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output0: Registry Contract's thread NFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
    * - Output2: Minting Counter NFT going back to the Registry contract.
    * - Output3: auctionNFT to the Registry contract.

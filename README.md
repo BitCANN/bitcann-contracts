@@ -31,7 +31,8 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [AuthorizedThreadNFTs](#authorizedthreadnfts)
    - [DomainNFTs](#domainnfts)
 3. [TLDs](#tlds)
-4. [FAQs](#faqs)
+4. [Genesis](#genesis)
+5. [FAQs](#faqs)
    - [How are domains sold?](#how-are-domains-sold)
    - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
    - [How is the correctness of the name verified?](#how-is-the-correctness-of-the-name-verified)
@@ -51,6 +52,8 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [No Renewal or Expiry?](#no-renewal-or-expiry)
 
 ## Contracts
+
+![BitCANN Architecture](architecture.png)
 
 The architecture is built around a series of smart contracts, categorized into these main types:
 
@@ -340,6 +343,25 @@ Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract
 
 During the genesis phase, the Registry.cash contract is initialized with the `domainCategory`. The `authHead` for this category must include the symbol and name as the TLD, making it accessible to all applications. This entry will be the first and only one in the `authChain`. After this step, the `authHead` must be permanently removed by creating an OP_RETURN output as the first output.
 
+## Genesis
+
+
+To ensure the system operates as expected, the following steps must be followed :
+
+- Mint a new hybrid token with an NFT commitment set to 0 (8 bytes) and the maximum possible token amount of `9223372036854775807`, the tokenCategory of this NFT will be `domainCategory`.
+- Using the `tokenCategory` i.e domainCategory, create the locking bytecode for `Registry.cash`.
+- Mint a mintingNFT i.e `DomainMintingNFT` and send it to the `Registry.cash`
+- Determine the following parameters and generate the locking bytecode of all the other authorized contracts:
+   - `inactivityExpiryTime`
+   - `minWaitTime`
+   - `maxPlatformFeePercentage`
+   - `minBidIncreasePercentage`
+   - `minStartingBid`
+   - `domainContractBytecode`
+- Create multiple threadNFTs for each authorized contract, commitment of each threadNFT must be the lockingbytecode of the authorized contract and the capability must be immutable.
+- Send the threadNFTs to the `Registry.cash`
+- Remove the authhead after adding information(Name and Symbol) about the domain in the authchain.
+
 ---
 
 ## FAQs
@@ -355,13 +377,13 @@ No, Once a bid is made, it's locked in.
 Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract. The can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
 
 #### How do domain or record lookups work?
-Let's assume there exists a library called `bitcann.js`. There is how it might look like:
+Let's assume there exists a library called `bitcann`. There is how it might look like:
 
 ```js
-const bitcann = require('bitcann.js');
+import { getDomain, getRecords } from 'bitcann';
 
-const domain = bitcann.getDomain('example.bch');
-const records = bitcann.getRecords(domain);
+const domain = getDomain('example.bch');
+const records = getRecords(domain);
 ```
 
 - `getDomain()` will return the address of the domain contract.

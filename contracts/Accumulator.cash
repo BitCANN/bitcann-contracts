@@ -7,14 +7,14 @@ contract Accumulator() {
    * Counter NFT to keep the system functioning smoothly.
    * 
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
    * - Input2: Minting NFT + tokenAmount0
    * - Input3: Authorized contract's UTXO + tokenAmount1
    * - Input4: Pure BCH
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output0: Registry Contract's thread NFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
    * - Output2: Minting NFT back to the Registry contract + tokenAmount (tokenAmount0 + tokenAmount1)
    * - Output3: Authorized contract's UTXO back to the Registry contract

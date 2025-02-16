@@ -15,9 +15,9 @@ contract Bid(int minBidIncreasePercentage) {
    *   commitment:   Bidder's PKH (20 bytes) + name (bytes)
    *
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract.
+   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract.
-   * - Input2: auctionNFT to the Registry contract.
+   * - Input2: auctionNFT from the Registry contract.
    * - Input3: Funding UTXO from the new bidder.
    * 
    * @outputs

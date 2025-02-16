@@ -8,13 +8,13 @@ contract DomainOwnershipGuard(bytes domainContractBytecode) {
    * `domainContractBytecode` is the partial bytecode of the domain contract that has an Owner..
    * 
    * @inputs
-   * - Input0: Registry Contract's immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
    * - Input2: External Auth NFT from the domain contract
    * - Input3: auctionNFT
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract
+   * - Output0: Registry Contract's thread NFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change
    * - Output2: External Auth NFT back to the domain contract
    * - Output3: BCH change/reward to caller
