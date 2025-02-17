@@ -31,6 +31,7 @@ export const options = { provider, addressType }
 export const aliceTemplate = new SignatureTemplate(alicePriv);
 
 export const name = 'test'
+// export const name = 'testdelay'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
 
@@ -63,15 +64,7 @@ console.log('INFO: script', script)
 const address = lockScriptToAddress(script)
 console.log('INFO: address', address)
 
-
-// 2018d264ac2756ef77b630ad839e9c4a1fdb50a5855a5a4b63934af8b3c090458b
-// 04
-// 74657374
-
-// 144 in decimals, 90 in hex (~1 day)
-export const waitTimeHex = binToHex(hexToBin('00000090'));
-
-export const domainFactoryContract = new Contract(artifactDomainFactory, [domainPartialBytecode, waitTimeHex, BigInt(50)], options);
+export const domainFactoryContract = new Contract(artifactDomainFactory, [domainPartialBytecode, BigInt(1), BigInt(50)], options);
 export const domainFactoryLockingBytecode = cashAddressToLockingBytecode(domainFactoryContract.address)
 export const domainFactoryLockingBytecodeHex = binToHex(domainFactoryLockingBytecode.bytecode)
 
