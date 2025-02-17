@@ -149,7 +149,6 @@ contract Domain(
 
     if (tx.inputs[2].tokenCategory == 0x) {
       // If pure BCH input, then allow anyone to burn given the time limit has passed.
-      require(tx.age >= 0);
       require(tx.inputs[1].sequenceNumber == inactivityExpiryTime);
     } else {
       // If domain ownership NFT input, then allow the owner to burn anytime.

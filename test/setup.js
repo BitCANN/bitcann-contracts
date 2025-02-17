@@ -48,9 +48,7 @@ export const bidContract = new Contract(artifactBid, [BigInt(5)], options);
 export const bidLockingBytecode = cashAddressToLockingBytecode(bidContract.address)
 export const bidLockingBytecodeHex = binToHex(bidLockingBytecode.bytecode)
 
-// 104736 in decimals, 00019920 in hex (~2 years)
-export const inactivityExpiryTimeHex = binToHex(hexToBin('00019920'));
-export const domainContract = new Contract(artifactDomain, [inactivityExpiryTimeHex, nameHex, reverseDomainTokenCategory], options);
+export const domainContract = new Contract(artifactDomain, [BigInt(1), nameHex, reverseDomainTokenCategory], options);
 export const domainLockingBytecode = cashAddressToLockingBytecode(domainContract.address)
 export const domainLockingBytecodeHex = binToHex(domainLockingBytecode.bytecode)
 

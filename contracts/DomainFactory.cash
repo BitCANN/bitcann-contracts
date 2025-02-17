@@ -68,7 +68,6 @@ contract DomainFactory(
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
     require(tx.inputs[2].value == tx.outputs[2].value);
 
-    require(tx.age >= 0);
     require(tx.inputs[3].sequenceNumber == minWaitTime);
 
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
