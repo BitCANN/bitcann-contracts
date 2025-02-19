@@ -7,55 +7,67 @@ contract Bid(int minBidIncreasePercentage) {
    * The function allows placing a new bid with:
    * - A minimum `minBidIncreasePercentage` increase over the previous bid.
    * - The previous bidder receives their bid amount back in the same transaction.
-   * - A successful bid updates the auctionNFT by updating the PKH and satoshiValue.
+   * - A successful bid updates the auctionNFT by updating the PKH in the nftCommitment and satoshiValue.
    *   capability:   Mutable
-   *   category:     DomainCategory
+   *   category:     registryInputCategory
    *   tokenAmount:  Represents the registrationId
    *   satoshiValue: Represents the bid amount
-   *   commitment:   Bidder's PKH (20 bytes) + name (bytes)
+   *   commitment:   new Bidder's PKH (20 bytes) + name (bytes)
    *
    * @inputs
-   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract.
    * - Input2: auctionNFT from the Registry contract.
    * - Input3: Funding UTXO from the new bidder.
    * 
    * @outputs
-   * - Output0: Registry Contract's immutable NFT back to the Registry contract.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
-   * - Output2: auctionNFT to the Registry contract.
-   * - Output3: Previous bid amount returned to the previous bidder.
+   * - Output2: Updated auctionNFT back to the Registry contract.
+   * - Output3: Previous bid amount to the previous bidder.
    * - Output4: Optional change in BCH to the new bidder.
    */
   function call() {
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 5);
     
-    // This contract can only be used at input1 and its UTXO should return to itself.
+    // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
 
-    // Lock this contract to only be used with the registry type contract.
-    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
+    // This contract to only be used with the 'lockingbytecode' used in the 0th input.
+    // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
+    // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
+    // be manipulating their own utxos.
+    bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);    
 
-    // Lock this contract to only be used with the registry contract.
-    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);    
-
+    // AuctionNFT should keep the same category and capability.
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
 
-    bytes domainCategory = tx.inputs[0].tokenCategory;
+    bytes registryInputCategory = tx.inputs[0].tokenCategory;
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
     // Enforcing the structure of the pair results in predictable behavior.
     bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);
-    require(auctionCategory == domainCategory);
+    require(auctionCategory == registryInputCategory);
     require(auctionCapability == 0x01); // Mutable
 
+    // Ensure that the funding happens from a P2PKH UTXO.
+    require(tx.inputs[3].lockingBytecode.length == 25);
+
     bytes20 previousPKH, bytes name = tx.inputs[2].nftCommitment.split(20);
+    // Extract the PKH from the lockingBytecode of the Funding UTXO.
+    // <pkh> + name > 20 bytes
     bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
+    
+    // AuctionNFT should have updated PKH in it's commitment.
     require(tx.outputs[2].nftCommitment == pkh + name);
+
+    // Since tokenAmount is registrationID, make sure that it's not changing.
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
 
+    // Ensure that the bid amount is greater than or equal to the previous bid amount + minBidIncreasePercentage.
     require(tx.outputs[2].value * 100 >= tx.inputs[2].value * (100 + minBidIncreasePercentage));
 
     // Locking bytecode of the previous bidder.

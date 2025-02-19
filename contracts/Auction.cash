@@ -70,7 +70,7 @@ contract Auction(int minStartingBid) {
     bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
     require(tx.outputs[3].nftCommitment == pkh + name);
 
-    // CounterNFT should keep the same tokenCategory.
+    // CounterNFT should keep the same category and capability.
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
     
     // All the token categories in the transaction should be the same.
