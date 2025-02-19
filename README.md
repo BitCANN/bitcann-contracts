@@ -23,7 +23,7 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
       - [AuctionNameEnforcer](#auctionnameenforcer)
       - [DomainOwnershipGuard](#domainownershipguard)
       - [AuctionConflictResolver](#auctionconflictresolver)
-   - [Domain](#3-domain)
+   - [Domain](#domain)
    - [Accumulator](#accumulator)
 2. [Cashtokens](#cashtokens)
    - [RegistrationNFTs](#registrationnfts)
@@ -63,7 +63,7 @@ The architecture is built around a series of smart contracts, categorized into t
 
 - **Guard Contracts**: [AuctionNameEnforcer.cash](#auctionnameenforcer), [DomainOwnershipGuard.cash](#domainownershipguard), [AuctionConflictResolver.cash](#auctionconflictresolver)
 
-- **Domain Contract**: [Domain.cash](#3-domain)
+- **Domain Contract**: [Domain.cash](#domain)
 
 - **Accumulator Contract**: [Accumulator.cash](#accumulator)
 
@@ -223,22 +223,20 @@ Constructor:
 - `domainCategory`: The category of the domain.
 
 There are 3 functions in each Domain Contract:
-- **addRecord**: This allows the owner of the domain to add records.
+
+- **useAuth**: This can be used to perform a variety of actions.
+For example:
+   - Prove the the ownership of the domain by other contracts.
+   - Perform any actions in conjunction with other contracts. (A Lease Contract)
+   - Add records and invalidate multiple records in a single transaction.
+
 
 Transaction Structure:
 | # | Inputs | Outputs |
 |---|--------|---------|
-| 0 | [DomainNFTs](#domainnfts) Internal Auth NFT from self | [DomainNFTs](#domainnfts) Internal Auth NFT returned to self |
-| 1 | [DomainNFTs](#domainnfts) Domain ownership NFT from owner | [DomainNFTs](#domainnfts) Domain ownership NFT returned to owner |
-| 2 | Funding UTXO (Can come from anywhere) | OP_RETURN containing record data or removal hash |
-| 3 |  | BCH change output |
-
-- **externalUse**: This can be called by anyone to prove that the domain is owned.
-
-Transaction Structure:
-| # | Inputs | Outputs |
-|---|--------|---------|
-| x | UTXO from self | Back to self |
+| x | [DomainNFTs](#domainnfts) Internal/External Auth NFT from self | Back to self |
+| x+1 (optional) | [OwnershipNFT](#domainnfts) from owner | [OwnershipNFT](#domainnfts) as output |
+| x+2 | | OP_RETURN containing record data or removal hash |
 
 - **burn**: This allows the owner of the domain to renounce ownership OR if the domain has been inactive for > `inactivityExpiryTime` then anyone can burn the domain allowing for a new auction.
 
@@ -303,7 +301,7 @@ A mutable hybrid NFT created for each new auction that remains within [Registry.
    A new bid simply updates the `pkh` in the `nftCommitment` and updates the `satoshisValue` to the new amount.
 
 #### AuthorizedThreadNFTs
-Each authorized contract's lockingbytecode(Excluding [Domain.cash](#3-domain)) is added to an immutable NFT commitment and sent to the [Registry.cash](#registry) at the time of genesis. These immutable NFTs stay with `Registry.cash` forever. Any interaction with the registry must include one of these thread NFTs to create a transaction.
+Each authorized contract's lockingbytecode(Excluding [Domain.cash](#domain)) is added to an immutable NFT commitment and sent to the [Registry.cash](#registry) at the time of genesis. These immutable NFTs stay with `Registry.cash` forever. Any interaction with the registry must include one of these thread NFTs to create a transaction.
 
 Structure:
    - `category`: domainCategory
@@ -327,7 +325,7 @@ A set of 3 immutable NFTs minted when an auction ends:
       - `category`: domainCategory
       - `commitment`: registrationID < 8 bytes > + name < bytes >
 
-   - **InternalAuthNFT**: A specialized authorization NFT that resides within the Domain contract and must be used together with the OwnershipNFT to enable the owner's interaction with [Domain.cash](#3-domain).
+   - **InternalAuthNFT**: A specialized authorization NFT that resides within the Domain contract and must be used together with the OwnershipNFT to enable the owner's interaction with [Domain.cash](#domain).
       - `category`: domainCategory
       - `commitment`: registrationID < 8 bytes >
 

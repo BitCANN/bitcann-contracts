@@ -5,70 +5,44 @@ contract Domain(
   bytes name,
   bytes domainCategory
   ) {
+  
   /**
-   * Adds or invalidates a record associated with this domain.
-   * 
-   * Records are created using OP_RETURN outputs.
-   * To add a record, include the record data directly in the OP_RETURN output.
-   * To invalidate a record, prefix "RMV" followed by the hash of the record content in the OP_RETURN output.
-   * This will signal the library/indexers to exclude the record from the valid records.
+   * This function can be used to perform a variety of actions.
+   *
+   * For example:
+   * - It can be used to prove the the ownership of the domain by other contracts.
+   * - This function allows the owner to perform any actions in conjunction with other contracts.
+   * - This function can be used to add records and invalidate multiple records in a single transaction.
+   *
+   * Records are created using OP_RETURN outputs. To add a record, include the record data directly in the OP_RETURN output.
+   * To invalidate a record, prefix "RMV" followed by the hash of the record content in the OP_RETURN output. This will signal
+   * the library/indexers to exclude the record from the valid records.
    * 
    * @inputs
-   * - Input0: Internal Auth NFT
-   * - Input1: Domain ownership NFT from the owner
-   * - Input2: Funding UTXO (Can come from anywhere)
+   * - Inputx: Internal/External Auth NFT
+   * - Inputx+1 (optional): Domain ownership NFT from the owner
    * 
-   * @outputs  
-   * - Output0: Internal Auth NFT returned to this contract
-   * - Output1: Domain NFT returned to the owner
-   * - Output2: OP_RETURN containing record data or invalidation hash
-   * - Output3: BCH change output
-   * 
-   */
-  function addRecord() {
-    require(tx.inputs.length == 3);
-    require(tx.outputs.length == 4);
-
-    bytes activeLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-
-    require(tx.inputs[0].lockingBytecode == activeLockingBytecode);
-    require(tx.outputs[0].lockingBytecode == activeLockingBytecode);
-
-    require(tx.inputs[0].tokenCategory == domainCategory);
-    require(tx.inputs[1].tokenCategory == domainCategory);
-    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
-    require(tx.inputs[1].tokenCategory == tx.outputs[1].tokenCategory);
-
-    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
-    require(tx.inputs[1].nftCommitment == tx.outputs[1].nftCommitment);
-
-    bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[1].nftCommitment.split(8);
-    require(tx.inputs[0].nftCommitment == registrationId);
-    require(nameFromOwnerNFT == name);
-
-    // This enforces an OP_RETURN output.
-    require(tx.outputs[2].value == 0);
-    require(tx.outputs[3].tokenCategory == 0x);
-  }
-
-  /*
-   * Allows this to be attached to any transaction, primarily used by DomainOwnershipGuard
-   * to and prove that the domain is owned and burn the illegal auctionNFT.
-   *
-   * @inputs
-   * - Inputx: External Auth NFT
-   *
    * @outputs
-   * - outputx: External Auth NFT back to seld
+   * - Outputx: Internal/External Auth NFT returned to this contract
+   * - Outputx+1 (optional): Domain NFT returned
+   * 
    */
-  function externalUse() {
-    require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
+  function useAuth(int authID) {
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
     require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
+    require(tx.outputs[this.activeInputIndex].tokenCategory == domainCategory);
+    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);
 
-    require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
-    require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
-    require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);
-    require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);
+    if(authID == 1) {
+      require(tx.inputs[this.activeInputIndex + 1].tokenCategory == domainCategory);
+      bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[this.activeInputIndex + 1].nftCommitment.split(8);
+      require(nameFromOwnerNFT == name);
+      // Should be used for Internal Auth NFT
+      require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId);
+    } else {
+      // Should be used for External Auth NFT
+      require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
+    }
   }
 
   /**

@@ -18,11 +18,12 @@ contract Registry(bytes domainCategory) {
    * 
    * @note Authorized contracts and their thread counts:
    * - Auction:                       [1 thread] (Single-threaded registration)
-   * - Bid:                           [~5 threads]
-   * - DomainFactory:                 [~5 threads]
-   * - DomainNameShield:              [~5 threads]
-   * - IllegalRegistration:           [~5 threads]
-   * - RegistrationConflict:          [~5 threads]
+   * - Bid:                           [~x threads]
+   * - DomainFactory:                 [~x threads]
+   * - AuctionNameEnforcer:           [~x threads]
+   * - DomainOwnershipGuard:          [~x threads]
+   * - AuctionConflictResolver:       [~x threads]
+   * - Accumulator:                   [~x threads]
    * 
    * @inputs
    * - Input0: Registry contract's immutable NFT
@@ -43,7 +44,6 @@ contract Registry(bytes domainCategory) {
     require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
     require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
     require(tx.inputs[0].value == tx.outputs[0].value);
-    // Just check the length of tokenCategory to be 32 as immutable NFTs do not have capability.
     require(tx.inputs[0].tokenCategory == domainCategory);
     // Note: Not checking the tokenAmount as it changes.
 
