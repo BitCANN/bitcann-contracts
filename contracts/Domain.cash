@@ -1,5 +1,10 @@
 pragma cashscript ^0.11.0;
 
+/**
+ * @param inactivityExpiryTime The time period after which the domain is considered inactive.
+ * @param name The name of the domain.
+ * @param domainCategory The category of the domain.
+ */
 contract Domain(
   int inactivityExpiryTime,
   bytes name,
@@ -28,35 +33,37 @@ contract Domain(
    * 
    */
   function useAuth(int authID) {
+    // The activeInputIndex can be anything as long as the utxo properties are preserved and comes back to the
+    // contract without alteration.
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
     require(tx.inputs[this.activeInputIndex].tokenCategory == domainCategory);
     require(tx.outputs[this.activeInputIndex].tokenCategory == domainCategory);
     require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);
 
     if(authID == 1) {
+      // The next input from the InternalAuthNFT must be the ownershipNFT.
       require(tx.inputs[this.activeInputIndex + 1].tokenCategory == domainCategory);
       bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[this.activeInputIndex + 1].nftCommitment.split(8);
       require(nameFromOwnerNFT == name);
-      // Should be used for Internal Auth NFT
       require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId);
     } else {
-      // Should be used for External Auth NFT
+      // One known use of ExternalAuthNFT in the `DomainOwnershipGuard` contract. ExternalAuthNFT is
+      // used to prove that an owner exists.
       require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
     }
   }
 
   /**
    * If the incentive system fails, i.e `DomainOwnershipGuard` or `AuctionConflictResolver` fails to prevent a
-   * a owner conflict. Which means there are more than 1 owner for this domain.
-   * 
+   * a owner conflict. When this happens there will be > 1 owner for this domain.
    * The owner with the lowest registrationID must be the only owner for this domain.
    * To help enforce this rule, this function will allow anyone to burn both the Auth NFTs of the NEW owner.
    *
    * @inputs
-   * - Input0: Valid External Auth NFT
-   * - Input1: Valid Internal Auth NFT
-   * - Input2: Invalid External Auth NFT
-   * - Input3: Invalid Internal Auth NFT
+   * - Input0: Valid External Auth NFT from self
+   * - Input1: Valid Internal Auth NFT from self
+   * - Input2: Invalid External Auth NFT from self
+   * - Input3: Invalid Internal Auth NFT from self
    * - Input4: BCH input from anyone
    * 
    * @outputs  
@@ -68,6 +75,7 @@ contract Domain(
     require(tx.inputs.length == 5);
     require(tx.outputs.length == 3);
 
+    // Pure BCH input and output to fund the transaction
     require(tx.inputs[4].tokenCategory == 0x);
     require(tx.outputs[2].tokenCategory == 0x);
 
@@ -97,11 +105,13 @@ contract Domain(
     require(tx.outputs[0].tokenCategory == domainCategory);
     require(tx.outputs[1].tokenCategory == domainCategory);
 
+    // Compare the registrationID
     require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
   }
 
   /**
-   * Allows the domain owner or anyone to burn the domain by burning AuthNFTs that control this contract.
+   * Allows the domain owner or anyone to burn the InternalAuthNFT and externalAuthNFT making this domain available
+   * for auction.
    * 
    * - Owner can burn the AuthNFTs anytime.
    * - External party can burn the AuthNFTs when the internalAuth NFT has not been used for more than `inactivityExpiryTime`.
@@ -117,16 +127,17 @@ contract Domain(
    */
   function burn() {
     require(tx.version == 2);
-
     require(tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 
+    // If an external party is attempting to burn the authNFTs
     if (tx.inputs[2].tokenCategory == 0x) {
       // If pure BCH input, then allow anyone to burn given the time limit has passed.
       require(tx.inputs[1].sequenceNumber == inactivityExpiryTime);
     } else {
       // If domain ownership NFT input, then allow the owner to burn anytime.
       require(tx.inputs[2].tokenCategory == domainCategory);
+      // Make sure that the registrationID in the domainOwnershipNFT and the internalAuthNFT are the same.
       require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
     }
 
@@ -134,7 +145,9 @@ contract Domain(
     require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
     require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
 
+    // ExternalAuthNFT
     require(tx.inputs[0].nftCommitment == 0x);
+    // Both InternalAuthNFT and externalAuthNFT are immutable and have the same tokenCategory
     require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
     require(tx.inputs[0].tokenCategory == domainCategory);
     require(tx.inputs[1].tokenCategory == domainCategory);
