@@ -7,6 +7,7 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
 - NFT Domain ownership, enabling secondary market trading.
 - Easy lookups
 - Sign-In using your Identity
+- Plugin for other contract systems
 - Earn by protecting the system by:
    - Burning illegal registration attempts
    - Identifying and burning registration conflicts
