@@ -41,7 +41,7 @@ contract Auction(int minStartingBid) {
     // Ensure that the domainCategory in not minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
 
-    // This contract to only be used with the 'lockingbytecode' used in the 0th input.
+    // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.

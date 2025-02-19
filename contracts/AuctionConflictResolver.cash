@@ -4,49 +4,62 @@ contract AuctionConflictResolver() {
   /**
    * Resolves a conflict between two competing registration auctions for the same name.
    * 
-   * If any new auction is created when an auction already exists, then the new auction is open for penalization.
+   * RULE:
+   * - If any new auction is created when an auction already exists, then the new auction is open for penalization.
+   *
    * Anyone can provide proof of an active auction's existence and take away the funds from the "new" invalid auction
    * as a form of reward for keeping the system secure and predictable.
    * Therefore, it's the responsibility of the application to check for any running auctions for the same name.
    * 
    * @inputs
-   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract.
-   * - Input2: Valid auctionNFT.
-   * - Input3: Invalid auctionNFT.
+   * - Input2: Valid auctionNFT from Registry Contract.
+   * - Input3: Invalid auctionNFT from Registry Contract.
    * 
    * @outputs
-   * - Output0: Registry Contract's thread NFT back to the Registry contract.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
-   * - Output2: Valid auctionNFT.
+   * - Output2: Valid auctionNFT back to Registry Contract.
    * - Output3: BCH change/reward to caller.
    */
   function call() {
     require(tx.inputs.length == 4);
     require(tx.outputs.length == 4);
 
-    // This contract can only be used at input1 and it should return to itself.
+    // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
 
-    // Lock this contract to only be used with the registry type contract.
-    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == parentContractScriptHash);
-    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
-    require(tx.inputs[3].lockingBytecode == parentContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
+    // This contract can only be used with the 'lockingbytecode' used in the 0th input.
+    // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
+    // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
+    // be manipulating their own utxos.
+    bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
+    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode);
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);
 
-    bytes validAuctionCategory, bytes validAuctionCapability = tx.inputs[2].tokenCategory.split(32);
-    require(validAuctionCategory == tx.inputs[0].tokenCategory);
-    require(validAuctionCapability == 0x01); // Mutable
+    // All the token categories in the transaction should be the same.
+    bytes registryInputCategory = tx.inputs[0].tokenCategory;
 
-    require(tx.inputs[2].value == tx.outputs[2].value);
+    // auctionNFT should be mutable
+    bytes auctionCategory, bytes auctionCapability = tx.inputs[2].tokenCategory.split(32);
+    require(auctionCategory == registryInputCategory);
+    require(auctionCapability == 0x01); // Mutable
+
+    // Invalid and valid auctionNFTs both should have the same category and capability.
     require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
+    // Both auctionNFTs should also have the same 'name'
     require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);
+    // The valid auctionNFT will have a lower registrationID
     require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);
 
-    // Send the tokenAmount to the registry contract.
+    // tokenAmount from the invalid auctionNFT goes to the authorizedThreadNFT to be accumulated later
+    // and merged back with the CounterNFT using the `Accumulator` Contract
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
+
+    // Attach any output to take away the funds as reward
     require(tx.outputs[3].tokenCategory == 0x);
   }
 }
