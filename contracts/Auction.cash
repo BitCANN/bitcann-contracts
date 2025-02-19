@@ -9,21 +9,21 @@ contract Auction(int minStartingBid) {
    * - Starting bid >= `minStartingBid` BCH.
    * - A successful registration initiation results in an auctionNFT representing the auction state:
    *   - capability: (Mutable)
-   *   - category: parentCategory
+   *   - category: registryInputCategory
    *   - tokenAmount: (Represents the registrationId)
    *   - satoshiValue: (Represents the bid amount)
    *   - commitment: bidder's PKH (20 bytes) + name (bytes)
    * 
    * @inputs
-   * - Input0: Registry Contract's authorized thread NFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
+   * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract.
-   * - Input2: Minting Counter NFT from Registry contract (Increases the registrationId by 1 in the output).
+   * - Input2: Minting CounterNFT from Registry contract (Increases the registrationId by 1 in the output).
    * - Input3: Funding UTXO.
    * 
    * @outputs
-   * - Output0: Registry Contract's thread NFT back to the Registry contract.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
-   * - Output2: Minting Counter NFT going back to the Registry contract.
+   * - Output2: Minting CounterNFT going back to the Registry contract.
    * - Output3: auctionNFT to the Registry contract.
    * - Output4: OP_RETURN output containing the name.
    * - Output5: Optional change in BCH.
@@ -32,51 +32,61 @@ contract Auction(int minStartingBid) {
     require(tx.inputs.length == 4);
     require(tx.outputs.length <= 6);
 
-    // This contract can only be used at input1 and it should return to itself.
+    // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    // Ensure that the domainCategory in not minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
 
-    // Lock this contract to only be used with the registry type contract.
-    bytes parentContractScriptHash = tx.inputs[0].lockingBytecode;
-
-    // Logic
-    require(tx.inputs[2].lockingBytecode == parentContractScriptHash);
-    require(tx.outputs[2].lockingBytecode == parentContractScriptHash);
-    require(tx.outputs[3].lockingBytecode == parentContractScriptHash);
+    // This contract to only be used with the 'lockingbytecode' used in the 0th input.
+    // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
+    // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
+    // be manipulating their own utxos.
+    bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);
+    require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode);
 
     // Registration ID increases by 1 with each transaction.
     int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());
     int nextRegistrationId = int(tx.outputs[2].nftCommitment.reverse());
     require(nextRegistrationId == prevRegistrationId + 1);
 
+    // Reduce the tokenAmount in the counterNFT as some amount is going to auctionNFT
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);
+    // tokenAmount in the auctionNFT is the registrationId.
     require(tx.outputs[3].tokenAmount == nextRegistrationId);
 
-    // Every auction begins with a base value of at least minStartingBid satoshis.
+    // Every auction begins with a min base value of at least minStartingBid satoshis.
     require(tx.outputs[3].value >= minStartingBid);
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
-    
+
+    // Ensure that the funding happens from a P2PKH UTXO.
+    require(tx.inputs[3].lockingBytecode.length == 25);
+
+    // Extract the PKH from the lockingBytecode of the Funding UTXO.
     // <pkh> + name > 20 bytes
     bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
     require(tx.outputs[3].nftCommitment == pkh + name);
 
-    // All the token categories in the transaction should be the same.
-    bytes parentCategory = tx.inputs[0].tokenCategory;
-    require(tx.outputs[this.activeInputIndex].tokenCategory != parentCategory);
-
+    // CounterNFT should keep the same tokenCategory.
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
+    
+    // All the token categories in the transaction should be the same.
+    bytes registryInputCategory = tx.inputs[0].tokenCategory;
+    
+    // CounterNFT should be minting and of the 'domainCategory' i.e registryInputCategory
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
-    require(counterCategory == parentCategory);
+    require(counterCategory == registryInputCategory);
     require(counterCapability == 0x02); // Minting
 
+    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.outputs[3].tokenCategory.split(32);
-    require(auctionCategory == parentCategory);
+    require(auctionCategory == registryInputCategory);
     require(auctionCapability == 0x01); // Mutable
 
-    // Enforce an OP_RETURN output.
-    require(tx.outputs[4].value == 0);
+    // Enforce an OP_RETURN output that contains the name.
     require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
 
     if (tx.outputs.length == 6) {

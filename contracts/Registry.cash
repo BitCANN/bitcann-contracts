@@ -4,17 +4,28 @@ pragma cashscript ^0.11.0;
   * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
   *
   * The Registry has two minting NFTs:
-  * 1. RegistrationMintingNFT, which has tokenAmount and nftCommitment.
-  * 2. DomainMintingNFT, which does not have any tokenAmount or nftCommitment.
+  * 1. CounterMintingNFT, has tokenAmount and nftCommitment.
+  * 2. DomainMintingNFT, does not have any tokenAmount or nftCommitment.
  */
 contract Registry(bytes domainCategory) {
   /**
    * The Registry contract serves as both a source and storage for authorized NFTs.
-   * It holds NFTs with immutable capability that share the same category as domainCategory.
+   * It holds: RegistrationNFTs, AuctionNFTs, and AuthorizedThreadNFTs
+   *
+   * AuthorizedThreadNFTs are NFTs with immutable capability that share the same category as domainCategory.
    * These NFTs contain the lockingBytecode of authorized contracts.
    * Multiple copies of these NFTs enable parallel processing through multiple threads.
    * 
    * The contract can only be called in conjunction with one of the authorized contracts.
+   *
+   * Imagine that the authorised contracts are just function composition,
+   * those contracts are being used for the code in them and to reduce the transaction size.
+   * This design reduces the transaction size to a minimum while using every OP_CODE required
+   * for a given action. To use the code in these authorized contracts, a random UTXO is used and
+   * sent back to itself to be used again in future.
+   *
+   * All the utxos, except for the DomainNFTs (InternalAuth, ExternalAuth and DomainOwnershipNFT),
+   * stay with the Registry contract.
    * 
    * @note Authorized contracts and their thread counts:
    * - Auction:                       [1 thread] (Single-threaded registration)
@@ -26,32 +37,35 @@ contract Registry(bytes domainCategory) {
    * - Accumulator:                   [~x threads]
    * 
    * @inputs
-   * - Input0: Registry contract's immutable NFT
-   * - Input1: Authorized contract's UTXO
+   * - Input0: AuthorizedThreadNFT from self
+   * - Input1: Any UTXO from Authorized contract
    * 
    * @outputs
-   * - Output0: Registry contract's NFT returned unchanged
-   * - Output1: Authorized contract's UTXO returned unchanged
+   * - Output0: AuthorizedThreadNFT back to self
+   * - Output1: Output back to Authorized contract to be reused again
    */
   function call() {
     // Registry Contract
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    // authorizedThreadNFT must stay with the Registry Contract.
     require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
     require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
 
-    // Make sure that the NFT stays with the contract.
-    require(tx.inputs[0].tokenCategory == tx.outputs[0].tokenCategory);
-    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
-    require(tx.inputs[0].value == tx.outputs[0].value);
+    // Immutable NFTs of domainCategory in Registry Contract will always be authorizedThreadNFTs
+    // Mutable NFTs of domainCategory in Registry Contract will always be auctionNFTs
+    // Minting NFTs of domainCategory in Registry Contract will always be counterMintingNFT or DomainMintingNFT
     require(tx.inputs[0].tokenCategory == domainCategory);
-    // Note: Not checking the tokenAmount as it changes.
+    require(tx.outputs[0].tokenCategory == domainCategory);
+
+    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
+    // Not checking the tokenAmount as it changes.
 
     // Authorized Contract
 
     // Expect the NFT commitment that contains the lockingBytecode of the authorized contract.
     require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
-    // With these prerequisites met, we just need to make sure that all the contracts that are deployed are written and initialized
-    // properly, and they expect this structure and handle the inputs and outputs as expected.
+    // With these prerequisites met, we just need to make sure that all the contracts that are deployed are written
+    // and initialized properly, and they expect this structure and handle the inputs and outputs as expected.
   }
 }
