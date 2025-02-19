@@ -1,5 +1,8 @@
 pragma cashscript ^0.11.0;
 
+/**
+ * @param minBidIncreasePercentage The minimum percentage increase required for a new bid over the previous bid.
+ */
 contract Bid(int minBidIncreasePercentage) {
   /**
    * Places a new bid on an active domain registration auction.

@@ -45,6 +45,9 @@ contract Registry(bytes domainCategory) {
    * - Output1: Output back to Authorized contract to be reused again
    */
   function call() {
+    // Added as safeguard.
+    require(tx.version == 2);
+
     // Registry Contract
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
@@ -57,8 +60,10 @@ contract Registry(bytes domainCategory) {
     // Minting NFTs of domainCategory in Registry Contract will always be counterMintingNFT or DomainMintingNFT
     require(tx.inputs[0].tokenCategory == domainCategory);
     require(tx.outputs[0].tokenCategory == domainCategory);
-
-    require(tx.inputs[0].nftCommitment == tx.outputs[0].nftCommitment);
+    // Keeping the value same to not influence any satoshi movement in authorized contracts
+    require(tx.outputs[0].value == tx.inputs[0].value);
+    // The commitment that has the lockingbytecode of the authorized contract should never change.
+    require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
     // Not checking the tokenAmount as it changes.
 
     // Authorized Contract

@@ -1,5 +1,8 @@
 pragma cashscript ^0.11.0;
 
+/**
+ * @param minStartingBid The minimum starting bid for the auction.
+ */
 contract Auction(int minStartingBid) {
   /**
    * Starts a new domain registration auction.
