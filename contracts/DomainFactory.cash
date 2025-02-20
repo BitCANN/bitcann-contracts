@@ -38,7 +38,7 @@ contract DomainFactory(
   function call(){
     require(tx.version == 2);
     require(tx.inputs.length == 4);
-    require(tx.outputs.length <= 7);
+    require(tx.outputs.length == 7);
 
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
