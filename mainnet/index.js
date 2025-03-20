@@ -6,7 +6,7 @@ import { main as domainFactory } from './transactions/domain-factory.js'
 import { main as ownershipGuard } from './transactions/ownership-guard.js'
 
 const main = async () => {
-  // await auction()
+  await auction()
   // await bid()
   // await auctionConflictResolver()
   // await nameEnforcer()

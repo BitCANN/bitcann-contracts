@@ -1,7 +1,6 @@
 import {
   TransactionBuilder,
-// } from 'cashscript';
-} from '../../cashscript/packages/cashscript/dist/index.js';
+} from 'cashscript';
 import {
   hexToBin,
   binToHex,
