@@ -9,9 +9,9 @@ import {
   binToHex,
   cashAddressToLockingBytecode,
 } from '@bitauth/libauth';
-import { buildLockScriptP2SH32, lockScriptToAddress } from './utils.js';
+import { buildLockScriptP2SH32, lockScriptToAddress } from './utils.js'
 
-import { alicePriv, aliceAddress, aliceTokenAddress, alicePkh } from './common.js';
+import { alicePriv, aliceAddress, aliceTokenAddress, alicePkh } from './common.js'
 export { alicePriv, aliceAddress, aliceTokenAddress, alicePkh };
 
 export const artifactRegistry = compileFile(new URL('../contracts/Registry.cash', import.meta.url));
@@ -41,14 +41,17 @@ export const registryContract = new Contract(artifactRegistry, [reverseDomainTok
 
 export const auctionContract = new Contract(artifactAuction, [BigInt(10000)], options);
 export const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address)
+// @ts-ignore
 export const auctionLockingBytecodeHex = binToHex(auctionLockingBytecode.bytecode)
 
 export const bidContract = new Contract(artifactBid, [BigInt(5)], options);
 export const bidLockingBytecode = cashAddressToLockingBytecode(bidContract.address)
+// @ts-ignore
 export const bidLockingBytecodeHex = binToHex(bidLockingBytecode.bytecode)
 
 export const domainContract = new Contract(artifactDomain, [BigInt(1), nameHex, reverseDomainTokenCategory], options);
 export const domainLockingBytecode = cashAddressToLockingBytecode(domainContract.address)
+// @ts-ignore
 export const domainLockingBytecodeHex = binToHex(domainLockingBytecode.bytecode)
 
 // ANOTHER APPROACH is: domainContract.artifact.debug.bytecode
@@ -63,18 +66,22 @@ console.log('INFO: address', address)
 
 export const domainFactoryContract = new Contract(artifactDomainFactory, [domainPartialBytecode, BigInt(1), BigInt(50)], options);
 export const domainFactoryLockingBytecode = cashAddressToLockingBytecode(domainFactoryContract.address)
+// @ts-ignore
 export const domainFactoryLockingBytecodeHex = binToHex(domainFactoryLockingBytecode.bytecode)
 
 export const domainOwnershipGuardContract = new Contract(artifactDomainOwnershipGuard, [domainPartialBytecode], options);
 export const domainOwnershipGuardLockingBytecode = cashAddressToLockingBytecode(domainOwnershipGuardContract.address)
+// @ts-ignore
 export const domainOwnershipGuardLockingBytecodeHex = binToHex(domainOwnershipGuardLockingBytecode.bytecode)
 
 export const auctionConflictResolverContract = new Contract(artifactAuctionConflictResolver, [], options);
 export const auctionConflictResolverLockingBytecode = cashAddressToLockingBytecode(auctionConflictResolverContract.address)
+// @ts-ignore
 export const auctionConflictResolverLockingBytecodeHex = binToHex(auctionConflictResolverLockingBytecode.bytecode)
 
 export const auctionNameEnforcerContract = new Contract(artifactAuctionNameEnforcer, [], options);
 export const auctionNameEnforcerLockingBytecode = cashAddressToLockingBytecode(auctionNameEnforcerContract.address)
+// @ts-ignore
 export const auctionNameEnforcerLockingBytecodeHex = binToHex(auctionNameEnforcerLockingBytecode.bytecode)
 
 console.log('nameHex', nameHex)
