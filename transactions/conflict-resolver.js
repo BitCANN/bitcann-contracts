@@ -4,13 +4,12 @@ import {
 import {
   registryContract,
   auctionConflictResolverContract as authorizedContract,
-  getUtxos,
   auctionConflictResolverLockingBytecodeHex as authorizedContractLockingBytecodeHex,
   domainCategory,
   provider,
   aliceAddress,
-} from '../setup.js'
-import { findPureUTXO } from '../utils.js'
+} from '../common/setup.js'
+import { findPureUTXO, getUtxos } from '../common/utils.js'
 
 const selectInputs = async () =>{
   const { userUTXOs, registryUTXOs, auctionConflictResolverUTXOs } = await getUtxos()

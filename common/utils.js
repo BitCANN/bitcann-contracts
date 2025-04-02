@@ -7,6 +7,19 @@ import {
   binToHex
 } from '@bitauth/libauth';
 
+import {
+  provider,
+  aliceAddress,
+  registryContract,
+  auctionContract,
+  bidContract,
+  auctionConflictResolverContract,
+  auctionNameEnforcerContract,
+  domainOwnershipGuardContract,
+  domainFactoryContract,
+  domainContract
+} from './setup.js';
+
 export function pushDataHex(data) {
   const hexData = Buffer.from(data, 'utf8').toString('hex');
   const length = hexData.length / 2;
@@ -73,3 +86,40 @@ export const addressToLockScript = function(address)
 
 	return lockScript;
 };
+
+
+
+export const getUtxos = async () => {
+  const [
+    userUTXOs,
+    registryUTXOs,
+    auctionUTXOs,
+    bidUTXOs,
+    auctionConflictResolverUTXOs,
+    auctionNameEnforcerUTXOs,
+    domainOwnershipGuardUTXOs,
+    domainFactoryUTXOs,
+    domainUTXOs
+  ] = await Promise.all([
+    provider.getUtxos(aliceAddress),
+    provider.getUtxos(registryContract.address),
+    provider.getUtxos(auctionContract.address),
+    provider.getUtxos(bidContract.address),
+    provider.getUtxos(auctionConflictResolverContract.address),
+    provider.getUtxos(auctionNameEnforcerContract.address),
+    provider.getUtxos(domainOwnershipGuardContract.address),
+    provider.getUtxos(domainFactoryContract.address),
+    provider.getUtxos(domainContract.address)
+  ])
+  return {
+    userUTXOs,
+    registryUTXOs,
+    auctionUTXOs,
+    bidUTXOs,
+    auctionConflictResolverUTXOs,
+    auctionNameEnforcerUTXOs,
+    domainOwnershipGuardUTXOs,
+    domainFactoryUTXOs,
+    domainUTXOs
+  }
+}

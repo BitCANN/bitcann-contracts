@@ -5,13 +5,13 @@ import {
   registryContract,
   domainContract,
   domainOwnershipGuardContract as authorizedContract,
-  getUtxos,
   domainOwnershipGuardLockingBytecodeHex as authorizedContractLockingBytecodeHex,
   domainCategory,
   provider,
   aliceAddress,
   name
-} from '../setup.js'
+} from '../common/setup.js'
+import { getUtxos } from '../common/utils.js'
 
 
 const selectInputs = async () =>{

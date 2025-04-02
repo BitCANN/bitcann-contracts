@@ -2,7 +2,8 @@ import { compileFile } from 'cashc/dist/index.js';
 import {
   Contract,
   SignatureTemplate,  
-  ElectrumNetworkProvider
+  ElectrumNetworkProvider,
+  MockNetworkProvider
 } from 'cashscript';
 import {
   hexToBin,
@@ -23,9 +24,20 @@ export const artifactAuctionConflictResolver = compileFile(new URL('../contracts
 export const artifactAuctionNameEnforcer = compileFile(new URL('../contracts/AuctionNameEnforcer.cash', import.meta.url));
 export const artifactDomainOwnershipGuard = compileFile(new URL('../contracts/DomainOwnershipGuard.cash', import.meta.url));
 
-export const provider = new ElectrumNetworkProvider();
+let provider;
+const args = process.argv.slice(2);
+  if (args.includes('mainnet')) {
+    provider = new ElectrumNetworkProvider();
+  } else if(args.includes('mocknet')) {
+    provider = new MockNetworkProvider();
+  } else {
+    console.error('Please specify a valid network: mainnet or mocknet');
+    process.exit(1);
+  }
+
+export { provider };
 export const addressType = 'p2sh32';
-export const options = { provider, addressType }
+export const options = { provider, addressType }  
 
 export const aliceTemplate = new SignatureTemplate(alicePriv);
 
@@ -104,38 +116,3 @@ console.log(`let domainContractAddress = '${domainContract.address}';`)
 console.log(`let domainContractBytecode = '${domainLockingBytecodeHex}';`)
 console.log(`let domainFactoryContractAddress = '${domainFactoryContract.address}';`)
 console.log(`let domainFactoryLockingBytecode = '${domainFactoryLockingBytecodeHex}';`)
-
-export const getUtxos = async () => {
-  const [
-    userUTXOs,
-    registryUTXOs,
-    auctionUTXOs,
-    bidUTXOs,
-    auctionConflictResolverUTXOs,
-    auctionNameEnforcerUTXOs,
-    domainOwnershipGuardUTXOs,
-    domainFactoryUTXOs,
-    domainUTXOs
-  ] = await Promise.all([
-    provider.getUtxos(aliceAddress),
-    provider.getUtxos(registryContract.address),
-    provider.getUtxos(auctionContract.address),
-    provider.getUtxos(bidContract.address),
-    provider.getUtxos(auctionConflictResolverContract.address),
-    provider.getUtxos(auctionNameEnforcerContract.address),
-    provider.getUtxos(domainOwnershipGuardContract.address),
-    provider.getUtxos(domainFactoryContract.address),
-    provider.getUtxos(domainContract.address)
-  ])
-  return {
-    userUTXOs,
-    registryUTXOs,
-    auctionUTXOs,
-    bidUTXOs,
-    auctionConflictResolverUTXOs,
-    auctionNameEnforcerUTXOs,
-    domainOwnershipGuardUTXOs,
-    domainFactoryUTXOs,
-    domainUTXOs
-  }
-}
