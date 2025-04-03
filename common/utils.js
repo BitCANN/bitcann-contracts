@@ -4,7 +4,8 @@ import {
   lockingBytecodeToCashAddress,
   hash256,
   hexToBin,
-  binToHex
+  binToHex,
+  numberToBinUint16BE
 } from '@bitauth/libauth';
 
 import {
@@ -19,6 +20,26 @@ import {
   domainFactoryContract,
   domainContract
 } from './setup.js';
+
+export function intToBytesToHex({value, length}) {
+  const bin = numberToBinUint16BE(value);
+  const bytes = new Uint8Array(bin.buffer, bin.byteOffset, bin.byteLength);
+  if (bytes.length > length) {
+    throw new Error(`Value ${value} exceeds the specified length of ${length} bytes`);
+  }
+  const result = new Uint8Array(length);
+  result.set(bytes, length - bytes.length);
+  return binToHex(result);
+}
+
+export function hexToInt(hex) {
+  const bytes = hexToBin(hex);
+  let intValue = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    intValue = (intValue << 8) | bytes[i];
+  }
+  return intValue;
+}
 
 export function pushDataHex(data) {
   const hexData = Buffer.from(data, 'utf8').toString('hex');

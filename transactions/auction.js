@@ -33,7 +33,8 @@ const selectInputs = async () =>{
   const threadNFTUTXO = registryUTXOs.find(utxo => 
     utxo.token?.nft?.commitment === authorizedContractLockingBytecodeHex &&
     utxo.token?.nft?.capability === 'none' &&
-    utxo.token?.category === domainCategory
+    utxo.token?.category === domainCategory &&
+    utxo.token?.amount >= BigInt(0)
   );
 
   console.log('INFO: threadNFTUTXO', threadNFTUTXO)
@@ -44,7 +45,7 @@ const selectInputs = async () =>{
     utxo.token?.nft?.capability === 'minting' &&
     utxo.token?.category === domainCategory &&
     utxo.token?.nft?.commitment &&
-    utxo.token?.amount > 0
+    utxo.token?.amount >= BigInt(0)
   );
 
   console.log('INFO: registrationCounterUTXO', registrationCounterUTXO)
@@ -64,13 +65,14 @@ const selectInputs = async () =>{
 export const main = async () => {
   const { userUTXO, threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO } = await selectInputs()
 
-  // @ts-ignore
   const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1
   const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0')
 
   const auctionAmount = BigInt(10000)
   const minerFee = BigInt(1500)
   const change = userUTXO.satoshis - auctionAmount - minerFee
+
+  console.log('threadNFTUTXO', threadNFTUTXO)
 
   const transaction = await new TransactionBuilder({ provider })
   .addInput(threadNFTUTXO, registryContract.unlock.call())
@@ -81,14 +83,10 @@ export const main = async () => {
     to: registryContract.tokenAddress,
     amount: threadNFTUTXO.satoshis,
     token: {
-      // @ts-ignore
       category: threadNFTUTXO.token.category,
-      // @ts-ignore
       amount: threadNFTUTXO.token.amount,
       nft: {
-        // @ts-ignore
         capability: threadNFTUTXO.token.nft.capability,
-        // @ts-ignore
         commitment: threadNFTUTXO.token.nft.commitment
       }
     }
@@ -101,12 +99,9 @@ export const main = async () => {
     to: registryContract.tokenAddress,
     amount: registrationCounterUTXO.satoshis,
     token: {
-      // @ts-ignore
       category: registrationCounterUTXO.token.category,
-      // @ts-ignore
       amount: registrationCounterUTXO.token.amount  - BigInt(newRegistrationId),
       nft: {
-        // @ts-ignore
         capability: registrationCounterUTXO.token.nft.capability,
         commitment: newRegistrationIdCommitment
       }
@@ -116,7 +111,6 @@ export const main = async () => {
     to: registryContract.tokenAddress,
     amount: auctionAmount,
     token: {
-      // @ts-ignore
       category: registrationCounterUTXO.token.category,
       amount: BigInt(newRegistrationId),
       nft: {
