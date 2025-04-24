@@ -124,7 +124,7 @@ export const main = async () => {
     to: aliceAddress,
     amount: change,
   })
-  .send();
+  .build();
 
   console.log('INFO: transaction', transaction)
 }

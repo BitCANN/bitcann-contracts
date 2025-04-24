@@ -23,6 +23,7 @@ export const artifactDomainFactory = compileFile(new URL('../contracts/DomainFac
 export const artifactAuctionConflictResolver = compileFile(new URL('../contracts/AuctionConflictResolver.cash', import.meta.url));
 export const artifactAuctionNameEnforcer = compileFile(new URL('../contracts/AuctionNameEnforcer.cash', import.meta.url));
 export const artifactDomainOwnershipGuard = compileFile(new URL('../contracts/DomainOwnershipGuard.cash', import.meta.url));
+export const artifactAccumulator = compileFile(new URL('../contracts/Accumulator.cash', import.meta.url));
 
 let provider;
 const args = process.argv.slice(2);
@@ -46,10 +47,12 @@ export const name = 'test'
 export const nameHex = Buffer.from(name).toString('hex')
 export const nameBin = hexToBin(nameHex)
 
-export const domainCategory = '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218'
+export const domainCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada'
 export const reverseDomainTokenCategory = binToHex(hexToBin(domainCategory).reverse())
 
 export const registryContract = new Contract(artifactRegistry, [reverseDomainTokenCategory], options);
+export const registryLockingBytecode = cashAddressToLockingBytecode(registryContract.address)
+export const registryLockingBytecodeHex = binToHex(registryLockingBytecode.bytecode)
 
 export const auctionContract = new Contract(artifactAuction, [BigInt(10000)], options);
 export const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address)
@@ -89,12 +92,17 @@ export const auctionNameEnforcerContract = new Contract(artifactAuctionNameEnfor
 export const auctionNameEnforcerLockingBytecode = cashAddressToLockingBytecode(auctionNameEnforcerContract.address)
 export const auctionNameEnforcerLockingBytecodeHex = binToHex(auctionNameEnforcerLockingBytecode.bytecode)
 
+export const accumulatorContract = new Contract(artifactAccumulator, [], options);
+export const accumulatorLockingBytecode = cashAddressToLockingBytecode(accumulatorContract.address)
+export const accumulatorLockingBytecodeHex = binToHex(accumulatorLockingBytecode.bytecode)
+
 console.log('nameHex', nameHex)
 console.log('INFO: name', name, nameHex, nameBin)
 console.log('INFO: aliceAddress', aliceAddress)
 console.log('INFO: alicePkh', binToHex(alicePkh))
 console.log(`let domainTokenCategory = '${domainCategory}';`)
 console.log(`let registryContractAddress = '${registryContract.address}';`)
+console.log(`let registryLockingBytecode = '${registryLockingBytecodeHex}';`)
 console.log(`let auctionContractAddress = '${auctionContract.address}';`)
 console.log(`let auctionLockingBytecode = '${auctionLockingBytecodeHex}';`)
 console.log(`let bidContractAddress = '${bidContract.address}';`)
@@ -109,3 +117,5 @@ console.log(`let domainContractAddress = '${domainContract.address}';`)
 console.log(`let domainContractBytecode = '${domainLockingBytecodeHex}';`)
 console.log(`let domainFactoryContractAddress = '${domainFactoryContract.address}';`)
 console.log(`let domainFactoryLockingBytecode = '${domainFactoryLockingBytecodeHex}';`)
+console.log(`let accumulatorContractAddress = '${accumulatorContract.address}';`)
+console.log(`let accumulatorLockingBytecode = '${accumulatorLockingBytecodeHex}';`)

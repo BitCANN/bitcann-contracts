@@ -71,43 +71,43 @@ contract Domain(
    * - Output1: Valid Internal Auth NFT back to self
    * - Output3: BCH change output
    */
-  function resolveOwnerConflict(){
-    require(tx.inputs.length == 5);
-    require(tx.outputs.length == 3);
+  // function resolveOwnerConflict(){
+  //   require(tx.inputs.length == 5);
+  //   require(tx.outputs.length == 3);
 
-    // Pure BCH input and output to fund the transaction
-    require(tx.inputs[4].tokenCategory == 0x);
-    require(tx.outputs[2].tokenCategory == 0x);
+  //   // Pure BCH input and output to fund the transaction
+  //   require(tx.inputs[4].tokenCategory == 0x);
+  //   require(tx.outputs[2].tokenCategory == 0x);
 
-    bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[2].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[3].lockingBytecode == selfLockingBytecode);
+  //   bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+  //   require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
+  //   require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+  //   require(tx.inputs[2].lockingBytecode == selfLockingBytecode);
+  //   require(tx.inputs[3].lockingBytecode == selfLockingBytecode);
 
-    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.outputs[1].lockingBytecode == selfLockingBytecode);
+  //   require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
+  //   require(tx.outputs[1].lockingBytecode == selfLockingBytecode);
 
-    // External Auth NFTs
-    require(tx.inputs[0].nftCommitment == 0x);
-    require(tx.inputs[2].nftCommitment == 0x);
+  //   // External Auth NFTs
+  //   require(tx.inputs[0].nftCommitment == 0x);
+  //   require(tx.inputs[2].nftCommitment == 0x);
 
-    // Commitments of Valid Auth NFts back to self
-    require(tx.outputs[0].nftCommitment == 0x);
-    require(tx.outputs[1].nftCommitment == tx.inputs[1].nftCommitment);
+  //   // Commitments of Valid Auth NFts back to self
+  //   require(tx.outputs[0].nftCommitment == 0x);
+  //   require(tx.outputs[1].nftCommitment == tx.inputs[1].nftCommitment);
 
-    // Ensure that all the token inputs and outputs have domainCategory
-    require(tx.inputs[0].tokenCategory == domainCategory);
-    require(tx.inputs[1].tokenCategory == domainCategory);
-    require(tx.inputs[2].tokenCategory == domainCategory);
-    require(tx.inputs[3].tokenCategory == domainCategory);
+  //   // Ensure that all the token inputs and outputs have domainCategory
+  //   require(tx.inputs[0].tokenCategory == domainCategory);
+  //   require(tx.inputs[1].tokenCategory == domainCategory);
+  //   require(tx.inputs[2].tokenCategory == domainCategory);
+  //   require(tx.inputs[3].tokenCategory == domainCategory);
 
-    require(tx.outputs[0].tokenCategory == domainCategory);
-    require(tx.outputs[1].tokenCategory == domainCategory);
+  //   require(tx.outputs[0].tokenCategory == domainCategory);
+  //   require(tx.outputs[1].tokenCategory == domainCategory);
 
-    // Compare the registrationID
-    require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
-  }
+  //   // Compare the registrationID
+  //   require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
+  // }
 
   /**
    * Allows the domain owner or anyone to burn the InternalAuthNFT and externalAuthNFT making this domain available

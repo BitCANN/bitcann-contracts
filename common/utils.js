@@ -56,6 +56,15 @@ export function pushDataHex(data) {
   }
 }
 
+export const findOwnershipNFTUTXO = (utxos, category) => {
+  const utxo = utxos.find(utxo => 
+    utxo.token?.nft?.capability === 'none' && utxo.token?.category === category
+  );
+  if (!utxo) throw new Error('Could not find ownership NFT UTXO');
+
+  return utxo;
+}
+
 export const findPureUTXO = (utxos) => {
   const utxo = utxos.reduce((max, utxo) => 
     (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, 

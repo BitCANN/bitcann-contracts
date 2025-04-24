@@ -164,7 +164,7 @@ export const  main = async () => {
     to: aliceAddress,
     amount: platformFee,
   })
-  .send();
+  .build();
 
   console.log('INFO: transaction', transaction)
 }
