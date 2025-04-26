@@ -1,31 +1,25 @@
-import { main as auction } from './transactions/auction.js'
-import { main as bid } from './transactions/bid.js'
-import { main as auctionConflictResolver } from './transactions/conflict-resolver.js'
-import { main as nameEnforcer } from './transactions/name-enforcer.js'
-import { main as domainFactory } from './transactions/domain-factory.js'
-import { main as ownershipGuard } from './transactions/ownership-guard.js'
-import { main as addRecord } from './transactions/addRecord.js'
-import { main as mocknetSetup } from './common/mocknet-setup.js'
+const Registry = require('./contracts/Registry');
+const Auction = require('./contracts/Auction');
+const Bid = require('./contracts/Bid');
+const Domain = require('./contracts/Domain');
+const DomainFactory = require('./contracts/DomainFactory');
+const AuctionConflictResolver = require('./contracts/AuctionConflictResolver');
+const AuctionNameEnforcer = require('./contracts/AuctionNameEnforcer');
+const DomainOwnershipGuard = require('./contracts/DomainOwnershipGuard');
+const Accumulator = require('./contracts/Accumulator');
 
-const main = async () => {
-  const args = process.argv.slice(2);
-  if (args.includes('mainnet')) {
-    // await auction()
-    // await bid()
-    // await auctionConflictResolver()
-    // await nameEnforcer()
-    // await domainFactory()
-    // await ownershipGuard()
-    await addRecord()
-  } else {
-    await mocknetSetup()
-    await auction()
-    await bid()
-    // await auctionConflictResolver()
-    // await nameEnforcer()
-    // await domainFactory()
-    // await ownershipGuard()
-  }
-}
+const BitCANNArtifacts = {
+	Registry,
+	Auction,
+	Bid,
+	Domain,
+	DomainFactory,
+	AuctionConflictResolver,
+	AuctionNameEnforcer,
+	DomainOwnershipGuard,
+	Accumulator,
+};
 
-main()
+module.exports = {
+	BitCANNArtifacts,
+};

@@ -1,0 +1,43 @@
+# Source files
+*.cash
+*.js.map
+*.d.ts.map
+
+# Development files
+.git/
+.gitignore
+.eslintrc.js
+.npmignore
+README.md
+CHANGELOG.md
+LICENSE
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Test files
+test/
+__tests__/
+*.test.js
+*.spec.js
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+
+# Exclude everything in contracts except JSON files
+contracts/*
+!contracts/*.json 
+
+# Image files
+*.png

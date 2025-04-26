@@ -1,27 +1,45 @@
 {
-  "name": "bitcann",
+  "name": "@bitcann/contracts",
   "author": "Kuldeep Singh",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Bitcoin Cash for Assigned Names and Numbers",
-  "main": "mainnet/index.js",
+  "homepage": "https://github.com/BitCANN/contracts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:BitCANN/contracts.git"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "contracts/",
+    "index.*"
+  ],
   "scripts": {
-    "start:mainnet": "node index.js mainnet",
-    "start:mocknet": "node index.js mocknet",
-    "compile:registry": "cashc ./contracts/Registry.cash -o ./artifacts/Registry.json",
-    "compile:domain": "cashc ./contracts/Domain.cash -o ./artifacts/Domain.json",
-    "compile:auction": "cashc ./contracts/Auction.cash -o ./artifacts/Auction.json",
-    "compile:domainfactory": "cashc ./contracts/DomainFactory.cash -o ./artifacts/DomainFactory.json",
-    "compile:auctionnameenforcer": "cashc ./contracts/AuctionNameEnforcer.cash -o ./artifacts/AuctionNameEnforcer.json",
-    "compile:domainownershipguard": "cashc ./contracts/DomainOwnershipGuard.cash -o ./artifacts/DomainOwnershipGuard.json",
-    "compile:auctionconflictresolver": "cashc ./contracts/AuctionConflictResolver.cash -o ./artifacts/AuctionConflictResolver.json",
-    "compile:accumulator": "cashc ./contracts/Accumulator.cash -o ./artifacts/Accumulator.json",
-    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:accumulator && npm run compile:domain",
-    "build": "npm run compile"
+    "compile:registry": "cashc ./contracts/Registry.cash -o ./contracts/Registry.json",
+    "compile:domain": "cashc ./contracts/Domain.cash -o ./contracts/Domain.json",
+    "compile:bid": "cashc ./contracts/Bid.cash -o ./contracts/Bid.json",
+    "compile:auction": "cashc ./contracts/Auction.cash -o ./contracts/Auction.json",
+    "compile:domainfactory": "cashc ./contracts/DomainFactory.cash -o ./contracts/DomainFactory.json",
+    "compile:auctionnameenforcer": "cashc ./contracts/AuctionNameEnforcer.cash -o ./contracts/AuctionNameEnforcer.json",
+    "compile:domainownershipguard": "cashc ./contracts/DomainOwnershipGuard.cash -o ./contracts/DomainOwnershipGuard.json",
+    "compile:auctionconflictresolver": "cashc ./contracts/AuctionConflictResolver.cash -o ./contracts/AuctionConflictResolver.json",
+    "compile:accumulator": "cashc ./contracts/Accumulator.cash -o ./contracts/Accumulator.json",
+    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:domain && npm run compile:bid && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:accumulator",
+    "build": "npm run compile",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@bitauth/libauth": "^3.1.0-next.4",
     "cashc": "^0.11.0-next.3",
-    "cashscript": "^0.11.0-next.3",
-    "dotenv": "^16.4.7"
-  }
+    "cashscript": "^0.11.0-next.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "bitcoin-cash",
+    "smart-contracts",
+    "cashscript",
+    "bitcann"
+  ],
+  "license": "MIT"
 }

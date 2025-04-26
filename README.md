@@ -1,4 +1,26 @@
-# BitCANN
+# @bitcann/contracts
+
+Bitcoin Cash for Assigned Names and Numbers (BitCANN) Smart Contracts
+
+## Installation
+
+```bash
+npm install @bitcann/contracts
+```
+
+## Usage
+
+```javascript
+import { BitCANNArtifacts } from '@bitcann/contracts';
+
+// Access contract artifacts
+const { Registry, Auction, Domain } = BitCANNArtifacts;
+```
+
+---
+
+# Documentation
+
 BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
 
 - Decentralized Domain Names like `.sat` and `.bch` and more.
