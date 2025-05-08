@@ -8,3 +8,6 @@ coverage/
 public/
 .DS_Store
 .env
+build/
+coverage/
+.env.*
