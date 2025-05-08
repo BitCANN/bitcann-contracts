@@ -33,7 +33,8 @@
     "prepublishOnly": "npm run build",
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
     "lint": "eslint . --ext .ts",
-    "lint-fix": "eslint . --ext .ts --fix"
+    "lint-fix": "eslint . --ext .ts --fix",
+    "coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
