@@ -2,6 +2,13 @@
 
 Bitcoin Cash for Assigned Names and Numbers (BitCANN) Smart Contracts
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@bitcann/contracts"><img src="https://img.shields.io/npm/v/@bitcann/contracts.svg" alt="NPM version" /></a>
+  <a href="https://t.me/bitcann_discussion"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN-0088CC?logo=telegram"></a>
+  <a href="https://www.npmjs.com/package/@bitcann/contracts"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/contracts"></a>
+</p>
+
+
 ## Installation
 
 ```bash
