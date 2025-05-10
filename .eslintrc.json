@@ -137,8 +137,6 @@
       }],
       "import/no-unresolved": ["off"],
       "import/no-extraneous-dependencies": ["off"],
-      "no-undefined": ["error"],
-      "no-undef": ["error"],
       "@typescript-eslint/space-before-blocks": "off"
   }
 }
