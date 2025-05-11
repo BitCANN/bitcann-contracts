@@ -29,6 +29,8 @@ const { Registry, Auction, Domain } = BitCANNArtifacts;
 
 ---
 
+> ⚠️ Important Notice: The contracts have not undergone extensive auditing by third parties. Users should be aware of potential risks, including the possibility of losing domain ownership or funds during auctions. Exercise caution and consider these risks before use.**
+
 # Documentation
 
 BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
@@ -370,7 +372,7 @@ If the domain has been inactive for > `inactivityExpiryTime` then the domain is 
 
 ## TLDs
 
-Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract system directly as a `value`. The names in the all the NFTs in the system do not have the TLD in them. Instead, it exists in the AuthChain. This is done to allow bigger names and reduce the contract size and complexity.
+Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract system directly as a `value`. The names as part of the commitment in any of the NFTs in the system do not have the TLD in them. Instead, it exists in the AuthChain. This is done to allow bigger names and reduce the contract size and complexity.
 
 During the genesis phase, the Registry.cash contract is initialized with the `domainCategory`. The `authHead` for this category must include the symbol and name as the TLD, making it accessible to all applications. This entry will be the first and only one in the `authChain`. After this step, the `authHead` must be permanently removed by creating an OP_RETURN output as the first output.
 
@@ -401,35 +403,11 @@ To ensure the system operates as expected, the following steps must be followed 
 Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once no new bids have been made for a `minWaitTime` period, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
 
 #### Can a bid be cancelled?
-No, Once a bid is made, it's locked in.
+No.
 
 #### Who earns from the auction sales?
 
-Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract. The can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
-
-#### How do domain or record lookups work?
-Let's assume there exists a library called `bitcann`. There is how it might look like:
-
-```js
-import { getDomain, getRecords } from 'bitcann';
-
-const domain = getDomain('example.bch');
-const records = getRecords(domain);
-```
-
-- `getDomain()` will return the address of the domain contract.
-```js
-function getDomain(fullName) {
-   const name, tld = fullName.split('.')
-   const domainCategory = getCategoryForTLD(tld)
-   const domainCategoryReversed = binToHex(hexToBin(domainCategory).reverse())
-   const scriptHash = buildLockScriptP2SH32(20 +  domainCategoryReversed + pushDataHex(name) + domainContractBytecode)
-   const address = lockScriptToAddress(scriptHash)
-   return address
-}
-```
-
-- `getRecords()` will return the records of the domain. Getting the records is as easy as fetching the transaction history of the domain contract and checking the OP_RETURN outputs.
+Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract. They can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
 
 #### Can anyone renounce ownership of a domain?
 Yes, The owner must call the `burn` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
