@@ -1,7 +1,7 @@
 {
   "name": "@bitcann/contracts",
   "author": "Kuldeep Singh",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Bitcoin Cash for Assigned Names and Numbers",
   "homepage": "https://github.com/BitCANN/contracts",
   "repository": {

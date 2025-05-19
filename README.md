@@ -11,6 +11,8 @@ Bitcoin Cash for Assigned Names and Numbers (BitCANN) Smart Contracts
   <a href="https://www.npmjs.com/package/@bitcann/contracts"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/contracts"></a>
 </p>
 
+> ⚠️ Important Notice: The contracts have not undergone extensive auditing by third parties. Users should be aware of potential risks, including the possibility of losing domain ownership or funds during auctions. Exercise caution and consider these risks before use.**
+
 
 ## Installation
 
@@ -28,8 +30,6 @@ const { Registry, Auction, Domain } = BitCANNArtifacts;
 ```
 
 ---
-
-> ⚠️ Important Notice: The contracts have not undergone extensive auditing by third parties. Users should be aware of potential risks, including the possibility of losing domain ownership or funds during auctions. Exercise caution and consider these risks before use.**
 
 # Documentation
 
