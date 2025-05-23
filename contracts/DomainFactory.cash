@@ -18,12 +18,16 @@ contract DomainFactory(
    * - Issuing an immutable domain NFT to the auction winner
    * - Distributing auction fees between the platform and miners
    * - Burning the auctionNFT
+   * - Pure BCH input from bidder is used to prevent miners from taking away the funds from any or all transactions in the future.
+   *   Out of many possible ways, this method will be suitable to easily implement by applications.
+   *
    *
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
    * - Input2: DomainMintingNFT from the Registry Contract
    * - Input3: auctionNFT from the Registry Contract
+   * - Input4: Pure BCH from bidder
    *
    * @outputs
    * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
@@ -32,13 +36,14 @@ contract DomainFactory(
    * - Output3: External Auth NFT to the domain contract
    * - Output4: Internal Auth NFT to the domain contract
    * - Output5: Domain NFT to the auction winner
-   * - Output6: Platform fee (only for the first 4 years)
+   * - Output6: Pure BCH back to the bidder
+   * - Output7: Platform fee
    *
    */
   function call(){
     require(tx.version == 2);
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length == 7);
+    require(tx.inputs.length == 5);
+    require(tx.outputs.length == 8);
 
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
@@ -123,14 +128,24 @@ contract DomainFactory(
     require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH));
     require(tx.outputs[5].value == 1000);
 
+    // Ensure that the bidder receiving the domain ownership NFT is also receiving the pure BCH back
+    require(tx.inputs[4].lockingBytecode == tx.outputs[5].lockingBytecode);
+    require(tx.inputs[4].lockingBytecode == tx.outputs[6].lockingBytecode);
+    // Ensure that the value of input from bidder is the same and goes back to the bidder
+    require(tx.inputs[4].value == tx.outputs[6].value);
+
+    // Ensure that input and output to the bidder does not have any tokenCategory
+    require(tx.inputs[4].tokenCategory == 0x);
+    require(tx.outputs[6].tokenCategory == 0x);
+
     // tokenAmount from the auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
 
     // Output can be added by anyone (Mainly platforms)
-    require(tx.outputs[6].tokenCategory == 0x);
+    require(tx.outputs[7].tokenCategory == 0x);
     // Enforce that the other piece of the fee goes to the miners.
-    require(tx.outputs[6].value <= (tx.inputs[3].value / 100) * maxPlatformFeePercentage);
+    require(tx.outputs[7].value <= (tx.inputs[3].value / 100) * maxPlatformFeePercentage);
   }
 
 }

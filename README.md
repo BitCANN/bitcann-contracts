@@ -179,9 +179,10 @@ Transaction Structure:
 | 1 | Any UTXO from self | Back to self |
 | 2 | [RegistrationNFT](#registrationnfts) Domain Minting NFT | [RegistrationNFT](#registrationnfts) Domain Minting NFT back to registry contract |
 | 3 | [AuctionNFT](#auctionnft) | [DomainNFT](#domainnfts) External Auth NFT |
-| 4 | | [DomainNFT](#domainnfts) Internal Auth NFT |
-| 5 | | [DomainNFT](#domainnfts) Ownership NFT|
-| 6 | | Platform fee and rest to miners |
+| 4 | Pure BCH from bidder | [DomainNFT](#domainnfts) Internal Auth NFT |
+| 5 | | [DomainNFT](#domainnfts) Ownership NFT |
+| 6 | | Pure BCH back to Bidder |
+| 7 | | Platform fee and rest to miners |
 
 
 ### Guard Contracts
