@@ -68,23 +68,19 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
 3. [TLDs](#tlds)
 4. [Genesis](#genesis)
 5. [FAQs](#faqs)
-   - [How are domains sold?](#how-are-domains-sold)
-   - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
-   - [How is the correctness of the name verified?](#how-is-the-correctness-of-the-name-verified)
-   - [How are auctions created?](#how-are-auctions-created)
-   - [What if two auctions for the same name are running?](#what-if-two-auctions-for-the-same-name-are-running)
-   - [I won the bidding contest, how do I claim the domain?](#i-won-the-bidding-contest-how-do-i-claim-the-domain)
-   - [Why Internal Auth NFT and External Auth NFT in each Domain Contract?](#why-internal-auth-nft-and-external-auth-nft-in-each-domain-contract)
-   - [What if the tokenAmount in the CounterNFT runs out?](#what-if-the-tokenamount-in-the-counternft-runs-out)
-   - [An illegal registration auction has started for a domain that is owned by someone, will there be two owners?](#an-illegal-registration-auction-has-started-for-a-domain-that-is-owned-by-someone-will-there-be-two-owners)
+   - [How are names allocated or sold?](#how-are-names-allocated-or-sold)
    - [Can a bid be cancelled?](#can-a-bid-be-cancelled)
+   - [How is any TLD assigned?](#how-is-any-tld-assigned)
+   - [Who earns from the auction sales?](#who-earns-from-the-auction-sales)
    - [Can anyone renounce ownership of a domain?](#can-anyone-renounce-ownership-of-a-domain)
-   - [What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?](#what-happens-to-the-ownershipnft-when-the-ownership-is-renounced-or-the-domain-is-abandoned)
-   - [How do domain or record lookups work?](#how-do-domain-or-record-lookups-work)
+   - [What occurs during a ownership renouncement event?](#what-occurs-during-a-ownership-renouncement-event)
    - [How does ownership transfer work?](#how-does-ownership-transfer-work)
-   - [How to add records?](#how-to-add-records)
-   - [How to remove records?](#how-to-remove-records)
+   - [How to records managed?](#how-to-records-managed)
    - [No Renewal or Expiry?](#no-renewal-or-expiry)
+   - [Why use text-based ownership instead of hash-based ownership?](#why-use-text-based-ownership-instead-of-hash-based-ownership)
+   - [How do I know I or someone else owns a domain?](#how-do-i-know-i-or-someone-else-owns-a-domain)
+   - [What if the incentive system is not 100% effective?](#what-if-the-incentive-system-is-not-100-effective)
+   - [What if an invalid name is registered?](#what-if-an-invalid-name-is-registered)
 
 ## Contracts
 
@@ -400,52 +396,86 @@ To ensure the system operates as expected, the following steps must be followed 
 
 ## FAQs
 
-#### How are domains sold?
-Domains are sold through an auction. The auction starts using the [Auction](#auction) Contract and is open for new Bids from anyone using the [Bid](#bid) contract. Once no new bids have been made for a `minWaitTime` period, the bidder can claim the domain by using the [DomainFactory](#domainfactory) contract.
+#### How are names allocated or sold?
+Names are allocated via an auction system, which is initialized with a starting bid and a duration.
+Once the auction ends, the highest bidder is eligible to claim the name.
+
+Important: The auction remains open until the highest bidder claims the name after the minimum duration has elapsed.
+
+If a new bid is submitted, the timer resets, requiring the highest bidder to wait for the minimum duration again before claiming the name.
+
+Even if the minimum duration has passed without the highest bidder claiming the name, the auction remains active, allowing new bids to be placed.
+
+[Auction](#auction) Contract: Technical details
 
 #### Can a bid be cancelled?
 No.
+
+#### How is any TLD assigned?
+Top Level Domains (TLDs) such as .bch and .sat are not directly stored as values within the contract system or as commitments in the NFTs. Instead, they are represented in the AuthChain, which allows for larger names and reduces contract complexity. Also, BCMR being a widely adopted standard makes it easier for applications to display the relevant information.
+
+During the genesis phase, the [Registry.cash](#registry) contract is initialized with a token category. The authHead for this category must include the symbol and name as the TLD, ensuring accessibility to all applications. This entry is the first and only one in the authChain. Subsequently, the authHead is permanently removed by creating an OP_RETURN output as the first output.
+
+This implies that while anyone can claim any TLD, the community will naturally gravitate towards and adopt the most popular and widely used ones.
 
 #### Who earns from the auction sales?
 
 Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [DomainFactory](#domainfactory) contract. They can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
 
 #### Can anyone renounce ownership of a domain?
-Yes, The owner must call the `burn` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain.
+Yes, The owner must call the `burn` function of their respective Domain contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the domain. This action will allow anyone to initiate a new auction for the domain and claim for themselves.
 
-#### What happens to the ownershipNFT when the ownership is renounced or the domain is abandoned?
-Since the ownershipNFT's first 8 bytes are registrationID, they cannot influence the domain contract as the new internal Auth NFT will have a different registrationID. The existing ownershipNFT renders useless.
+#### What occurs during a ownership renouncement event?
+Each domain contract has an inbuilt function that allows the owner to renounce ownership by burning the internalAuthNFT and externalAuthNFT along with the ownershipNFT.
+
+This action will allow anyone to initiate a new auction for the domain and claim for themselves.
 
 #### How does ownership transfer work? 
 Ownership transfer is simply transferring the ownershipDomainNFT to the new owner.
 
-#### How to add records?
-The owner can add new records using the `addRecord` function of the DomainContract. Records are added as OP_RETURN outputs. Records can be found by checking transaction history.
-
-#### How to remove/invalidate records?
-
-Since the records are OP_RETURN, it's not possible to remove them. However, it's possible to provide a way that can act as a standard for applications to understand that a certain record in invalidated. To 'Invalidate' a record, the owner can create a new transaction from the Domain Contract using the `addRecord` function and provide `RMV + hash` in the OP_RETURN.
+#### How to records managed?
+Record management is done by following [SORTS](https://github.com/BitCANN/sorts) standard 
 
 #### No Renewal or Expiry?
-To prevent domains from being lost indefinitely, the owner must perform at least one activity (such as adding or invalidating records) within the `inactivityExpiryTime` period. Each activity resets the inactivity timer. If the owner does not interact with the domain within the `inactivityExpiryTime`, anyone can burn the Internal and External Auth NFTs to make the domain available for auction.
+The protocol uses an activity-based maintenance system to ensure domain upkeep:
 
-#### How is the name verified?
-Check [AuctionNameEnforcer](#auctionnameenforcer)
+Owners are required to engage in at least one activity within a specified timeframe, known as `inactivityExpiryTime`, which is determined during the genesis process.
 
-#### How are auctions created?
-Check [Auction](#auction)
+These activities, such as adding or invalidating records, reset the inactivity timer.
 
-#### What if two auctions for the same name are running?
-Check [AuctionConflictResolver](#auctionconflictresolver)
+Note: The expiration of the timer alone does not permit the initiation of a new auction. The owner must utilize the built-in function to burn the internal and external Auth NFTs, demonstrating that the inactivity condition has been satisfied. Failing to do so before starting a new auction allows others to invalidate the new registration attempt.
 
-#### I won the bidding contest, how do I claim the domain?
-Check [DomainFactory](#domainfactory)
+#### Why use text-based ownership instead of hash-based ownership?
+Text-based ownership makes the auction process transparent, allowing interested parties to view and participate in active auctions, thus providing equal opportunities for all.
 
-#### Why Internal Auth NFT and External Auth NFT in each Domain Contract?
-Check [DomainNFTs](#domainnfts)
+In a hash-based system, reliance on external indexers to prevent auction conflicts can increase the risk of losing funds due to synchronization issues.
 
-#### What if the tokenAmount in the CounterNFT runs out?
-Check [Accumulator](#accumulator)
+Marketplaces would need to depend on indexers to display names accurately.
 
-#### An auction has started for a domain that is owned by someone, will there be two owners?
-Check [DomainOwnershipGuard](#domainownershipguard)
+Creating a registry of hashes is relatively easy, which undermines the perceived privacy of a hash-based system.
+
+#### How do I know I or someone else owns a domain?
+Upon the conclusion of the auction and the successful claiming of the name, three distinct NFTs are generated, each serving a unique purpose. Let us explore their roles in more detail.
+
+**Ownership NFT:**
+
+The Ownership NFT, along with the Internal Auth NFT, serves as definitive proof of name ownership. The ownershipNFT is minted to the highest bidder's address and contains both the name and registrationID as part of its commitment.
+
+**Internal Auth NFT:**
+
+The Internal Auth NFT, along with the Ownership NFT, is used to prove ownership to the domain contract. The internalAuthNFT is minted to the domain contract that is responsible to control the name and contains the same registrationID as the ownershipNFT.
+To interact with the domain contract, one must provide ownershipNFT and use the internalAuthNFT that have the same registrationID.
+
+**External Auth NFT:**
+
+The External Auth NFT is used to prove that a domain contract is already owner by someone. It is minted to the domain contract that is responsible to control the name and does not contain anything in its commitment.
+
+#### What if the incentive system is not 100% effective?
+
+In rare instances, a name may be claimed by two different bidders in separate auctions. The legitimate owner will be the bidder with the lower registrationID. Each domain contract includes a built-in function that allows anyone to present two competing pairs of internal and external auth NFTs and burn the one with the higher registrationID.
+
+As mentioned earlier, it will become impossible for the party with the mismatched registrationID in their ownershipNFT and internalAuthNFT to use the name, rendering the ownershipNFT issued to the party with the higher registrationID ineffective.
+
+#### What if an invalid name is registered?
+
+It is extremely unlikely for an invalid name to be registered due to the robust incentive system in place. However, in the rare event that the incentives fail, the protocol does not provide a remedy for such a case.
