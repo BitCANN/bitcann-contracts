@@ -7,7 +7,7 @@ Bitcoin Cash for Assigned Names and Numbers (BitCANN) Smart Contracts
   <a href="https://codecov.io/github/BitCANN/bitcann-contracts" > 
  <img src="https://codecov.io/github/BitCANN/bitcann-contracts/graph/badge.svg?token=EFOGPCL99P"/> 
  </a><br>
-  <a href="https://t.me/bitcann_discussion"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN-0088CC?logo=telegram"></a>
+  <a href="https://t.me/bitcann_protocol"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN-0088CC?logo=telegram"></a>
   <a href="https://www.npmjs.com/package/@bitcann/contracts"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/contracts"></a>
 </p>
 
