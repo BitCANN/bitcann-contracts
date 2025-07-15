@@ -67,7 +67,8 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
    - [DomainNFTs](#domainnfts)
 3. [TLDs](#tlds)
 4. [Genesis](#genesis)
-5. [FAQs](#faqs)
+5. [Dual Decay Mechanism](#dual-decay-mechanism)
+6. [FAQs](#faqs)
    - [How are names allocated or sold?](#how-are-names-allocated-or-sold)
    - [Can a bid be cancelled?](#can-a-bid-be-cancelled)
    - [How is any TLD assigned?](#how-is-any-tld-assigned)
@@ -392,7 +393,62 @@ To ensure the system operates as expected, the following steps must be followed 
 - Send the threadNFTs to the `Registry.cash`
 - Remove the authhead after adding information(Name and Symbol) about the domain in the authchain.
 
+
+## Dual Decay Mechanism
+
+Dual decay mechanism aligns incentives between the creator, users, and miners and to gradually transform the system into a public good.
+
+- Decaying Auction Price: Reduces the base cost to acquire names as more names are registered.
+- Decaying Genesis Incentive: Reduces the creator’s revenue share over time until miners receive 100% of auction proceeds.
+
+
+![Dual Decay Mechanism](dual-decay.png)
+
+| Parameter                          | Value           | Notes                |
+|-------------------------------------|-----------------|----------------------|
+| Initial auction price               | 0.01 BCH        |        from 1st registration               |
+| Auction price decay rate             | 0.0003%         | 326667 registrations to reach 0.0002 BCH     |
+| End auction price                   | 0.0002 BCH     | from 326667 registrations onwards|
+| Genesis incentive decay rate | 0.001%  |   99858 names to reach 0 payout                   |
+
+
+**1. Decaying Auction Price:**
+
+Every name is claimed via an English-style auction with a base price. This starting price begins at 0.01 BCH (~$5, as of 1st July 2025) and decreases at a fixed rate of 0.0003% per name claimed, reaching a floor of 0.0002 BCH after roughly 326,667 registrations.
+
+This has the following advantages:
+
+- If the BCH price appreciates, the auction price may become too high, pricing out users and resulting in fewer names being claimed. If it's too low, a few actors could dominate early name registrations, hoard them, or even lease them out. The decay mechanism balances these extremes.
+- If the BCH price does not appreciate, bidding can serve as the price discovery mechanism.
+- Reduces early hoarding and squatting.
+
+
+**2. Decaying Genesis Incentive:**
+
+The Decaying Genesis Incentive serves a dual purpose: it funds the creator's efforts to launch and grow the system. It also acts as a critical check against early miner monopolization, preventing a few miners who may discover the system early from recycling rewards to accumulate names before the broader network is aware.
+
+- Incentivises the creator to continuously promote and improve the system, fund the development, integrations, community building, etc. No work = no payout.
+- Creates a natural sunset for economic power, avoiding long-term rent seeking behavior.
+- Ensures the system eventually becomes public good governed by market forces.
+
+Known limitations:
+
+- **[Early phase]**: In the initial stages, the creator may be tempted to bid on names to inflate prices and secure either a higher payout or acquire the name at little to no cost if others don’t outbid them.
+However, as the incentive decays to zero by around ~99,858 registrations, the opportunity for such behavior diminishes. Compared to global domain statistics, this risk window represents a very small fraction of total registrations.
+
+Global Domain Registration Statistics
+
+| System                  | Total Domains Registered |
+|-------------------------|-------------------------|
+| Global (all domains)    | >362 Million             |
+| ENS (Ethereum Name Service) | >2.8 Million         |
+| Unstoppable Domains     | >4 Million             |
+
+
+- **[Early phase]**: If the creator also operates as a miner during the early phase, they are in the strongest position to game the system.
+
 ---
+
 
 ## FAQs
 
