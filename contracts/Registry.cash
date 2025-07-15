@@ -1,4 +1,4 @@
-pragma cashscript ^0.11.0;
+pragma cashscript 0.11.2;
 
 /**
   * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]

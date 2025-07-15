@@ -1,4 +1,4 @@
-pragma cashscript ^0.11.0;
+pragma cashscript 0.11.2;
 
 /**
  * @param inactivityExpiryTime The time period after which the domain is considered inactive.

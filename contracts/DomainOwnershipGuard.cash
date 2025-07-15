@@ -1,4 +1,4 @@
-pragma cashscript ^0.11.0;
+pragma cashscript 0.11.2;
 
 /**
  * @param domainContractBytecode The the partial bytecode of the domain contract that has an Owner..
