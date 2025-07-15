@@ -33,6 +33,9 @@ contract Domain(
    * 
    */
   function useAuth(int authID) {
+    // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
+    require(tx.version == 2);
+
     // The activeInputIndex can be anything as long as the utxo properties are preserved and comes back to the
     // contract without alteration.
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
@@ -72,6 +75,9 @@ contract Domain(
    * - Output3: BCH change output
    */
   function resolveOwnerConflict(){
+    // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
+    require(tx.version == 2);
+
     require(tx.inputs.length == 5);
     require(tx.outputs.length == 3);
 
@@ -126,7 +132,10 @@ contract Domain(
    *
    */
   function burn() {
+    // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
+    // Need version 2 enforcement for relative timelocks.
     require(tx.version == 2);
+
     require(tx.inputs.length == 3);
     require(tx.outputs.length == 1);
 
