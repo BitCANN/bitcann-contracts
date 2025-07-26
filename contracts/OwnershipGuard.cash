@@ -1,27 +1,28 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
 /**
- * @param domainContractBytecode The the partial bytecode of the domain contract that has an Owner..
+ * @param nameContractBytecode The the partial bytecode of the name contract that has an Owner.
+ * @param tld - TLD of the name
  */
-contract DomainOwnershipGuard(bytes domainContractBytecode) {
+contract OwnershipGuard(bytes nameContractBytecode, bytes tld) {
   /**
-   * If the domain being auctioned already has an `externalAuthNFT` with the same category, then the auction is invalid.
-   * Because it means that an owner still exists. If it is known that the domain has been abandoned for > `inactivityExpiryTime`
-   * then one must use the `burn` method of the domain.cash to burn the internalAuthNFT and externalAuthNFT making the 
-   * domain to be available for auction.
+   * If the name being auctioned already has an `externalAuthNFT` with the same category, then the auction is invalid.
+   * Because it means that an owner still exists. If it is known that the name has been abandoned for > `inactivityExpiryTime`
+   * then one must use the `burn` method of the name.cash to burn the internalAuthNFT and externalAuthNFT making the 
+   * name to be available for auction.
    *
-   * Penalizes invalid domain registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.
+   * Penalizes invalid name registrations by allowing anyone to burn the auctionNFT and claim the funds as a reward.
    * 
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: External Auth NFT from the Domain Contract
+   * - Input2: External Auth NFT from the Name Contract
    * - Input3: auctionNFT from Registry Contract
    * 
    * @outputs
    * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change
-   * - Output2: External Auth NFT back to the Domain Contract
+   * - Output2: External Auth NFT back to the Name Contract
    * - Output3: BCH change/reward to caller
    */
   function call(){
@@ -43,29 +44,30 @@ contract DomainOwnershipGuard(bytes domainContractBytecode) {
     require(tx.inputs[2].tokenCategory == registryInputCategory);
     require(tx.outputs[2].tokenCategory == registryInputCategory);
 
-    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
+    // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);
     require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    // Mutable
+    require(auctionCapability == 0x01);
 
     // nftCommiment of the externalAuthNFT must stay the same
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
     // Ensure that the externalAuth NFT is used and not the internalAuth NFT.
     require(tx.inputs[2].nftCommitment == 0x);
 
-    // Get the name of the domain from the auctionNFT
+    // Get the name of the name from the auctionNFT
     bytes name = tx.inputs[3].nftCommitment.split(20)[1];
-    // Get the name length to generate the complete bytecode of the domain contract
+    // Get the name length to generate the complete bytecode of the name contract
     int nameLength = name.length;
     // category + name + bytecode.
-    // Note: `inactivityExpiryTime` in the domain is already added to the domainContractBytecode in the constructor.
-    bytes domainBytecode = 0x20 + registryInputCategory + bytes(nameLength) + name + domainContractBytecode;
-    bytes32 scriptHash = hash256(domainBytecode);
-    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+    // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
+    bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength + tld.length) + name + tld + nameContractBytecode;
+    bytes32 scriptHash = hash256(nameBytecode);
+    bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
-    // Ensure that the externalAuthNFT is coming from the correct Domain Contract
-    require(tx.inputs[2].lockingBytecode == domainLockingBytecode);
-    require(tx.outputs[2].lockingBytecode == domainLockingBytecode);
+    // Ensure that the externalAuthNFT is coming from the correct Name Contract
+    require(tx.inputs[2].lockingBytecode == nameLockingBytecode);
+    require(tx.outputs[2].lockingBytecode == nameLockingBytecode);
 
     // tokenAmount from the auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract

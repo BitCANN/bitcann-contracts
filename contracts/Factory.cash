@@ -1,21 +1,23 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
 /**
- * @param domainContractBytecode - Partial bytecode of the domain contract
+ * @param nameContractBytecode - Partial bytecode of the name contract
  * @param minWaitTime - Minimum wait time to consider an auction ended
- * @param maxPlatformFeePercentage - Maximum platform fee percentage
+ * @param creatorIncentivePKH - PKH of the creator incentive
+ * @param tld - TLD of the name
  */
-contract DomainFactory(
-  bytes domainContractBytecode,
+contract Factory(
+  bytes nameContractBytecode,
   int minWaitTime,
-  int maxPlatformFeePercentage
+  bytes20 creatorIncentivePKH,
+  bytes tld
 ) {
   /**
-   * This function finalizes a domain registration auction by:
+   * This function finalizes a name registration auction by:
    * - Verifying the auction has ended and the winner's bid is valid
-   * - Issuing an immutable externalAuthNFT to the Domain Contract
-   * - Issuing an immutable internalAuthNFT to the Domain Contract
-   * - Issuing an immutable domain NFT to the auction winner
+   * - Issuing an immutable externalAuthNFT to the Name Contract
+   * - Issuing an immutable internalAuthNFT to the Name Contract
+   * - Issuing an immutable name NFT to the auction winner
    * - Distributing auction fees between the platform and miners
    * - Burning the auctionNFT
    * - Pure BCH input from bidder is used to prevent miners from taking away the funds from any or all transactions in the future.
@@ -25,29 +27,27 @@ contract DomainFactory(
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
-   * - Input2: DomainMintingNFT from the Registry Contract
+   * - Input2: NameMintingNFT from the Registry Contract
    * - Input3: auctionNFT from the Registry Contract
-   * - Input4: Pure BCH from bidder
    *
    * @outputs
    * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change
-   * - Output2: DomainMintingNFT back to the Registry contract
-   * - Output3: External Auth NFT to the domain contract
-   * - Output4: Internal Auth NFT to the domain contract
-   * - Output5: Domain NFT to the auction winner
-   * - Output6: Pure BCH back to the bidder
-   * - Output7: Platform fee
+   * - Output2: NameMintingNFT back to the Registry contract
+   * - Output3: External Auth NFT to the name contract
+   * - Output4: Internal Auth NFT to the name contract
+   * - Output5: Name NFT to the auction winner
+   * - Output6: Platform fee [Reduces and the not included]
    *
    */
   function call(){
-    require(tx.inputs.length == 5);
-    require(tx.outputs.length == 8);
+    require(tx.inputs.length == 4);
+    require(tx.outputs.length <= 7);
 
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    // Ensure that the domainCategory in not minted here.
+    // Ensure that the nameCategory in not minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
     // Strict value checks to ensure the platform and miner get fee.
     require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value);
@@ -67,23 +67,25 @@ contract DomainFactory(
     require(tx.outputs[4].tokenCategory == registryInputCategory);
     require(tx.outputs[5].tokenCategory == registryInputCategory);
 
-    // DomainMintingNFT should be minting and of the 'domainCategory' i.e registryInputCategory
-    bytes domainMintingCategory, bytes domainMintingCapability = tx.inputs[2].tokenCategory.split(32);
-    require(domainMintingCategory == registryInputCategory);
-    require(domainMintingCapability == 0x02); // Mutable
-    // DomainMintingNFT should keep the same category and capability
+    // NameMintingNFT should be minting and of the 'nameCategory' i.e registryInputCategory
+    bytes nameMintingCategory, bytes nameMintingCapability = tx.inputs[2].tokenCategory.split(32);
+    require(nameMintingCategory == registryInputCategory);
+    // Minting
+    require(nameMintingCapability == 0x02);
+    // NameMintingNFT should keep the same category and capability
     require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
 
-    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
+    // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);
     require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    // Mutable
+    require(auctionCapability == 0x01);
 
-    // Enforce strict restrictions on DomainMintingNFT
+    // Enforce strict restrictions on NameMintingNFT
     require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment);
-    // DomainMintingNFT has no nftCommitment
+    // NameMintingNFT has no nftCommitment
     require(tx.outputs[2].nftCommitment == 0x);
-    // DomainMintingNFT has no tokenAmount
+    // NameMintingNFT has no tokenAmount
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount);
     require(tx.outputs[2].tokenAmount == 0);
 
@@ -97,18 +99,18 @@ contract DomainFactory(
     // Extract the PKH and name from the auctionNFT
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
     
-    // Get the name length to generate the complete bytecode of the domain contract
+    // Get the name length to generate the complete bytecode of the name contract
     int nameLength = name.length;
     // category + name + bytecode.
-    // Note: `inactivityExpiryTime` in the domain is already added to the domainContractBytecode in the constructor.
-    bytes domainBytecode = 0x20 + registryInputCategory + bytes(nameLength) + name + domainContractBytecode;
-    bytes32 scriptHash = hash256(domainBytecode);
-    bytes35 domainLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
+    // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
+    bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength) + name + tld + nameContractBytecode;
+    bytes32 scriptHash = hash256(nameBytecode);
+    bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     
-    // ExternalAuthNFT goes to the domain contract
-    require(tx.outputs[3].lockingBytecode == domainLockingBytecode);
-    // InternalAuthNFT goes to the domain contract
-    require(tx.outputs[4].lockingBytecode == domainLockingBytecode);
+    // ExternalAuthNFT goes to the name contract
+    require(tx.outputs[3].lockingBytecode == nameLockingBytecode);
+    // InternalAuthNFT goes to the name contract
+    require(tx.outputs[4].lockingBytecode == nameLockingBytecode);
     
     // ExternalAuthNFT does not have any commitment
     require(tx.outputs[3].nftCommitment == 0x);
@@ -122,29 +124,27 @@ contract DomainFactory(
     // Strict value check
     require(tx.outputs[4].value == 1000);
 
-    // Send the domain ownership NFT to the bidder
+    // Send the name ownership NFT to the bidder
     require(tx.outputs[5].nftCommitment == registrationId + name);
     require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH));
     require(tx.outputs[5].value == 1000);
-
-    // Ensure that the bidder receiving the domain ownership NFT is also receiving the pure BCH back
-    require(tx.inputs[4].lockingBytecode == tx.outputs[5].lockingBytecode);
-    require(tx.inputs[4].lockingBytecode == tx.outputs[6].lockingBytecode);
-    // Ensure that the value of input from bidder is the same and goes back to the bidder
-    require(tx.inputs[4].value == tx.outputs[6].value);
-
-    // Ensure that input and output to the bidder does not have any tokenCategory
-    require(tx.inputs[4].tokenCategory == 0x);
-    require(tx.outputs[6].tokenCategory == 0x);
 
     // tokenAmount from the auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
 
-    // Output can be added by anyone (Mainly platforms)
-    require(tx.outputs[7].tokenCategory == 0x);
-    // Enforce that the other piece of the fee goes to the miners.
-    require(tx.outputs[7].value <= (tx.inputs[3].value / 100) * maxPlatformFeePercentage);
+    // Dual Decay mechanism, creator incentive decays linearly with the step.
+    // 1. Decay percentage to the step 0.001%
+    int decayPercentageToTheStep = tx.inputs[3].tokenAmount * 1 / 10000;
+    // 2. Get creator incentive for current step with linear decay
+    int creatorIncentive = tx.inputs[3].tokenAmount * (1 - decayPercentageToTheStep);
+
+    if(creatorIncentive > 20000) {
+      require(tx.outputs[6].tokenCategory == 0x);
+      // Enforce that the other piece of the fee goes to the miners.
+      require(tx.outputs[6].value == creatorIncentive);
+      require(tx.outputs[6].lockingBytecode == new LockingBytecodeP2PKH(creatorIncentivePKH));
+    }
   }
 
 }

@@ -1,8 +1,8 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
-contract AuctionNameEnforcer() {
+contract NameEnforcer() {
   /**
-   * Proves that a domain name contains invalid characters, burns the auctionNFT, and takes away the funds as a reward.
+   * Proves that a name contains invalid characters, burns the auctionNFT, and takes away the funds as a reward.
    * During the entire auction, this can be called at any time by anyone.
    * 
    * Rules:
@@ -39,7 +39,7 @@ contract AuctionNameEnforcer() {
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
 
-    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
+    // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[2].tokenCategory.split(32);
     require(auctionCategory == registryInputCategory);
     require(auctionCapability == 0x01); // Mutable

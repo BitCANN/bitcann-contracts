@@ -20,11 +20,11 @@ describe('imports', () =>
 			'Registry',
 			'Auction',
 			'Bid',
-			'Domain',
-			'DomainFactory',
-			'AuctionConflictResolver',
-			'AuctionNameEnforcer',
-			'DomainOwnershipGuard',
+			'Name',
+			'Factory',
+			'NameEnforcer',
+			'OwnershipGuard',
+			'ConflictResolver',
 			'Accumulator',
 		] as const;
 

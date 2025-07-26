@@ -106,7 +106,7 @@ The Registry contract functions as the control and storage hub. Operational, Gua
 This contract holds [RegistrationNFTs](#registrationnfts), [AuctionNFTs](#auctionnft), and [AuthorizedThreadNFTs](#authorizedthreadnfts).
 
 Constructor:
-- `domainCategory`: The category of the domain. All the NFTs in the system belong to this category.
+- `nameCategory`: The category of the domain. All the NFTs in the system belong to this category.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -253,7 +253,7 @@ The Domain contract allows the owner to perform a few operations after [DomainNF
 Constructor:
 - `inactivityExpiryTime`: The time after which the domain is considered abandoned.
 - `name`: The name of the domain.
-- `domainCategory`: The category of the domain.
+- `nameCategory`: The category of the domain.
 
 There are 3 functions in each Domain Contract:
 
@@ -318,11 +318,11 @@ The contracts talk to each other through cashtokens. There are 4 types in this s
 #### RegistrationNFTs
 A pair of minting NFTs that exist as UTXOs within the [Registry.cash](#registry) contract, consisting of:
    - **CounterNFT**: This minting hybrid NFT has nftCommitment that starts from 0 and increments by 1 with each new registration. It is also initialized with the maximum possible token amount of `9223372036854775807` that interacts with [Auction.cash](#auction) to facilitate the creation of new auction NFTs. Based on the value of the new registrationID from it's own commitment, the new minted AuctionNFT gets the exact tokenAmount. [FAQ](#what-if-the-tokenamount-in-the-counternft-runs-out)
-      - `category`: domainCategory
+      - `category`: nameCategory
       - `commitment`: registrationID < 8 bytes >
       - `tokenAmount`: Keeps reducing with each new registration.
    - **DomainMintingNFT**: A minting NFT that works with [DomainFactory.cash](#domainfactory) to issue new Domain NFTs. This has no nftCommitment or tokenAmount.
-      - `category`: domainCategory
+      - `category`: nameCategory
 
 #### AuctionNFT
 A mutable hybrid NFT created for each new auction that remains within [Registry.cash](#registry), containing comprehensive auction information through the following attributes:
@@ -330,14 +330,14 @@ A mutable hybrid NFT created for each new auction that remains within [Registry.
    - `tokenAmount`: This represents the registrationID
    - `capability`: Mutable
    - `satoshis`: The latest bid amount
-   - `category`: The designated domainCategory
+   - `category`: The designated nameCategory
    A new bid simply updates the `pkh` in the `nftCommitment` and updates the `satoshisValue` to the new amount.
 
 #### AuthorizedThreadNFTs
 Each authorized contract's lockingbytecode(Excluding [Domain.cash](#domain)) is added to an immutable NFT commitment and sent to the [Registry.cash](#registry) at the time of genesis. These immutable NFTs stay with `Registry.cash` forever. Any interaction with the registry must include one of these thread NFTs to create a transaction.
 
 Structure:
-   - `category`: domainCategory
+   - `category`: nameCategory
    - `commitment`: lockingbytecode of authorized contract <35 bytes>
 
 The Registry Contract has a designated number of threads for authorized contracts:
@@ -355,15 +355,15 @@ x = number of threads [The exact value can be anything. It must be decided at th
 #### DomainNFTs
 A set of 3 immutable NFTs minted when an auction ends:
    - **OwnershipNFT**: This NFT proves ownership of a specific domain.
-      - `category`: domainCategory
+      - `category`: nameCategory
       - `commitment`: registrationID < 8 bytes > + name < bytes >
 
    - **InternalAuthNFT**: A specialized authorization NFT that resides within the Domain contract and must be used together with the OwnershipNFT to enable the owner's interaction with [Domain.cash](#domain).
-      - `category`: domainCategory
+      - `category`: nameCategory
       - `commitment`: registrationID < 8 bytes >
 
    - **ExternalAuthNFT**: A specialized authorization NFT that resides within the Domain Contract but can be attached to any transaction, particularly utilized by [DomainOwnershipGuard.cash](#domainownershipguard) to prove existing domain ownership and enforce penalties on illegal auction attempts.
-      - `category`: domainCategory
+      - `category`: nameCategory
 
 If the domain has been inactive for > `inactivityExpiryTime` then the domain is considered abandoned and anyone can prove the inactivity and burn the Internal and External Auth NFTs to make the domain available for auction.
 
@@ -372,15 +372,15 @@ If the domain has been inactive for > `inactivityExpiryTime` then the domain is 
 
 Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract system directly as a `value`. The names as part of the commitment in any of the NFTs in the system do not have the TLD in them. Instead, it exists in the AuthChain. This is done to allow bigger names and reduce the contract size and complexity.
 
-During the genesis phase, the Registry.cash contract is initialized with the `domainCategory`. The `authHead` for this category must include the symbol and name as the TLD, making it accessible to all applications. This entry will be the first and only one in the `authChain`. After this step, the `authHead` must be permanently removed by creating an OP_RETURN output as the first output.
+During the genesis phase, the Registry.cash contract is initialized with the `nameCategory`. The `authHead` for this category must include the symbol and name as the TLD, making it accessible to all applications. This entry will be the first and only one in the `authChain`. After this step, the `authHead` must be permanently removed by creating an OP_RETURN output as the first output.
 
 ## Genesis
 
 
 To ensure the system operates as expected, the following steps must be followed :
 
-- Mint a new hybrid token with an NFT commitment set to 0 (8 bytes) and the maximum possible token amount of `9223372036854775807`, the tokenCategory of this NFT will be `domainCategory`.
-- Using the `tokenCategory` i.e domainCategory, create the locking bytecode for `Registry.cash`.
+- Mint a new hybrid token with an NFT commitment set to 0 (8 bytes) and the maximum possible token amount of `9223372036854775807`, the tokenCategory of this NFT will be `nameCategory`.
+- Using the `tokenCategory` i.e nameCategory, create the locking bytecode for `Registry.cash`.
 - Mint a mintingNFT i.e `DomainMintingNFT` and send it to the `Registry.cash`
 - Determine the following parameters and generate the locking bytecode of all the other authorized contracts:
    - `inactivityExpiryTime`

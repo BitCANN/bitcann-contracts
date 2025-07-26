@@ -1,8 +1,8 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
 contract Accumulator() {
   /**
-   * Once enough auctions have happened, there might come a time when the counterNFT's tokenAmount is not enough.
+   * Once enough auctions have happened, there will come a time when the counterNFT's tokenAmount is not enough.
    * Since the amount would be accumulating in the thread NFTs, this function can be used to transfer them back to the
    * Counter NFT to keep the system functioning smoothly.
    * 
@@ -51,13 +51,14 @@ contract Accumulator() {
     
     bytes counterCategory, bytes counterCapability = tx.inputs[2].tokenCategory.split(32);
     require(counterCategory == registryInputCategory);
-    require(counterCapability == 0x02); // Minting
+     // Minting
+    require(counterCapability == 0x02);
 
     // Locking bytecode of the authorized contract is 35 bytes long.
     require(tx.inputs[3].nftCommitment.length == 35);
 
     // Since the nftCommitment of counterNFT is registrationID so it must not be null
-    // as the DomainMintingNFT has no nftCommitment nor tokenAmount
+    // as the NameMintingNFT has no nftCommitment nor tokenAmount
     require(tx.inputs[2].nftCommitment != 0x);
     require(tx.inputs[2].tokenAmount > 0); // Ensure that the counter minting NFT is used.
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount + tx.inputs[3].tokenAmount);

@@ -10,17 +10,18 @@ import {
 } from '@bitauth/libauth';
 import { SignatureTemplate } from 'cashscript';
 
-export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
-export const reversedDomainTokenCategory = binToHex(hexToBin(domainTokenCategory).reverse());
+export const nameTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
+export const reversedNameTokenCategory = binToHex(hexToBin(nameTokenCategory).reverse());
 
 export const mockOptions =
 {
-	category: domainTokenCategory,
+	category: nameTokenCategory,
 	minStartingBid: 10000,
 	minBidIncreasePercentage: 5,
 	inactivityExpiryTime: 1,
 	minWaitTime: 1,
 	maxPlatformFeePercentage: 50,
+	tld: '.bch',
 };
 // @ts-ignore
 const seed = deriveSeedFromBip39Mnemonic('bitcann test seed');

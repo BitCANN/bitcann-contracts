@@ -1,13 +1,13 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
-import { aliceAddress, alicePkh, aliceTemplate, domainTokenCategory, mockOptions, reversedDomainTokenCategory } from '../common.js';
+import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory } from '../common.js';
 import {  intToBytesToHex, getTxOutputs } from '../utils.js';
 
 describe('Auction', () =>
 {
 	const provider = new MockNetworkProvider();
-	const registryContract = new Contract(BitCANNArtifacts.Registry, [ reversedDomainTokenCategory ], { provider });
+	const registryContract = new Contract(BitCANNArtifacts.Registry, [ reversedNameTokenCategory ], { provider });
 	const auctionContract = new Contract(BitCANNArtifacts.Auction, [ BigInt(mockOptions.minStartingBid) ], { provider });
 	const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address);
 	// @ts-ignore
@@ -43,7 +43,7 @@ describe('Auction', () =>
 
 		threadNFTUTXO = {
 			token: {
-				category: domainTokenCategory,
+				category: nameTokenCategory,
 				amount: BigInt(0),
 				nft: {
 					commitment: auctionLockingBytecodeHex,
@@ -58,7 +58,7 @@ describe('Auction', () =>
 
 		registrationCounterUTXO = {
 			token: {
-				category: domainTokenCategory,
+				category: nameTokenCategory,
 				amount: BigInt('9223372036854775807'),
 				nft: {
 					commitment: intToBytesToHex({ value: 0, length: 8 }),
@@ -75,7 +75,7 @@ describe('Auction', () =>
 		mintingNFTUTXO = {
 			token: {
 				amount: BigInt(0),
-				category: domainTokenCategory,
+				category: nameTokenCategory,
 				nft: {
 					commitment: '',
 					capability: 'minting',

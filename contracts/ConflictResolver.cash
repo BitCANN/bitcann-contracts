@@ -1,6 +1,6 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
-contract AuctionConflictResolver() {
+contract ConflictResolver() {
   /**
    * Resolves a conflict between two competing registration auctions for the same name.
    * 

@@ -1,11 +1,11 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.3;
 
 /**
  * @param minStartingBid The minimum starting bid for the auction.
  */
 contract Auction(int minStartingBid) {
   /**
-   * Starts a new domain registration auction.
+   * Starts a new name registration auction.
    * @param name The name being registered.
    * 
    * The function creates a new auction with:
@@ -38,7 +38,7 @@ contract Auction(int minStartingBid) {
     // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1);
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    // Ensure that the domainCategory in not minted here.
+    // Ensure that the nameCategory in not minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
@@ -60,8 +60,16 @@ contract Auction(int minStartingBid) {
     // tokenAmount in the auctionNFT is the registrationId.
     require(tx.outputs[3].tokenAmount == nextRegistrationId);
 
-    // Every auction begins with a min base value of at least minStartingBid satoshis.
-    require(tx.outputs[3].value >= minStartingBid);
+    // Dual Decay mechanism, auction price decays linearly with the step.
+    // 1. Decay percentage to the step 0.0003%
+    int decayPercentageToTheStep = nextRegistrationId * 3 / 1000000;
+    // 2. Get auction price for current step with linear decay
+    int currentAuctionPrice = minStartingBid * (1 - decayPercentageToTheStep);
+    // Set the minimum auction price to 20000 satoshis.
+    currentAuctionPrice = max(currentAuctionPrice, 20000);
+
+    // Every auction begins with a min base value of at least currentAuctionPrice satoshis.
+    require(tx.outputs[3].value >= currentAuctionPrice);
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
 
@@ -73,21 +81,27 @@ contract Auction(int minStartingBid) {
     bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
     require(tx.outputs[3].nftCommitment == pkh + name);
 
+    // Ensure that the name is not too long, as of 2025 upgrade, the nftcommitment is 40 bytes.
+    // 20 bytes pkh + 16 bytes name + 4 bytes TLD
+    require(name.length <= 16);
+
     // CounterNFT should keep the same category and capability.
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
     
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
     
-    // CounterNFT should be minting and of the 'domainCategory' i.e registryInputCategory
+    // CounterNFT should be minting and of the 'nameCategory' i.e registryInputCategory
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
     require(counterCategory == registryInputCategory);
-    require(counterCapability == 0x02); // Minting
+    // Minting
+    require(counterCapability == 0x02);
 
-    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
+    // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.outputs[3].tokenCategory.split(32);
     require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    // Mutable
+    require(auctionCapability == 0x01);
 
     // Enforce an OP_RETURN output that contains the name.
     require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));

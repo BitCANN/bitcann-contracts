@@ -24,6 +24,15 @@ export interface LibauthOutput
 	token?: LibauthTokenDetails;
 }
 
+
+export const getAuctionPrice = (registrationId: number, minStartingBid: number): number =>
+{
+	const decayPercentageToTheStep = registrationId * 3 / 1000000;
+	const currentAuctionPrice = minStartingBid * (1 - decayPercentageToTheStep);
+
+	return currentAuctionPrice;
+};
+
 export const intToBytesToHex = ({ value, length }: { value: number; length: number }): string =>
 {
 	const bin = numberToBinUint16BE(value);
