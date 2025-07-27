@@ -64,7 +64,7 @@ contract Auction(int minStartingBid) {
     // To facilitate higher precisions and since decimals do not exist in VM, we multiply
     // it by 1e6 (1000000) and name the values as points.
 
-    // 1. Decay points (step 0.0003% per step)
+    // 1. Decay points (0.0003% per step)
     int decayPoints = minStartingBid * nextRegistrationId * 3;
     // 2. Get auction price points
     int currentPricePoints = minStartingBid * 1e6;

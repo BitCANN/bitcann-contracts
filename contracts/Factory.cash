@@ -134,11 +134,14 @@ contract Factory(
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
 
     // Dual Decay mechanism, creator incentive decays linearly with the step.
-    // 1. Decay percentage to the step 0.001%
-    int decayPercentageToTheStep = tx.inputs[3].tokenAmount * 1 / 10000;
-    // 2. Get creator incentive for current step with linear decay
-    int creatorIncentive = tx.inputs[3].tokenAmount * (1 - decayPercentageToTheStep);
+    // 1. Decay points (0.001% per step)
+    int decayPoints = tx.inputs[3].tokenAmount;
+    // 2. Get creator incentive points
+    int creatorIncentivePoints = tx.inputs[3].tokenAmount * 1e5;
+    // 3. Subtract creator incentive points by decay points to get the current creator incentive.
+    int creatorIncentive = (creatorIncentivePoints - decayPoints) / 1e5;
 
+    // If incentive is > 20000 satoshis, then it goes to the creator, else it goes to the miners.
     if(creatorIncentive > 20000) {
       require(tx.outputs[6].tokenCategory == 0x);
       // Enforce that the other piece of the fee goes to the miners.
