@@ -79,12 +79,16 @@ contract Auction(int minStartingBid) {
     // Funding UTXO/ Bid UTXO
     require(tx.inputs[3].tokenCategory == 0x);
 
-    // Ensure that the funding happens from a P2PKH UTXO.
+    // Ensure that the funding happens from a P2PKH UTXO because there will be no way to know the locking bytecode as 
+    // name can be of any length.
     require(tx.inputs[3].lockingBytecode.length == 25);
 
-    // Extract the PKH from the lockingBytecode of the Funding UTXO.
-    // <pkh> + name > 20 bytes
-    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
+    bytes pkhLockingBytecodeHead, bytes pkhLockingBytecodeBody = tx.inputs[3].lockingBytecode.split(3);
+    // OP_DUP OP_HASH160 Push 20-byte
+    require(pkhLockingBytecodeHead == 0x76a914);
+    bytes pkh, bytes pkhLockingBytecodeTail = pkhLockingBytecodeBody.split(20);
+    // OP_EQUALVERIFY OP_CHECKSIG
+    require(pkhLockingBytecodeTail == 0x88ac);
     require(tx.outputs[3].nftCommitment == pkh + name);
 
     // Ensure that the name is not too long, as of 2025 upgrade, the nftcommitment is 40 bytes.

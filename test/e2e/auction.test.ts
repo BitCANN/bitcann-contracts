@@ -163,168 +163,168 @@ describe('Auction', () =>
 		expect(txOutputs).toEqual(expect.arrayContaining([{ to: aliceAddress, amount: changeAmount, token: undefined }]));
 	});
 
-	// it('should pass without change output', async () =>
-	// {
-	// 	// Construct the transaction using the TransactionBuilder
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
-	// 		.addInput(registrationCounterUTXO, registryContract.unlock.call())
-	// 		.addInput(userUTXO, aliceTemplate.unlockP2PKH())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: auctionContract.tokenAddress,
-	// 			amount: authorizedContractUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: registrationCounterUTXO.satoshis,
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: registrationCounterUTXO.token!.nft!.capability,
-	// 					commitment: newRegistrationIdCommitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: BigInt(auctionAmount),
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: 'mutable',
-	// 					commitment: binToHex(alicePkh) + binToHex(nameBin),
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOpReturnOutput([ name ]);
+	it('should pass without change output', async () =>
+	{
+		// Construct the transaction using the TransactionBuilder
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
+			.addInput(registrationCounterUTXO, registryContract.unlock.call())
+			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: auctionContract.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token!.nft!.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: BigInt(auctionAmount),
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'mutable',
+						commitment: binToHex(alicePkh) + binToHex(nameBin),
+					},
+				},
+			})
+			.addOpReturnOutput([ name ]);
 
-	// 	const txPromise = await transaction.send();
-	// 	// @ts-ignore
-	// 	const txOutputs = getTxOutputs(txPromise);
-	// 	expect(txOutputs.length).toBe(5);
-	// });
+		const txPromise = await transaction.send();
+		// @ts-ignore
+		const txOutputs = getTxOutputs(txPromise);
+		expect(txOutputs.length).toBe(5);
+	});
 
-	// it('should fail without op return output', async () =>
-	// {
-	// 	// Construct the transaction using the TransactionBuilder
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
-	// 		.addInput(registrationCounterUTXO, registryContract.unlock.call())
-	// 		.addInput(userUTXO, aliceTemplate.unlockP2PKH())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: auctionContract.tokenAddress,
-	// 			amount: authorizedContractUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: registrationCounterUTXO.satoshis,
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: registrationCounterUTXO.token!.nft!.capability,
-	// 					commitment: newRegistrationIdCommitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: BigInt(auctionAmount),
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: 'mutable',
-	// 					commitment: binToHex(alicePkh) + binToHex(nameBin),
-	// 				},
-	// 			},
-	// 		});
+	it('should fail without op return output', async () =>
+	{
+		// Construct the transaction using the TransactionBuilder
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
+			.addInput(registrationCounterUTXO, registryContract.unlock.call())
+			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: auctionContract.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token!.nft!.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: BigInt(auctionAmount),
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'mutable',
+						commitment: binToHex(alicePkh) + binToHex(nameBin),
+					},
+				},
+			});
 
-	// 	const txPromise = transaction.send();
-	// 	await expect(txPromise).rejects.toThrow('Auction.cash:113 Error in transaction at input 1 in contract Auction.cash at line 113.');
-	// 	await expect(txPromise).rejects.toThrow('Failing statement: tx.outputs[4].lockingBytecode');
-	// });
+		const txPromise = transaction.send();
+		await expect(txPromise).rejects.toThrow('Auction.cash:117 Error in transaction at input 1 in contract Auction.cash at line 117.');
+		await expect(txPromise).rejects.toThrow('Failing statement: tx.outputs[4].lockingBytecode');
+	});
 
-	// it('should fail setting auction capability to none', async () =>
-	// {
-	// 	// Construct the transaction using the TransactionBuilder
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
-	// 		.addInput(registrationCounterUTXO, registryContract.unlock.call())
-	// 		.addInput(userUTXO, aliceTemplate.unlockP2PKH())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: auctionContract.tokenAddress,
-	// 			amount: authorizedContractUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: registrationCounterUTXO.satoshis,
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: registrationCounterUTXO.token!.nft!.capability,
-	// 					commitment: newRegistrationIdCommitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: BigInt(auctionAmount),
-	// 			token: {
-	// 				category: registrationCounterUTXO.token!.category,
-	// 				amount: BigInt(newRegistrationId),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: binToHex(alicePkh) + binToHex(nameBin),
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOpReturnOutput([ name ]);
+	it('should fail setting auction capability to none', async () =>
+	{
+		// Construct the transaction using the TransactionBuilder
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
+			.addInput(registrationCounterUTXO, registryContract.unlock.call())
+			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: auctionContract.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token!.nft!.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: BigInt(auctionAmount),
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'none',
+						commitment: binToHex(alicePkh) + binToHex(nameBin),
+					},
+				},
+			})
+			.addOpReturnOutput([ name ]);
 
-	// 	const txPromise = transaction.send();
-	// 	await expect(txPromise).rejects.toThrow('Auction.cash:110 Require statement failed at input 1 in contract Auction.cash at line 110.');
-	// 	await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01);');
-	// });
+		const txPromise = transaction.send();
+		await expect(txPromise).rejects.toThrow('Auction.cash:114 Require statement failed at input 1 in contract Auction.cash at line 114.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01);');
+	});
 });
