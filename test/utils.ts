@@ -30,7 +30,7 @@ export const getAuctionPrice = (registrationId: number, minStartingBid: number):
 	const decayPercentageToTheStep = registrationId * 3 / 1000000;
 	const currentAuctionPrice = minStartingBid * (1 - decayPercentageToTheStep);
 
-	return currentAuctionPrice;
+	return Math.max(currentAuctionPrice, 20000);
 };
 
 export const intToBytesToHex = ({ value, length }: { value: number; length: number }): string =>

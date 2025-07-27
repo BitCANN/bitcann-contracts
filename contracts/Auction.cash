@@ -51,8 +51,8 @@ contract Auction(int minStartingBid) {
     require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode);
 
     // Registration ID increases by 1 with each transaction.
-    int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());
-    int nextRegistrationId = int(tx.outputs[2].nftCommitment.reverse());
+    int prevRegistrationId = int(tx.inputs[2].nftCommitment);
+    int nextRegistrationId = int(tx.outputs[2].nftCommitment);
     require(nextRegistrationId == prevRegistrationId + 1);
 
     // Reduce the tokenAmount in the counterNFT as some amount is going to auctionNFT
@@ -61,10 +61,16 @@ contract Auction(int minStartingBid) {
     require(tx.outputs[3].tokenAmount == nextRegistrationId);
 
     // Dual Decay mechanism, auction price decays linearly with the step.
-    // 1. Decay percentage to the step 0.0003%
-    int decayPercentageToTheStep = nextRegistrationId * 3 / 1000000;
-    // 2. Get auction price for current step with linear decay
-    int currentAuctionPrice = minStartingBid * (1 - decayPercentageToTheStep);
+    // To facilitate higher precisions and since decimals do not exist in VM, we multiply
+    // it by 1e6 (1000000) and name the values as points.
+
+    // 1. Decay points (step 0.0003% per step)
+    int decayPoints = minStartingBid * nextRegistrationId * 3;
+    // 2. Get auction price points
+    int currentPricePoints = minStartingBid * 1e6;
+    // 3. Subtract price points by decay points to get the current auction price.
+    int currentAuctionPrice = (currentPricePoints - decayPoints) / 1e6;
+
     // Set the minimum auction price to 20000 satoshis.
     currentAuctionPrice = max(currentAuctionPrice, 20000);
 

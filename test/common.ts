@@ -16,7 +16,8 @@ export const reversedNameTokenCategory = binToHex(hexToBin(nameTokenCategory).re
 export const mockOptions =
 {
 	category: nameTokenCategory,
-	minStartingBid: 10000,
+	// minStartingBid: 10000,
+	minStartingBid: 1000000,
 	minBidIncreasePercentage: 5,
 	inactivityExpiryTime: 1,
 	minWaitTime: 1,

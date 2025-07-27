@@ -119,7 +119,7 @@ contract Factory(
 
     // InternalAuthNFT has registrationID as the commitment so it can be used to authenticate
     // along with the ownershipNFT
-    bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount).reverse();
+    bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount);
     require(tx.outputs[4].nftCommitment == registrationId);
     // Strict value check
     require(tx.outputs[4].value == 1000);
