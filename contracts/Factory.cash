@@ -20,9 +20,6 @@ contract Factory(
    * - Issuing an immutable name NFT to the auction winner
    * - Distributing auction fees between the platform and miners
    * - Burning the auctionNFT
-   * - Pure BCH input from bidder is used to prevent miners from taking away the funds from any or all transactions in the future.
-   *   Out of many possible ways, this method will be suitable to easily implement by applications.
-   *
    *
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract

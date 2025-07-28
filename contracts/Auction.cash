@@ -28,12 +28,11 @@ contract Auction(int minStartingBid) {
    * - Output1: Input1 back to this contract without any change.
    * - Output2: Minting CounterNFT going back to the Registry contract.
    * - Output3: auctionNFT to the Registry contract.
-   * - Output4: OP_RETURN output containing the name.
-   * - Output5: Optional change in BCH.
+   * - Output4: Optional change in BCH.
    */
   function call(bytes name) {
     require(tx.inputs.length == 4);
-    require(tx.outputs.length <= 6);
+    require(tx.outputs.length <= 5);
 
     // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1);
@@ -113,12 +112,9 @@ contract Auction(int minStartingBid) {
     // Mutable
     require(auctionCapability == 0x01);
 
-    // Enforce an OP_RETURN output that contains the name.
-    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
-
-    if (tx.outputs.length == 6) {
+    if (tx.outputs.length == 5) {
       // If any change, then it must be pure BCH.
-      require(tx.outputs[5].tokenCategory == 0x);
+      require(tx.outputs[4].tokenCategory == 0x);
     }
   }
 }
