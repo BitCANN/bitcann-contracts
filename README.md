@@ -192,8 +192,6 @@ Similarly, other contracts also provide a way to penalize anyone who attempts to
 
 The NameEnforcer contract allows anyone to prove that the running auction has an invalid name. By providing proof (index of the invalid character) they burn the auctionNFT, taking away the entire amount as a reward.
 
-> **INFO:** The nature of this architecture is that it allows for more types of restrictions. These rules can be modified to allow for more or fewer restrictions.
-
 Rules: 
 - The name must consist of only these characters
    - Letters (a-z or A-Z)
@@ -253,15 +251,15 @@ The Name contract allows the owner to perform a few operations after [NameNFTs](
 
 Constructor:
 - `inactivityExpiryTime`: The time after which the name is considered abandoned.
-- `name`: The name.
+- `fullName`: The full name. (This includes the TLD)
 - `nameCategory`: The category of the name.
 
 There are 3 functions in each Name Contract:
 
 - **useAuth**: This can be used to perform a variety of actions.
 For example:
-   - Prove the the ownership of the name by other contracts.
-   - Perform any actions in conjunction with other contracts. (A Lease Contract)
+   - Prove the ownership of the name by other contracts.
+   - Perform any actions in conjunction with other contracts. (E.g. A Lease Contract)
    - Add records and invalidate multiple records in a single transaction.
 
 
@@ -295,7 +293,7 @@ Transaction Structure:
 
 ### Accumulator
 
-Once enough auctions have happened, there might come a time when the counterNFT's tokenAmount is not enough to create new Auction NFT. Since the amount would be accumulating in the thread NFTs, this contract can be used to transfer them back to the CounterNFT to keep the system functioning smoothly.
+Once enough auctions have happened, there will come a time when the counterNFT's tokenAmount is not enough to create new Auction NFT. Since the amount would be accumulating in the thread NFTs, this contract can be used to transfer them back to the CounterNFT to keep the system functioning smoothly.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -371,9 +369,7 @@ If the name has been inactive for > `inactivityExpiryTime` then the name is cons
 
 ## TLDs
 
-Top Level Domains (TLDs) like `.bch` and `.sat` do not exist within the contract system directly as a `value`. The names as part of the commitment in any of the NFTs in the system do not have the TLD in them. Instead, it exists in the AuthChain. This is done to allow bigger names and reduce the contract size and complexity.
-
-During the genesis phase, the Registry.cash contract is initialized with the `nameCategory`. The `authHead` for this category must include the symbol and name as the TLD, making it accessible to all applications. This entry will be the first and only one in the `authChain`. After this step, the `authHead` must be permanently removed by creating an OP_RETURN output as the first output.
+Top Level Domains (TLDs) like `.bch` and `.sat` exist in the contracts as constructor parameters, adding them to the authchain is not required.
 
 ## Genesis
 
@@ -390,9 +386,9 @@ To ensure the system operates as expected, the following steps must be followed 
    - `minBidIncreasePercentage`
    - `minStartingBid`
    - `nameContractBytecode`
+   - `tld`
 - Create multiple threadNFTs for each authorized contract, commitment of each threadNFT must be the lockingbytecode of the authorized contract and the capability must be immutable.
 - Send the threadNFTs to the `Registry.cash`
-- Remove the authhead after adding information(Name and Symbol) about the name in the authchain.
 
 
 ## Dual Decay Mechanism
@@ -469,9 +465,7 @@ Even if the minimum duration has passed without the highest bidder claiming the 
 No.
 
 #### How is any TLD assigned?
-Top Level Domains (TLDs) such as .bch and .sat are not directly stored as values within the contract system or as commitments in the NFTs. Instead, they are represented in the AuthChain, which allows for larger names and reduces contract complexity. Also, BCMR being a widely adopted standard makes it easier for applications to display the relevant information.
-
-During the genesis phase, the [Registry.cash](#registry) contract is initialized with a token category. The authHead for this category must include the symbol and name as the TLD, ensuring accessibility to all applications. This entry is the first and only one in the authChain. Subsequently, the authHead is permanently removed by creating an OP_RETURN output as the first output.
+Top Level Domains (TLDs) such as .bch and/or .sat exist in the contracts as constructor parameters.
 
 This implies that while anyone can claim any TLD, the community will naturally gravitate towards and adopt the most popular and widely used ones.
 

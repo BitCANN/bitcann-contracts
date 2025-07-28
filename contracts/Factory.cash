@@ -100,7 +100,7 @@ contract Factory(
     int nameLength = name.length;
     // category + name + bytecode.
     // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
-    bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength) + name + tld + nameContractBytecode;
+    bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength + tld.length) + name + tld + nameContractBytecode;
     bytes32 scriptHash = hash256(nameBytecode);
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     

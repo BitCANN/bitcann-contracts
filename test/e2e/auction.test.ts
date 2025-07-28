@@ -1,4 +1,4 @@
-import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo } from 'cashscript';
+import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory } from '../common.js';
@@ -147,7 +147,6 @@ describe('Auction', () =>
 					},
 				},
 			})
-			.addOpReturnOutput([ name ])
 			.addOutput({
 				to: aliceAddress,
 				amount: userUTXO.satoshis,
@@ -210,16 +209,15 @@ describe('Auction', () =>
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
 					},
 				},
-			})
-			.addOpReturnOutput([ name ]);
+			});
 
 		const txPromise = await transaction.send();
 		// @ts-ignore
 		const txOutputs = getTxOutputs(txPromise);
-		expect(txOutputs.length).toBe(5);
+		expect(txOutputs.length).toBe(4);
 	});
 
-	it('should fail without op return output', async () =>
+	it('should fail due to invalid amount in the output', async () =>
 	{
 		// Construct the transaction using the TransactionBuilder
 		transaction = new TransactionBuilder({ provider })
@@ -257,7 +255,7 @@ describe('Auction', () =>
 			})
 			.addOutput({
 				to: registryContract.tokenAddress,
-				amount: BigInt(auctionAmount),
+				amount: BigInt(auctionAmount - BigInt(1)),
 				token: {
 					category: registrationCounterUTXO.token!.category,
 					amount: BigInt(newRegistrationId),
@@ -269,8 +267,10 @@ describe('Auction', () =>
 			});
 
 		const txPromise = transaction.send();
-		await expect(txPromise).rejects.toThrow('Auction.cash:117 Error in transaction at input 1 in contract Auction.cash at line 117.');
-		await expect(txPromise).rejects.toThrow('Failing statement: tx.outputs[4].lockingBytecode');
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Auction.cash:77 Require statement failed at input 1 in contract Auction.cash at line 77.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].value >= currentAuctionPrice);');
 	});
 
 	it('should fail setting auction capability to none', async () =>
@@ -320,11 +320,10 @@ describe('Auction', () =>
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
 					},
 				},
-			})
-			.addOpReturnOutput([ name ]);
+			});
 
 		const txPromise = transaction.send();
-		await expect(txPromise).rejects.toThrow('Auction.cash:114 Require statement failed at input 1 in contract Auction.cash at line 114.');
+		await expect(txPromise).rejects.toThrow('Auction.cash:113 Require statement failed at input 1 in contract Auction.cash at line 113.');
 		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01);');
 	});
 });

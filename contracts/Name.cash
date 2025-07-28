@@ -2,12 +2,14 @@ pragma cashscript 0.11.3;
 
 /**
  * @param inactivityExpiryTime The time period after which the name is considered inactive.
- * @param fullName The full name of the name including the TLD. <name>.<tld>
+ * @param name The name of the name.
+ * @param tld The TLD of the name.
  * @param nameCategory The category of the name.
  */
 contract Name(
   int inactivityExpiryTime,
-  bytes fullName,
+  bytes name,
+  bytes tld,
   bytes nameCategory
   ) {
   
@@ -47,7 +49,7 @@ contract Name(
       // The next input from the InternalAuthNFT must be the ownershipNFT.
       require(tx.inputs[this.activeInputIndex + 1].tokenCategory == nameCategory);
       bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[this.activeInputIndex + 1].nftCommitment.split(8);
-      require(nameFromOwnerNFT == fullName);
+      require(nameFromOwnerNFT == name + tld);
       require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId);
     } else {
       // One known use of ExternalAuthNFT in the `NameOwnershipGuard` contract. ExternalAuthNFT is
@@ -56,10 +58,54 @@ contract Name(
     }
   }
 
-  function penaliseInvalidName() {
-    // Allow anyone to call only when the name registered is invalid, and the incentive system was not able to prevent it.
-    
+  /**
+   * If an invalid name is registered, this function allows anyone to burn the NFTs
+   * @inputs
+   * - Input0: External Auth NFT from self
+   * - Input1: Internal Auth NFT from self
+   * - Input2: BCH input from anyone
+   * 
+   * @outputs  
+   * - Output0: BCH change output
+   */
+  function penaliseInvalidName(int characterNumber) {
+    // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
     require(tx.version == 2);
+
+    require(tx.inputs.length == 3);
+    require(tx.outputs.length == 1);
+
+    bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+
+    require(tx.inputs[0].tokenCategory == nameCategory);
+    require(tx.inputs[1].tokenCategory == nameCategory);
+
+    // External Auth NFT
+    require(tx.inputs[0].nftCommitment == 0x);
+
+    // Internal Auth NFT
+    // First 8 bytes are the registrationID and the rest is the name.
+    bytes fullName = tx.inputs[1].nftCommitment.split(8)[1];
+    bytes nameFromNFT = fullName.split(tld.length)[0];
+
+    bytes characterSplitBytes = nameFromNFT.split(characterNumber)[0];
+    characterNumber = characterNumber - 1;
+    bytes character = characterSplitBytes.split(characterNumber)[1];
+    int charVal = int(character);
+
+    // Character is not a hyphen.
+    require(charVal != 45); 
+    // Character is not from a-z.
+    require(!within(charVal, 97, 123));
+    // Character is not from A-Z.
+    require(!within(charVal, 65, 91));
+    // Character is not from 0-9.
+    require(!within(charVal, 48, 58));
+
+    // Pure BCH, ensures burn
+    require(tx.outputs[2].tokenCategory == 0x);
   }
 
   /**
@@ -118,7 +164,7 @@ contract Name(
     require(tx.outputs[1].tokenCategory == nameCategory);
 
     // Compare the registrationID
-    require(int(tx.inputs[1].nftCommitment.reverse()) < int(tx.inputs[3].nftCommitment.reverse()));
+    require(int(tx.inputs[1].nftCommitment) < int(tx.inputs[3].nftCommitment));
   }
 
   /**
