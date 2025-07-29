@@ -8,10 +8,13 @@ import {
 	binToHex,
 	hexToBin,
 } from '@bitauth/libauth';
-import { SignatureTemplate } from 'cashscript';
+import { SignatureTemplate, randomNFT } from 'cashscript';
 
-export const nameTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
+export const nameTokenCategory = randomNFT().category;
 export const reversedNameTokenCategory = binToHex(hexToBin(nameTokenCategory).reverse());
+
+export const invalidNameTokenCategory = randomNFT().category;
+export const reversedInvalidNameTokenCategory = binToHex(hexToBin(invalidNameTokenCategory).reverse());
 
 export const mockOptions =
 {

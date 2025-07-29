@@ -48,30 +48,30 @@ contract Registry(bytes nameCategory) {
     // 1. Since the registry contract is static, version check is required to prevent from any vulnerabilities
     // caused due to future versions.
     // 2. BitCANN uses relative timelocks, need to enforce version 2.
-    require(tx.version == 2);
+    require(tx.version == 2, "Invalid transaction version");
 
     // Registry Contract
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
     // authorizedThreadNFT must stay with the Registry Contract.
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.outputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
 
     // Immutable NFTs of nameCategory in Registry Contract will always be authorizedThreadNFTs
     // Mutable NFTs of nameCategory in Registry Contract will always be auctionNFTs
     // Minting NFTs of nameCategory in Registry Contract will always be counterMintingNFT or NameMintingNFT
-    require(tx.inputs[0].tokenCategory == nameCategory);
-    require(tx.outputs[0].tokenCategory == nameCategory);
+    require(tx.inputs[0].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.outputs[0].tokenCategory == nameCategory, "Token category mismatch");
     // Keeping the value same to not influence any satoshi movement in authorized contracts
-    require(tx.outputs[0].value == tx.inputs[0].value);
+    require(tx.outputs[0].value == tx.inputs[0].value, "Value mismatch");
     // The commitment that has the lockingbytecode of the authorized contract should never change.
-    require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+    require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment, "NFT commitment mismatch");
     // Not checking the tokenAmount as it changes.
 
     // Authorized Contract
 
     // Expect the NFT commitment that contains the lockingBytecode of the authorized contract.
-    require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
+    require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, "NFT commitment mismatch");
     // With these prerequisites met, we just need to make sure that all the contracts that are deployed are written
     // and initialized properly, and they expect this structure and handle the inputs and outputs as expected.
   }

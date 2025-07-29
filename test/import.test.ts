@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { BitCANNArtifacts } from '../../lib/index.js';
+import { BitCANNArtifacts } from '../lib/index.js';
 
 interface ContractArtifact
 {
