@@ -63,8 +63,10 @@ contract Registry(bytes nameCategory) {
     require(tx.inputs[0].tokenCategory == nameCategory, "Token category mismatch");
     require(tx.outputs[0].tokenCategory == nameCategory, "Token category mismatch");
     // Keeping the value same to not influence any satoshi movement in authorized contracts
-    require(tx.outputs[0].value == tx.inputs[0].value, "Value mismatch");
+    require(tx.outputs[0].value == tx.inputs[0].value, "satoshi value mismatch");
     // The commitment that has the lockingbytecode of the authorized contract should never change.
+    // It is possible that in other contracts a minting NFT of the nameCategory is used, in that case
+    // it becomes possible to change the nft commitment of 0th output.
     require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment, "NFT commitment mismatch");
     // Not checking the tokenAmount as it changes.
 
