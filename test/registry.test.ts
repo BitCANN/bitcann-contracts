@@ -285,11 +285,11 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:66 Require statement failed at input 0 in contract Registry.cash at line 66 with the following message: Value mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].value == tx.inputs[0].value, \"Value mismatch\");');
+		await expect(txPromise).rejects.toThrow('Registry.cash:66 Require statement failed at input 0 in contract Registry.cash at line 66 with the following message: Satoshi value mismatch.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].value == tx.inputs[0].value, \"Satoshi value mismatch\");');
 	});
 
-		it('should fail when sending incorrect amount to authorizedThreadNFT from registry contract', async () =>
+	it('should fail when trying to change nft commitment of 0th output', async () =>
 	{
 		// Construct the transaction using the TransactionBuilder
 		transaction = new TransactionBuilder({ provider })
@@ -299,7 +299,66 @@ describe('Registry', () =>
 			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
 			.addOutput({
 				to: registryContract.tokenAddress,
-				amount: threadNFTUTXO.satoshis + BigInt(1),
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: binToHex(alicePkh),
+					},
+				},
+			})
+			.addOutput({
+				to: auctionContract.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token!.nft!.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: BigInt(auctionAmount),
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'mutable',
+						commitment: binToHex(alicePkh) + binToHex(nameBin),
+					},
+				},
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Registry.cash:70 Require statement failed at input 0 in contract Registry.cash at line 70 with the following message: NFT commitment mismatch.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment, \"NFT commitment mismatch\");');
+	});
+
+
+	it('should fail when different contract is used in input 1', async () =>
+	{
+		provider.addUtxo(testContract.address, authorizedContractUTXO);
+
+		// Construct the transaction using the TransactionBuilder
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(authorizedContractUTXO, testContract.unlock.call())
+			.addInput(registrationCounterUTXO, registryContract.unlock.call())
+			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
 				token: {
 					category: threadNFTUTXO.token!.category,
 					amount: threadNFTUTXO.token!.amount,
@@ -341,8 +400,8 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:66 Require statement failed at input 0 in contract Registry.cash at line 66 with the following message: Value mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].value == tx.inputs[0].value, \"Value mismatch\");');
+		await expect(txPromise).rejects.toThrow('Registry.cash:76 Require statement failed at input 0 in contract Registry.cash at line 76 with the following message: Invalid contract.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, \"Invalid contract\");');
 	});
 
 	it('should fail with invalid active input index for auction contract', async () =>
@@ -397,7 +456,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:74 Require statement failed at input 0 in contract Registry.cash at line 74 with the following message: NFT commitment mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, \"NFT commitment mismatch\");');
+		await expect(txPromise).rejects.toThrow('Registry.cash:76 Require statement failed at input 0 in contract Registry.cash at line 76 with the following message: Invalid contract.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, \"Invalid contract\");');
 	});
 });

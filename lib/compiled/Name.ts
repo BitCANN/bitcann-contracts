@@ -287,5 +287,5 @@ export default {
 		'name': 'cashc',
 		'version': '0.11.3',
 	},
-	'updatedAt': '2025-07-29T20:49:24.249Z',
+	'updatedAt': '2025-07-29T23:10:39.385Z',
 };
