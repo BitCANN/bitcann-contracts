@@ -2,7 +2,7 @@ import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utx
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory } from './common.js';
-import { getAuctionPrice } from './utils.js';
+import { getAuctionPrice, getRegistrationIdCommitment } from './utils.js';
 import artifacts from './artifacts.js';
 
 describe('Registry', () =>
@@ -83,7 +83,6 @@ describe('Registry', () =>
 				category: nameTokenCategory,
 				amount: BigInt('9223372036854775807'),
 				nft: {
-					// commitment: intToBytesToHex({ value: 0, length: 8 }),
 					commitment: '00',
 					capability: 'minting',
 				},
@@ -111,13 +110,8 @@ describe('Registry', () =>
 		provider.addUtxo(registryContract.address, mintingNFTUTXO);
 
 		newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;
-		const regIdHex = newRegistrationId.toString(16).padStart(16, '0');
-		const regIdBytes = [];
-		for(let i = 0; i < regIdHex.length; i += 2)
-		{
-			regIdBytes.push(regIdHex.slice(i, i + 2));
-		}
-		newRegistrationIdCommitment = regIdBytes.reverse().join('');
+		newRegistrationIdCommitment = getRegistrationIdCommitment(newRegistrationId);
+
 		auctionAmount = BigInt(getAuctionPrice(newRegistrationId, mockOptions.minStartingBid));
 	});
 

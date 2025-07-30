@@ -211,3 +211,16 @@ export const getTxOutputs = (tx: Transaction, network: Network = Network.MOCKNET
 		};
 	});
 };
+
+export const getRegistrationIdCommitment = (newRegistrationId: number): string =>
+{
+	const regIdHex = newRegistrationId.toString(16).padStart(16, '0');
+	const regIdBytes = [];
+	for(let i = 0; i < regIdHex.length; i += 2)
+	{
+		regIdBytes.push(regIdHex.slice(i, i + 2));
+	}
+	const newRegistrationIdCommitment = regIdBytes.reverse().join('');
+
+	return newRegistrationIdCommitment;
+};
