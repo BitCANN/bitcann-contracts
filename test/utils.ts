@@ -27,8 +27,9 @@ export interface LibauthOutput
 
 export const getAuctionPrice = (registrationId: number, minStartingBid: number): number =>
 {
-	const decayPercentageToTheStep = registrationId * 3 / 1000000;
-	const currentAuctionPrice = minStartingBid * (1 - decayPercentageToTheStep);
+	const decayPoints = minStartingBid * registrationId * 3;
+	const currentPricePoints = minStartingBid * 1e6;
+	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1e6;
 
 	return Math.max(currentAuctionPrice, 20000);
 };
