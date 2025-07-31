@@ -110,9 +110,9 @@ describe('Registry', () =>
 		provider.addUtxo(registryContract.address, mintingNFTUTXO);
 
 		newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;
-		newRegistrationIdCommitment = getRegistrationIdCommitment(newRegistrationId);
+		newRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(newRegistrationId));
 
-		auctionAmount = BigInt(getAuctionPrice(newRegistrationId, mockOptions.minStartingBid));
+		auctionAmount = getAuctionPrice(BigInt(newRegistrationId), BigInt(mockOptions.minStartingBid));
 	});
 
 	it('should fail when sending authorizedThreadNFT to any other address than registry contract', async () =>

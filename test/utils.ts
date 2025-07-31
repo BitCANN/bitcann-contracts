@@ -25,13 +25,13 @@ export interface LibauthOutput
 }
 
 
-export const getAuctionPrice = (registrationId: number, minStartingBid: number): number =>
+export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint): bigint =>
 {
-	const decayPoints = minStartingBid * registrationId * 3;
-	const currentPricePoints = minStartingBid * 1e6;
-	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1e6;
+	const decayPoints = BigInt(minStartingBid) * registrationId * 3n;
+	const currentPricePoints = minStartingBid * 1000000n;
+	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1000000n;
 
-	return Math.max(currentAuctionPrice, 20000);
+	return BigInt(Math.max(Number(currentAuctionPrice), 20000));
 };
 
 export const intToBytesToHex = ({ value, length }: { value: number; length: number }): string =>
@@ -213,7 +213,7 @@ export const getTxOutputs = (tx: Transaction, network: Network = Network.MOCKNET
 	});
 };
 
-export const getRegistrationIdCommitment = (newRegistrationId: number): string =>
+export const getRegistrationIdCommitment = (newRegistrationId: bigint): string =>
 {
 	const regIdHex = newRegistrationId.toString(16).padStart(16, '0');
 	const regIdBytes = [];
