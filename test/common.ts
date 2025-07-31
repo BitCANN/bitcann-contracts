@@ -34,7 +34,7 @@ const baseDerivationPath = "m/44'/145'/0'/0";
 
 // Derive Alice's private key, public key, public key hash and address
 const aliceNode = deriveHdPath(rootNode, `${baseDerivationPath}/0`);
-if(typeof aliceNode === 'string') throw new Error();
+
 export const alicePub = secp256k1.derivePublicKeyCompressed(aliceNode.privateKey);
 export const alicePriv = aliceNode.privateKey;
 // @ts-ignore
