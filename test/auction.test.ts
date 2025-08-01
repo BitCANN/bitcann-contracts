@@ -1,4 +1,4 @@
-import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError, OutputTokenAmountTooSmallError } from 'cashscript';
+import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory, aliceTokenAddress } from './common.js';
@@ -216,6 +216,62 @@ describe('Auction', () =>
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
 		await expect(txPromise).rejects.toThrow('Auction.cash:35 Require statement failed at input 1 in contract Auction.cash at line 35 with the following message: Invalid number of outputs.');
 		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length <= 5, "Invalid number of outputs");');
+	});
+
+	it('should fail when contract is not used at input index 1', async () =>
+	{
+		// Construct the transaction using the TransactionBuilder with contract at input 0 instead of 1
+		transaction = new TransactionBuilder({ provider })
+			.addInput(authorizedContractUTXO, auctionContract.unlock.call(nameBin))
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(registrationCounterUTXO, registryContract.unlock.call())
+			.addInput(userUTXO, aliceTemplate.unlockP2PKH())
+			.addOutput({
+				to: auctionContract.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token!.nft!.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: BigInt(auctionAmount),
+				token: {
+					category: registrationCounterUTXO.token!.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'mutable',
+						commitment: binToHex(alicePkh) + binToHex(nameBin),
+					},
+				},
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Auction.cash:38 Require statement failed at input 0 in contract Auction.cash at line 38 with the following message: Active input index is not 1.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, "Active input index is not 1");');
 	});
 
 	it('should fail when attaching a token to the auction output', async () =>
