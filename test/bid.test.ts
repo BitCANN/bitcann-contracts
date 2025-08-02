@@ -2,7 +2,7 @@ import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utx
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory, aliceTokenAddress } from './common.js';
-import { getTxOutputs, getAuctionPrice, getRegistrationIdCommitment } from './utils.js';
+import { getTxOutputs, getAuctionPrice } from './utils.js';
 import artifacts from './artifacts.js';
 
 describe('Bid', () =>
