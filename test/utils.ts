@@ -5,7 +5,9 @@ import { cashAddressToLockingBytecode,
 	hexToBin,
 	binToHex,
 	numberToBinUint16BE } from '@bitauth/libauth';
-import { type Output, Network, Transaction } from 'cashscript';
+import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
+import { BitCANNArtifacts } from '../lib';
+import { mockOptions } from './common.js';
 
 export interface LibauthTokenDetails
 {
@@ -224,4 +226,32 @@ export const getRegistrationIdCommitment = (newRegistrationId: bigint): string =
 	const newRegistrationIdCommitment = regIdBytes.reverse().join('');
 
 	return newRegistrationIdCommitment;
+};
+
+/**
+ * Retrieves the partial bytecode of the Name contract.
+ *
+ * @param {string} category - The category identifier for the name.
+ * @param {Object} options - The options for constructing the Name contract.
+ * @param {NetworkProvider} options.provider - The network provider.
+ * @param {AddressType} options.addressType - The address type.
+ * @returns {string} The partial bytecode of the Name contract.
+ */
+export const getDomainPartialBytecode = (category: string, options: { provider: NetworkProvider; addressType: AddressType }): string =>
+{
+	// Reverse the category bytes for use in contract parameters.
+	const reversedCategory = binToHex(hexToBin(category).reverse());
+
+	// Placeholder name used for constructing a partial domain contract bytecode.
+	const placeholderName = 'test';
+	const placeholderNameHex = Array.from(placeholderName).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+
+	// Construct a placeholder name contract to extract partial bytecode.
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ BigInt(1), placeholderNameHex, mockOptions.tld, reversedCategory ], options);
+	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
+	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
+
+	return namePartialBytecode;
 };
