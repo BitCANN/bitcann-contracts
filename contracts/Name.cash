@@ -36,25 +36,25 @@ contract Name(
    */
   function useAuth(int authID) {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2);
+    require(tx.version == 2, "Invalid number of inputs");
 
     // The activeInputIndex can be anything as long as the utxo properties are preserved and comes back to the
     // contract without alteration.
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    require(tx.inputs[this.activeInputIndex].tokenCategory == nameCategory);
-    require(tx.outputs[this.activeInputIndex].tokenCategory == nameCategory);
-    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[this.activeInputIndex].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.outputs[this.activeInputIndex].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment, "NFT commitment does not match");
 
     if(authID == 1) {
       // The next input from the InternalAuthNFT must be the ownershipNFT.
-      require(tx.inputs[this.activeInputIndex + 1].tokenCategory == nameCategory);
+      require(tx.inputs[this.activeInputIndex + 1].tokenCategory == nameCategory, "Token category mismatch");
       bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[this.activeInputIndex + 1].nftCommitment.split(8);
-      require(nameFromOwnerNFT == name + tld);
-      require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId);
+      require(nameFromOwnerNFT == name + tld, "NFT commitment does not match");
+      require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId, "NFT commitment does not match");
     } else {
       // One known use of ExternalAuthNFT in the `NameOwnershipGuard` contract. ExternalAuthNFT is
       // used to prove that an owner exists.
-      require(tx.inputs[this.activeInputIndex].nftCommitment == 0x);
+      require(tx.inputs[this.activeInputIndex].nftCommitment == 0x, "NFT commitment does not match");
     }
   }
 
@@ -70,20 +70,20 @@ contract Name(
    */
   function penaliseInvalidName(int characterNumber) {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2);
+    require(tx.version == 2, "Invalid number of inputs");
 
-    require(tx.inputs.length == 3);
-    require(tx.outputs.length == 1);
+    require(tx.inputs.length == 3, "Invalid number of inputs");
+    require(tx.outputs.length == 1, "Invalid number of outputs");
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
 
-    require(tx.inputs[0].tokenCategory == nameCategory);
-    require(tx.inputs[1].tokenCategory == nameCategory);
+    require(tx.inputs[0].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[1].tokenCategory == nameCategory, "Token category mismatch");
 
     // External Auth NFT
-    require(tx.inputs[0].nftCommitment == 0x);
+    require(tx.inputs[0].nftCommitment == 0x, "NFT commitment does not match");
 
     // Internal Auth NFT
     // First 8 bytes are the registrationID and the rest is the name.
@@ -96,16 +96,16 @@ contract Name(
     int charVal = int(character);
 
     // Character is not a hyphen.
-    require(charVal != 45); 
+    require(charVal != 45, "Token category mismatch"); 
     // Character is not from a-z.
-    require(!within(charVal, 97, 123));
+    require(!within(charVal, 97, 123), "Token category mismatch");
     // Character is not from A-Z.
-    require(!within(charVal, 65, 91));
+    require(!within(charVal, 65, 91), "Token category mismatch");
     // Character is not from 0-9.
-    require(!within(charVal, 48, 58));
+    require(!within(charVal, 48, 58), "Token category mismatch");
 
     // Pure BCH, ensures burn
-    require(tx.outputs[2].tokenCategory == 0x);
+    require(tx.outputs[2].tokenCategory == 0x, "Token category is not BCH");
   }
 
   /**
@@ -128,43 +128,43 @@ contract Name(
    */
   function resolveOwnerConflict(){
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2);
+    require(tx.version == 2, "Invalid number of inputs");
 
-    require(tx.inputs.length == 5);
-    require(tx.outputs.length == 3);
+    require(tx.inputs.length == 5, "Invalid number of inputs");
+    require(tx.outputs.length == 3, "Invalid number of outputs");
 
     // Pure BCH input and output to fund the transaction
-    require(tx.inputs[4].tokenCategory == 0x);
-    require(tx.outputs[2].tokenCategory == 0x);
+    require(tx.inputs[4].tokenCategory == 0x, "Token category is not BCH");
+    require(tx.outputs[2].tokenCategory == 0x, "Change is not pure BCH");
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[2].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[3].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[2].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[3].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
 
-    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.outputs[1].lockingBytecode == selfLockingBytecode);
+    require(tx.outputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.outputs[1].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
 
     // External Auth NFTs
-    require(tx.inputs[0].nftCommitment == 0x);
-    require(tx.inputs[2].nftCommitment == 0x);
+    require(tx.inputs[0].nftCommitment == 0x, "NFT commitment does not match");
+    require(tx.inputs[2].nftCommitment == 0x, "NFT commitment does not match");
 
     // Commitments of Valid Auth NFts back to self
-    require(tx.outputs[0].nftCommitment == 0x);
-    require(tx.outputs[1].nftCommitment == tx.inputs[1].nftCommitment);
+    require(tx.outputs[0].nftCommitment == 0x, "NFT commitment does not match");
+    require(tx.outputs[1].nftCommitment == tx.inputs[1].nftCommitment, "NFT commitment does not match");
 
     // Ensure that all the token inputs and outputs have nameCategory
-    require(tx.inputs[0].tokenCategory == nameCategory);
-    require(tx.inputs[1].tokenCategory == nameCategory);
-    require(tx.inputs[2].tokenCategory == nameCategory);
-    require(tx.inputs[3].tokenCategory == nameCategory);
+    require(tx.inputs[0].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[1].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[2].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[3].tokenCategory == nameCategory, "Token category mismatch");
 
-    require(tx.outputs[0].tokenCategory == nameCategory);
-    require(tx.outputs[1].tokenCategory == nameCategory);
+    require(tx.outputs[0].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.outputs[1].tokenCategory == nameCategory, "Token category mismatch");
 
     // Compare the registrationID
-    require(int(tx.inputs[1].nftCommitment) < int(tx.inputs[3].nftCommitment));
+    require(int(tx.inputs[1].nftCommitment) < int(tx.inputs[3].nftCommitment), "Token amount mismatch");
   }
 
   /**
@@ -186,34 +186,34 @@ contract Name(
   function burn() {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
     // Need version 2 enforcement for relative timelocks.
-    require(tx.version == 2);
+    require(tx.version == 2, "Invalid number of inputs");
 
-    require(tx.inputs.length == 3);
-    require(tx.outputs.length == 1);
+    require(tx.inputs.length == 3, "Invalid number of inputs");
+    require(tx.outputs.length == 1, "Invalid number of outputs");
 
     // If an external party is attempting to burn the authNFTs
     if (tx.inputs[2].tokenCategory == 0x) {
       // If pure BCH input, then allow anyone to burn given the time limit has passed.
-      require(tx.inputs[1].sequenceNumber == inactivityExpiryTime);
+      require(tx.inputs[1].sequenceNumber == inactivityExpiryTime, "Token amount mismatch");
     } else {
       // If name ownership NFT input, then allow the owner to burn anytime.
-      require(tx.inputs[2].tokenCategory == nameCategory);
+      require(tx.inputs[2].tokenCategory == nameCategory, "Token category mismatch");
       // Make sure that the registrationID in the nameOwnershipNFT and the internalAuthNFT are the same.
-      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment);
+      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment, "NFT commitment does not match");
     }
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.inputs[1].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[1].lockingBytecode == selfLockingBytecode, "Locking bytecode mismatch");
 
     // ExternalAuthNFT
-    require(tx.inputs[0].nftCommitment == 0x);
+    require(tx.inputs[0].nftCommitment == 0x, "NFT commitment does not match");
     // Both InternalAuthNFT and externalAuthNFT are immutable and have the same tokenCategory
-    require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory);
-    require(tx.inputs[0].tokenCategory == nameCategory);
-    require(tx.inputs[1].tokenCategory == nameCategory);
+    require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory, "Token category mismatch");
+    require(tx.inputs[0].tokenCategory == nameCategory, "Token category mismatch");
+    require(tx.inputs[1].tokenCategory == nameCategory, "Token category mismatch");
 
     // Return the BCH as change.
-    require(tx.outputs[0].tokenCategory == 0x);
+    require(tx.outputs[0].tokenCategory == 0x, "Change is not pure BCH");
   }
 }

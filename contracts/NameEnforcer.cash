@@ -25,25 +25,25 @@ contract NameEnforcer() {
    *
    */
   function call(int characterNumber) {
-    require(tx.inputs.length == 3, "Invalid number of inputs");
-    require(tx.outputs.length == 3, "Invalid number of outputs");
+    require(tx.inputs.length == 3, "Transaction: must have exactly 3 inputs");
+    require(tx.outputs.length == 3, "Transaction: must have exactly 3 outputs");
 
     // This contract can only be used at input1 and it should return the input1 back to itself.
-    require(this.activeInputIndex == 1, "Active input index is not 1");
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Locking bytecode mismatch");
+    require(this.activeInputIndex == 1, "Input 1: name enforcer contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
 
     // Lock this contract to only be used with the registry type contract.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: locking bytecode does not match registry input's locking bytecode");
 
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
 
     // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[2].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory, "Auction category mismatch");
+    require(auctionCategory == registryInputCategory, "Input 2: auction token category does not match registry");
     // Auction capability should be mutable.
-    require(auctionCapability == 0x01, "Auction capability is not mutable");
+    require(auctionCapability == 0x01, "Input 2: auction capability must be mutable (0x01)");
 
     bytes name = tx.inputs[2].nftCommitment.split(20)[1];
     bytes characterSplitBytes = name.split(characterNumber)[0];
@@ -62,9 +62,9 @@ contract NameEnforcer() {
 
     // tokenAmount from the invalid auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
-    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount, "Token amount mismatch");
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount, "Output 0: token amount must equal input 0 + input 2 amounts (accumulation)");
 
     // Pure BCH.
-    require(tx.outputs[2].tokenCategory == 0x, "Reward is not pure BCH");
+    require(tx.outputs[2].tokenCategory == 0x, "Output 2: reward must be pure BCH (no token category)");
   }
 }

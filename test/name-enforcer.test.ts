@@ -1,7 +1,7 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
-import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory } from './common.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory } from './common.js';
 import { getTxOutputs } from './utils.js';
 import artifacts from './artifacts.js';
 
@@ -17,7 +17,6 @@ describe('NameEnforcer', () =>
 
 	const validName = 'test';
 	const validNameHex = Buffer.from(validName).toString('hex');
-	const validNameBin = hexToBin(validNameHex);
 
 	const invalidNameWithSpecialChar = 'test@';
 	const invalidNameWithSpecialCharHex = Buffer.from(invalidNameWithSpecialChar).toString('hex');
@@ -118,8 +117,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:28 Require statement failed at input 1 in contract NameEnforcer.cash at line 28 with the following message: Invalid number of inputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs.length == 3, \"Invalid number of inputs\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:28 Require statement failed at input 1 in contract NameEnforcer.cash at line 28 with the following message: Transaction: must have exactly 3 inputs.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs.length == 3, \"Transaction: must have exactly 3 inputs\");');
 	});
 
 	it('should fail with invalid number of outputs', async () =>
@@ -157,8 +156,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:29 Require statement failed at input 1 in contract NameEnforcer.cash at line 29 with the following message: Invalid number of outputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length == 3, \"Invalid number of outputs\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:29 Require statement failed at input 1 in contract NameEnforcer.cash at line 29 with the following message: Transaction: must have exactly 3 outputs.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length == 3, \"Transaction: must have exactly 3 outputs\");');
 	});
 
 	it('should fail when contract is not used at input index 1', async () =>
@@ -192,8 +191,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:32 Require statement failed at input 0 in contract NameEnforcer.cash at line 32 with the following message: Active input index is not 1.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, \"Active input index is not 1\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:32 Require statement failed at input 0 in contract NameEnforcer.cash at line 32 with the following message: Input 1: name enforcer contract UTXO must be at this index.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, \"Input 1: name enforcer contract UTXO must be at this index\");');
 	});
 
 	it('should fail when using a non registry contract in input 2', async () =>
@@ -229,8 +228,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:37 Require statement failed at input 1 in contract NameEnforcer.cash at line 37 with the following message: Locking bytecode mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, \"Locking bytecode mismatch\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:37 Require statement failed at input 1 in contract NameEnforcer.cash at line 37 with the following message: Input 2: locking bytecode does not match registry input\'s locking bytecode.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, \"Input 2: locking bytecode does not match registry input\'s locking bytecode\");');
 	});
 
 	it('should fail due to invalid auction category', async () =>
@@ -279,8 +278,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:44 Require statement failed at input 1 in contract NameEnforcer.cash at line 44 with the following message: Auction category mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCategory == registryInputCategory, \"Auction category mismatch\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:44 Require statement failed at input 1 in contract NameEnforcer.cash at line 44 with the following message: Input 2: auction token category does not match registry.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCategory == registryInputCategory, \"Input 2: auction token category does not match registry\");');
 	});
 
 	it('should fail due to invalid auction capability', async () =>
@@ -329,8 +328,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:46 Require statement failed at input 1 in contract NameEnforcer.cash at line 46 with the following message: Auction capability is not mutable.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01, \"Auction capability is not mutable\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:46 Require statement failed at input 1 in contract NameEnforcer.cash at line 46 with the following message: Input 2: auction capability must be mutable (0x01).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01, \"Input 2: auction capability must be mutable (0x01)\");');
 	});
 
 	it('should fail when character is a hyphen', async () =>
@@ -384,7 +383,7 @@ describe('NameEnforcer', () =>
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
 		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:55 Require statement failed at input 1 in contract NameEnforcer.cash at line 55 with the following message: Character is a hyphen.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(charVal != 45, "Character is a hyphen");');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(charVal != 45, \"Character is a hyphen\");');
 	});
 
 	it('should fail when character is a lowercase letter', async () =>
@@ -438,7 +437,7 @@ describe('NameEnforcer', () =>
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
 		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:57 Require statement failed at input 1 in contract NameEnforcer.cash at line 57 with the following message: Character is lowercase letter.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 97, 123), "Character is lowercase letter");');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 97, 123), \"Character is lowercase letter\");');
 	});
 
 	it('should fail when character is an uppercase letter', async () =>
@@ -492,7 +491,7 @@ describe('NameEnforcer', () =>
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
 		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:59 Require statement failed at input 1 in contract NameEnforcer.cash at line 59 with the following message: Character is uppercase letter.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 65, 91), "Character is uppercase letter");');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 65, 91), \"Character is uppercase letter\");');
 	});
 
 	it('should fail when character is a digit', async () =>
@@ -546,7 +545,7 @@ describe('NameEnforcer', () =>
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
 		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:61 Require statement failed at input 1 in contract NameEnforcer.cash at line 61 with the following message: Character is a digit.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 48, 58), "Character is a digit");');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(!within(charVal, 48, 58), \"Character is a digit\");');
 	});
 
 	it('should fail due to token amount mismatch', async () =>
@@ -580,8 +579,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:65 Require statement failed at input 1 in contract NameEnforcer.cash at line 65 with the following message: Token amount mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount, "Token amount mismatch");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:65 Require statement failed at input 1 in contract NameEnforcer.cash at line 65 with the following message: Output 0: token amount must equal input 0 + input 2 amounts (accumulation).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[2].tokenAmount, \"Output 0: token amount must equal input 0 + input 2 amounts (accumulation)\");');
 	});
 
 	it('should fail due to reward not being pure BCH', async () =>
@@ -623,8 +622,8 @@ describe('NameEnforcer', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:68 Require statement failed at input 1 in contract NameEnforcer.cash at line 68 with the following message: Reward is not pure BCH.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenCategory == 0x, \"Reward is not pure BCH\");');
+		await expect(txPromise).rejects.toThrow('NameEnforcer.cash:68 Require statement failed at input 1 in contract NameEnforcer.cash at line 68 with the following message: Output 2: reward must be pure BCH (no token category).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenCategory == 0x, \"Output 2: reward must be pure BCH (no token category)\");');
 	});
 
 	it('should pass with valid invalid character detection', async () =>

@@ -24,42 +24,43 @@ contract ConflictResolver() {
    * - Output3: BCH change/reward to caller.
    */
   function call() {
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length == 4);
+    require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
+    require(tx.outputs.length == 4, "Transaction: must have exactly 4 outputs");
 
     // This contract can only be used at input1 and it should return the input1 back to itself.
-    require(this.activeInputIndex == 1);
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    require(this.activeInputIndex == 1, "Input 1: conflict resolver contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
-    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode);
-    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: valid auction locking bytecode does not match registry input's locking bytecode");
+    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: invalid auction locking bytecode does not match registry input's locking bytecode");
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Output 2: valid auction locking bytecode does not match registry input's locking bytecode");
 
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
 
     // auctionNFT should be mutable
     bytes auctionCategory, bytes auctionCapability = tx.inputs[2].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    require(auctionCategory == registryInputCategory, "Input 2: valid auction token category prefix must match registry");
+    // Valid auction capability should be mutable.
+    require(auctionCapability == 0x01, "Input 2: valid auction capability must be mutable (0x01)");
 
     // Invalid and valid auctionNFTs both should have the same category and capability.
-    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory);
+    require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory, "Input 2 and 3: auction token categories must match");
     // Both auctionNFTs should also have the same 'name'
-    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1]);
+    require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1], "Input 2 and 3: auction names must match");
     // The valid auctionNFT will have a lower registrationID
-    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount);
+    require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount, "Input 2: valid auction registration ID must be lower than input 3");
 
     // tokenAmount from the invalid auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
-    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount);
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Output 0: token amount must equal input 0 + input 3 amounts (accumulation)");
 
     // Attach any output to take away the funds as reward
-    require(tx.outputs[3].tokenCategory == 0x);
+    require(tx.outputs[3].tokenCategory == 0x, "Output 3: reward must be pure BCH (no token category)");
   }
 }

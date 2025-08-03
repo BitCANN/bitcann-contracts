@@ -150,8 +150,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:34 Require statement failed at input 1 in contract Auction.cash at line 34 with the following message: Invalid number of inputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs.length == 4, "Invalid number of inputs");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:34 Require statement failed at input 1 in contract Auction.cash at line 34 with the following message: Transaction: must have exactly 4 inputs.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");');
 	});
 
 	it('should fail with invalid number of outputs', async () =>
@@ -214,8 +214,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:35 Require statement failed at input 1 in contract Auction.cash at line 35 with the following message: Invalid number of outputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length <= 5, "Invalid number of outputs");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:35 Require statement failed at input 1 in contract Auction.cash at line 35 with the following message: Transaction: must have at most 5 outputs.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length <= 5, "Transaction: must have at most 5 outputs");');
 	});
 
 	it('should fail when contract is not used at input index 1', async () =>
@@ -270,8 +270,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:38 Require statement failed at input 0 in contract Auction.cash at line 38 with the following message: Active input index is not 1.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, "Active input index is not 1");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:38 Require statement failed at input 0 in contract Auction.cash at line 38 with the following message: Input 1: auction contract UTXO must be at this index.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, "Input 1: auction contract UTXO must be at this index");');
 	});
 
 	it('should fail when attaching a token to the auction output', async () =>
@@ -334,8 +334,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:41 Require statement failed at input 1 in contract Auction.cash at line 41 with the following message: Token added to the output.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, \"Token added to the output\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:41 Require statement failed at input 1 in contract Auction.cash at line 41 with the following message: Output 1: must not have any token category (pure BCH only).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");');
 	});
 
 	it('should fail when using a non registry contract in input 2', async () =>
@@ -392,8 +392,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:48 Require statement failed at input 1 in contract Auction.cash at line 48 with the following message: Locking bytecode mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, \"Locking bytecode mismatch\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:48 Require statement failed at input 1 in contract Auction.cash at line 48 with the following message: Input 2: locking bytecode does not match registry input\'s locking bytecode.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: locking bytecode does not match registry input\'s locking bytecode");');
 	});
 
 	it('should fail when using a non registry contract in output 2', async () =>
@@ -449,8 +449,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:49 Require statement failed at input 1 in contract Auction.cash at line 49 with the following message: Locking bytecode mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, \"Locking bytecode mismatch\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:49 Require statement failed at input 1 in contract Auction.cash at line 49 with the following message: Output 2: locking bytecode does not match registry input\'s locking bytecode.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Output 2: locking bytecode does not match registry input\'s locking bytecode");');
 	});
 
 	it('should fail when using a non registry contract in output 3', async () =>
@@ -505,8 +505,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:50 Require statement failed at input 1 in contract Auction.cash at line 50 with the following message: Locking bytecode mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode, \"Locking bytecode mismatch\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:50 Require statement failed at input 1 in contract Auction.cash at line 50 with the following message: Output 3: locking bytecode does not match registry input\'s locking bytecode.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode, "Output 3: locking bytecode does not match registry input\'s locking bytecode");');
 	});
 
 	it('should fail due to incorrect new registration id', async () =>
@@ -563,8 +563,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:55 Require statement failed at input 1 in contract Auction.cash at line 55 with the following message: Registration ID does not increase by 1.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(nextRegistrationId == prevRegistrationId + 1, \"Registration ID does not increase by 1\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:55 Require statement failed at input 1 in contract Auction.cash at line 55 with the following message: Output 2: registration ID must increase by 1.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(nextRegistrationId == prevRegistrationId + 1, "Output 2: registration ID must increase by 1");');
 	});
 
 	it('should fail due to incorrect new registration tokenAmount deducted from counterNFT', async () =>
@@ -619,8 +619,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:58 Require statement failed at input 1 in contract Auction.cash at line 58 with the following message: Token amount in CounterNFT does not decrease.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId, \"Token amount in CounterNFT does not decrease\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:58 Require statement failed at input 1 in contract Auction.cash at line 58 with the following message: Output 2: counter NFT token amount must decrease by registration ID.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId, "Output 2: counter NFT token amount must decrease by registration ID");');
 	});
 
 	it('should fail due to incorrect token amount in auctionNFT', async () =>
@@ -675,8 +675,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:60 Require statement failed at input 1 in contract Auction.cash at line 60 with the following message: Token amount in AuctionNFT does not match.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].tokenAmount == nextRegistrationId, \"Token amount in AuctionNFT does not match\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:60 Require statement failed at input 1 in contract Auction.cash at line 60 with the following message: Output 3: auction NFT token amount must equal registration ID.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].tokenAmount == nextRegistrationId, "Output 3: auction NFT token amount must equal registration ID");');
 	});
 
 	it('should fail due to invalid auction amount, value less than minimum', async () =>
@@ -731,8 +731,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:77 Require statement failed at input 1 in contract Auction.cash at line 77 with the following message: Auction price is less than the minimum.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].value >= currentAuctionPrice, \"Auction price is less than the minimum\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:77 Require statement failed at input 1 in contract Auction.cash at line 77 with the following message: Output 3: auction price must be at least minimum calculated price.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].value >= currentAuctionPrice, "Output 3: auction price must be at least minimum calculated price");');
 	});
 
 	it('should pass due to correct auction amount, value greater than minimum ', async () =>
@@ -1107,8 +1107,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:83 Require statement failed at input 1 in contract Auction.cash at line 83 with the following message: Locking bytecode length is not 25.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[3].lockingBytecode.length == 25, \"Locking bytecode length is not 25\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:83 Require statement failed at input 1 in contract Auction.cash at line 83 with the following message: Input 3: locking bytecode must be 25 bytes (P2PKH).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[3].lockingBytecode.length == 25, "Input 3: locking bytecode must be 25 bytes (P2PKH)");');
 	});
 
 	it('should fail due to nft commitment mismatch in auction NFT output', async () =>
@@ -1167,8 +1167,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:91 Require statement failed at input 1 in contract Auction.cash at line 91 with the following message: NFT commitment does not match.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].nftCommitment == pkh + name, \"NFT commitment does not match\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:91 Require statement failed at input 1 in contract Auction.cash at line 91 with the following message: Output 3: NFT commitment must match bidder PKH + name.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].nftCommitment == pkh + name, "Output 3: NFT commitment must match bidder PKH + name");');
 	});
 
 	it('should fail due to long name', async () =>
@@ -1227,8 +1227,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:95 Require statement failed at input 1 in contract Auction.cash at line 95 with the following message: Name is too long.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(name.length <= 16, \"Name is too long\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:95 Require statement failed at input 1 in contract Auction.cash at line 95 with the following message: Name: length must be at most 16 characters.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(name.length <= 16, "Name: length must be at most 16 characters");');
 	});
 
 	it('should fail due to change in token category of counter nft', async () =>
@@ -1298,8 +1298,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:98 Require statement failed at input 1 in contract Auction.cash at line 98 with the following message: Token category mismatch.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory, \"Token category mismatch\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:98 Require statement failed at input 1 in contract Auction.cash at line 98 with the following message: Output 2: counter NFT token category must match input 2.');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory, "Output 2: counter NFT token category must match input 2");');
 	});
 
 	it('should fail due to invalid capability in token category of counter nft', async () =>
@@ -1369,8 +1369,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:107 Require statement failed at input 1 in contract Auction.cash at line 107 with the following message: Counter capability is not minting capability.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(counterCapability == 0x02, \"Counter capability is not minting capability\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:107 Require statement failed at input 1 in contract Auction.cash at line 107 with the following message: Output 2: counter NFT capability must be minting (0x02).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(counterCapability == 0x02, "Output 2: counter NFT capability must be minting (0x02)");');
 	});
 
 	it('should fail due to invalid capability in token category of counter nft', async () =>
@@ -1440,8 +1440,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:107 Require statement failed at input 1 in contract Auction.cash at line 107 with the following message: Counter capability is not minting capability.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(counterCapability == 0x02, \"Counter capability is not minting capability\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:107 Require statement failed at input 1 in contract Auction.cash at line 107 with the following message: Output 2: counter NFT capability must be minting (0x02).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(counterCapability == 0x02, "Output 2: counter NFT capability must be minting (0x02)");');
 	});
 
 	it('should fail due to invalid capability in token category of auction nft', async () =>
@@ -1496,8 +1496,8 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:113 Require statement failed at input 1 in contract Auction.cash at line 113 with the following message: Auction capability is not mutable.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01, \"Auction capability is not mutable\");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:113 Require statement failed at input 1 in contract Auction.cash at line 113 with the following message: Output 3: auction NFT capability must be mutable (0x01).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01, "Output 3: auction NFT capability must be mutable (0x01)");');
 	});
 
 	it('should fail due to token attached to change output', async () =>
@@ -1563,8 +1563,8 @@ describe('Auction', () =>
 
 		const txPromise = transaction.send();
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Auction.cash:117 Require statement failed at input 1 in contract Auction.cash at line 117 with the following message: Change is not pure BCH.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[4].tokenCategory == 0x, "Change is not pure BCH");');
+		await expect(txPromise).rejects.toThrow('Auction.cash:117 Require statement failed at input 1 in contract Auction.cash at line 117 with the following message: Output 4: change must be pure BCH (no token category).');
+		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[4].tokenCategory == 0x, "Output 4: change must be pure BCH (no token category)");');
 	});
 
 	it('should pass without change output', async () =>
