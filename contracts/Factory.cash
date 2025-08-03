@@ -38,60 +38,60 @@ contract Factory(
    *
    */
   function call(){
-    require(tx.inputs.length == 4, "Invalid number of inputs");
-    require(tx.outputs.length <= 7, "Invalid number of outputs");
+    require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
+    require(tx.outputs.length <= 7, "Transaction: must have at most 7 outputs");
 
     // This contract can only be used at input1 and it should return to itself.
-    require(this.activeInputIndex == 1, "Active input index is not 1");
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Locking bytecode mismatch");
+    require(this.activeInputIndex == 1, "Input 1: factory contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
     // Ensure that the nameCategory in not minted here.
-    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Token added to the output");
+    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
     // Strict value checks to ensure the platform and miner get fee.
-    require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value, "Token amount mismatch");
+    require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value, "Input 1: satoshi value must match output 1");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Locking bytecode mismatch");
-    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Locking bytecode mismatch");
-    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: name minting NFT locking bytecode does not match registry input's locking bytecode");
+    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: auction NFT locking bytecode does not match registry input's locking bytecode");
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Output 2: name minting NFT locking bytecode does not match registry input's locking bytecode");
 
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
-    require(tx.outputs[3].tokenCategory == registryInputCategory, "Counter category mismatch");
-    require(tx.outputs[4].tokenCategory == registryInputCategory, "Counter category mismatch");
-    require(tx.outputs[5].tokenCategory == registryInputCategory, "Counter category mismatch");
+    require(tx.outputs[3].tokenCategory == registryInputCategory, "Output 3: external auth NFT token category prefix must match registry");
+    require(tx.outputs[4].tokenCategory == registryInputCategory, "Output 4: internal auth NFT token category prefix must match registry");
+    require(tx.outputs[5].tokenCategory == registryInputCategory, "Output 5: name ownership NFT token category prefix must match registry");
 
     // NameMintingNFT should be minting and of the 'nameCategory' i.e registryInputCategory
     bytes nameMintingCategory, bytes nameMintingCapability = tx.inputs[2].tokenCategory.split(32);
-    require(nameMintingCategory == registryInputCategory, "Counter category mismatch");
+    require(nameMintingCategory == registryInputCategory, "Input 2: name minting NFT token category prefix must match registry");
     // Minting
-    require(nameMintingCapability == 0x02, "Counter capability is not minting capability");
+    require(nameMintingCapability == 0x02, "Input 2: name minting NFT capability must be minting (0x02)");
     // NameMintingNFT should keep the same category and capability
-    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory, "Token category mismatch");
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory, "Output 2: name minting NFT token category must match input 2");
 
     // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory, "Auction category mismatch");
+    require(auctionCategory == registryInputCategory, "Input 3: auction NFT token category prefix must match registry");
     // Mutable
-    require(auctionCapability == 0x01, "Auction capability is not mutable");
+    require(auctionCapability == 0x01, "Input 3: auction NFT capability must be mutable (0x01)");
 
     // Enforce strict restrictions on NameMintingNFT
-    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment, "NFT commitment does not match");
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment, "Output 2: name minting NFT commitment must match input 2");
     // NameMintingNFT has no nftCommitment
-    require(tx.outputs[2].nftCommitment == 0x, "NFT commitment does not match");
+    require(tx.outputs[2].nftCommitment == 0x, "Output 2: name minting NFT must have empty commitment");
     // NameMintingNFT has no tokenAmount
-    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount, "Token amount mismatch");
-    require(tx.outputs[2].tokenAmount == 0, "Token amount mismatch");
+    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount, "Output 2: name minting NFT token amount must match input 2");
+    require(tx.outputs[2].tokenAmount == 0, "Output 2: name minting NFT token amount must be 0");
 
     // Strict value check
-    require(tx.outputs[2].value == tx.inputs[2].value, "Token amount mismatch");
+    require(tx.outputs[2].value == tx.inputs[2].value, "Output 2: name minting NFT satoshi value must match input 2");
 
     // Enforcing the relative timelock, the auctionNFT must be atleast `minWaitTime` old
     // to be considered ended.
-    require(tx.inputs[3].sequenceNumber == minWaitTime, "Token amount mismatch");
+    require(tx.inputs[3].sequenceNumber == minWaitTime, "Input 3: auction NFT sequence number must equal minimum wait time");
 
     // Extract the PKH and name from the auctionNFT
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
@@ -105,30 +105,30 @@ contract Factory(
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     
     // ExternalAuthNFT goes to the name contract
-    require(tx.outputs[3].lockingBytecode == nameLockingBytecode, "Locking bytecode mismatch");
+    require(tx.outputs[3].lockingBytecode == nameLockingBytecode, "Output 3: external auth NFT locking bytecode must match name contract");
     // InternalAuthNFT goes to the name contract
-    require(tx.outputs[4].lockingBytecode == nameLockingBytecode, "Locking bytecode mismatch");
+    require(tx.outputs[4].lockingBytecode == nameLockingBytecode, "Output 4: internal auth NFT locking bytecode must match name contract");
     
     // ExternalAuthNFT does not have any commitment
-    require(tx.outputs[3].nftCommitment == 0x, "NFT commitment does not match");
+    require(tx.outputs[3].nftCommitment == 0x, "Output 3: external auth NFT must have empty commitment");
     // Strict value check
-    require(tx.outputs[3].value == 1000, "Token amount mismatch");
+    require(tx.outputs[3].value == 1000, "Output 3: external auth NFT satoshi value must be 1000");
 
     // InternalAuthNFT has registrationID as the commitment so it can be used to authenticate
     // along with the ownershipNFT
     bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount);
-    require(tx.outputs[4].nftCommitment == registrationId, "NFT commitment does not match");
+    require(tx.outputs[4].nftCommitment == registrationId, "Output 4: internal auth NFT commitment must match registration ID");
     // Strict value check
-    require(tx.outputs[4].value == 1000, "Token amount mismatch");
+    require(tx.outputs[4].value == 1000, "Output 4: internal auth NFT satoshi value must be 1000");
 
     // Send the name ownership NFT to the bidder
-    require(tx.outputs[5].nftCommitment == registrationId + name, "NFT commitment does not match");
-    require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH), "Locking bytecode mismatch");
-    require(tx.outputs[5].value == 1000, "Token amount mismatch");
+    require(tx.outputs[5].nftCommitment == registrationId + name, "Output 5: name ownership NFT commitment must match registration ID + name");
+    require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH), "Output 5: name ownership NFT locking bytecode must match bidder PKH");
+    require(tx.outputs[5].value == 1000, "Output 5: name ownership NFT satoshi value must be 1000");
 
     // tokenAmount from the auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
-    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Token amount mismatch");
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Output 0: token amount must equal input 0 + input 3 amounts (accumulation)");
 
     // Dual Decay mechanism, creator incentive decays linearly with the step.
     // 1. Decay points (0.001% per step)
@@ -140,10 +140,10 @@ contract Factory(
 
     // If incentive is > 20000 satoshis, then it goes to the creator, else it goes to the miners.
     if(creatorIncentive > 20000) {
-      require(tx.outputs[6].tokenCategory == 0x, "Token category is not BCH");
+      require(tx.outputs[6].tokenCategory == 0x, "Output 6: creator incentive must be pure BCH (no token category)");
       // Enforce that the other piece of the fee goes to the miners.
-      require(tx.outputs[6].value == creatorIncentive, "Token amount mismatch");
-      require(tx.outputs[6].lockingBytecode == new LockingBytecodeP2PKH(creatorIncentivePKH), "Locking bytecode mismatch");
+      require(tx.outputs[6].value == creatorIncentive, "Output 6: creator incentive satoshi value must match calculated incentive");
+      require(tx.outputs[6].lockingBytecode == new LockingBytecodeP2PKH(creatorIncentivePKH), "Output 6: creator incentive locking bytecode must match creator PKH");
     }
   }
 

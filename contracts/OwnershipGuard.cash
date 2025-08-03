@@ -26,34 +26,34 @@ contract OwnershipGuard(bytes nameContractBytecode, bytes tld) {
    * - Output3: BCH change/reward to caller
    */
   function call(){
-    require(tx.inputs.length == 4, "Invalid number of inputs");
-    require(tx.outputs.length == 4, "Invalid number of outputs");
+    require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
+    require(tx.outputs.length == 4, "Transaction: must have exactly 4 outputs");
     
     // This contract can only be used at input1 and it should return the input1 back to itself.
-    require(this.activeInputIndex == 1, "Active input index is not 1");
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Locking bytecode mismatch");
+    require(this.activeInputIndex == 1, "Input 1: ownership guard contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: auction NFT locking bytecode does not match registry input's locking bytecode");
 
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
-    require(tx.inputs[2].tokenCategory == registryInputCategory, "Token category mismatch");
-    require(tx.outputs[2].tokenCategory == registryInputCategory, "Token category mismatch");
+    require(tx.inputs[2].tokenCategory == registryInputCategory, "Input 2: external auth NFT token category prefix must match registry");
+    require(tx.outputs[2].tokenCategory == registryInputCategory, "Output 2: external auth NFT token category prefix must match registry");
 
     // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.inputs[3].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory, "Auction category mismatch");
+    require(auctionCategory == registryInputCategory, "Input 3: auction NFT token category prefix must match registry");
     // Mutable
-    require(auctionCapability == 0x01, "Auction capability is not mutable");
+    require(auctionCapability == 0x01, "Input 3: auction NFT capability must be mutable (0x01)");
 
     // nftCommiment of the externalAuthNFT must stay the same
-    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment, "NFT commitment does not match");
+    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment, "Output 2: external auth NFT commitment must match input 2");
     // Ensure that the externalAuth NFT is used and not the internalAuth NFT.
-    require(tx.inputs[2].nftCommitment == 0x, "NFT commitment does not match");
+    require(tx.inputs[2].nftCommitment == 0x, "Input 2: external auth NFT must have empty commitment");
 
     // Get the name of the name from the auctionNFT
     bytes name = tx.inputs[3].nftCommitment.split(20)[1];
@@ -66,14 +66,14 @@ contract OwnershipGuard(bytes nameContractBytecode, bytes tld) {
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
 
     // Ensure that the externalAuthNFT is coming from the correct Name Contract
-    require(tx.inputs[2].lockingBytecode == nameLockingBytecode, "Locking bytecode mismatch");
-    require(tx.outputs[2].lockingBytecode == nameLockingBytecode, "Locking bytecode mismatch");
+    require(tx.inputs[2].lockingBytecode == nameLockingBytecode, "Input 2: external auth NFT locking bytecode must match name contract");
+    require(tx.outputs[2].lockingBytecode == nameLockingBytecode, "Output 2: external auth NFT locking bytecode must match name contract");
 
     // tokenAmount from the auctionNFT goes to the authorizedThreadNFT to be accumulated later
     // and merged back with the CounterNFT using the `Accumulator` Contract
-    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Token amount mismatch");
+    require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Output 0: token amount must equal input 0 + input 3 amounts (accumulation)");
 
     // Reward Output
-    require(tx.outputs[3].tokenCategory == 0x, "Token category is not BCH");
+    require(tx.outputs[3].tokenCategory == 0x, "Output 3: reward must be pure BCH (no token category)");
   }
 }
