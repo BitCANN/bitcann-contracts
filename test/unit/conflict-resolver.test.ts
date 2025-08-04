@@ -1,9 +1,9 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
-import { BitCANNArtifacts } from '../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory } from './common.js';
-import { getTxOutputs } from './utils.js';
-import artifacts from './artifacts.js';
+import { BitCANNArtifacts } from '../../lib/index.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory } from '../common.js';
+import { getTxOutputs } from '../utils.js';
+import artifacts from '../artifacts.js';
 
 describe('ConflictResolver', () =>
 {

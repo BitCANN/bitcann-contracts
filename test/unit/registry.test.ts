@@ -1,9 +1,9 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
-import { BitCANNArtifacts } from '../lib/index.js';
-import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory } from './common.js';
-import { getAuctionPrice, getRegistrationIdCommitment } from './utils.js';
-import artifacts from './artifacts.js';
+import { BitCANNArtifacts } from '../../lib/index.js';
+import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory } from '../common.js';
+import { getAuctionPrice, getRegistrationIdCommitment } from '../utils.js';
+import artifacts from '../artifacts.js';
 
 describe('Registry', () =>
 {
