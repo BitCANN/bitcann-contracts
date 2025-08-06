@@ -1,14 +1,12 @@
 pragma cashscript 0.11.3;
 
-/**
- * @param minBidIncreasePercentage The minimum percentage increase required for a new bid over the previous bid.
- */
-contract Bid(int minBidIncreasePercentage) {
+
+contract Bid() {
   /**
    * Places a new bid on an active name registration auction.
    * 
    * The function allows placing a new bid with:
-   * - A minimum `minBidIncreasePercentage` increase over the previous bid.
+   * - A minimum 5% increase over the previous bid.
    * - The previous bidder receives their bid amount back in the same transaction.
    * - A successful bid updates the auctionNFT by updating the PKH in the nftCommitment and satoshiValue.
    *   capability:   Mutable
@@ -74,8 +72,8 @@ contract Bid(int minBidIncreasePercentage) {
     // Since tokenAmount is registrationID, make sure that it's not changing.
     require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount, "Output 2: auction NFT token amount must match input 2");
 
-    // Ensure that the bid amount is greater than or equal to the previous bid amount + minBidIncreasePercentage.
-    require(tx.outputs[2].value * 100 >= tx.inputs[2].value * (100 + minBidIncreasePercentage), "Output 2: bid amount must be at least minimum increase percentage");
+    // Ensure that the bid amount is greater than or equal to the previous bid amount + 5%.
+    require(tx.outputs[2].value * 100 >= tx.inputs[2].value * 105, "Output 2: bid amount must be at least 5 percentage higher");
 
     // Locking bytecode of the previous bidder.
     require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH), "Output 3: previous bidder locking bytecode must match previous PKH");
