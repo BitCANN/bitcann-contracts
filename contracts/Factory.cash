@@ -78,10 +78,10 @@ contract Factory(
     // Mutable
     require(auctionCapability == 0x01, "Input 3: auction NFT capability must be mutable (0x01)");
 
-    // Enforce strict restrictions on NameMintingNFT
-    require(tx.inputs[2].nftCommitment == tx.outputs[2].nftCommitment, "Output 2: name minting NFT commitment must match input 2");
     // NameMintingNFT has no nftCommitment
     require(tx.outputs[2].nftCommitment == 0x, "Output 2: name minting NFT must have empty commitment");
+    require(tx.inputs[2].nftCommitment == 0x, "Input 2: name minting NFT must have empty commitment");
+
     // NameMintingNFT has no tokenAmount
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount, "Output 2: name minting NFT token amount must match input 2");
     require(tx.outputs[2].tokenAmount == 0, "Output 2: name minting NFT token amount must be 0");

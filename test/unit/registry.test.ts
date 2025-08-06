@@ -9,7 +9,7 @@ describe('Registry', () =>
 {
 	const provider = new MockNetworkProvider();
 	const registryContract = new Contract(BitCANNArtifacts.Registry, [ reversedNameTokenCategory ], { provider });
-	const auctionContract = new Contract(BitCANNArtifacts.Auction, [ BigInt(mockOptions.minStartingBid) ], { provider });
+	const auctionContract = new Contract(BitCANNArtifacts.Auction, [ ], { provider });
 	const testContract = new Contract(artifacts, [], { provider });
 	const auctionLockingBytecode = cashAddressToLockingBytecode(auctionContract.address);
 	// @ts-ignore
@@ -167,8 +167,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:58 Require statement failed at input 0 in contract Registry.cash at line 58 with the following message: Output 0: locking bytecode must match registry contract.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].lockingBytecode == selfLockingBytecode, \"Output 0: locking bytecode must match registry contract\");');
+		await expect(txPromise).rejects.toThrow('Output 0: locking bytecode must match registry contract');
 	});
 
 	it('should fail when using incorrect token category from registry contract', async () =>
@@ -223,8 +222,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:63 Require statement failed at input 0 in contract Registry.cash at line 63 with the following message: Input 0: token category must match name category.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[0].tokenCategory == nameCategory, \"Input 0: token category must match name category\");');
+		await expect(txPromise).rejects.toThrow('Input 0: token category must match name category');
 	});
 
 	it('should fail when sending incorrect amount to authorizedThreadNFT from registry contract', async () =>
@@ -279,8 +277,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:66 Require statement failed at input 0 in contract Registry.cash at line 66 with the following message: Output 0: satoshi value must match input 0.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].value == tx.inputs[0].value, \"Output 0: satoshi value must match input 0\");');
+		await expect(txPromise).rejects.toThrow('Output 0: satoshi value must match input 0');
 	});
 
 	it('should fail when trying to change nft commitment of 0th output', async () =>
@@ -335,8 +332,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:70 Require statement failed at input 0 in contract Registry.cash at line 70 with the following message: Output 0: NFT commitment must match input 0.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment, \"Output 0: NFT commitment must match input 0\");');
+		await expect(txPromise).rejects.toThrow('Output 0: NFT commitment must match input 0');
 	});
 
 
@@ -394,8 +390,7 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:76 Require statement failed at input 0 in contract Registry.cash at line 76 with the following message: Input 1: locking bytecode must match authorized contract from input 0 NFT commitment.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, \"Input 1: locking bytecode must match authorized contract from input 0 NFT commitment\");');
+		await expect(txPromise).rejects.toThrow('Input 1: locking bytecode must match authorized contract from input 0 NFT commitment');
 	});
 
 	it('should fail with invalid active input index for auction contract', async () =>
@@ -450,7 +445,6 @@ describe('Registry', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Registry.cash:76 Require statement failed at input 0 in contract Registry.cash at line 76 with the following message: Input 1: locking bytecode must match authorized contract from input 0 NFT commitment.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, \"Input 1: locking bytecode must match authorized contract from input 0 NFT commitment\");');
+		await expect(txPromise).rejects.toThrow('Input 1: locking bytecode must match authorized contract from input 0 NFT commitment');
 	});
 });

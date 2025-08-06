@@ -19,8 +19,8 @@ export const reversedInvalidNameTokenCategory = binToHex(hexToBin(invalidNameTok
 export const mockOptions =
 {
 	category: nameTokenCategory,
-	// minStartingBid: 10000,
-	minStartingBid: 1000000,
+	minStartingBid: 10000,
+	// minStartingBid: 1000000,
 	minBidIncreasePercentage: 5,
 	inactivityExpiryTime: 1,
 	minWaitTime: 1,
@@ -42,3 +42,14 @@ export const alicePkh = hash160(alicePub);
 export const aliceAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkh', payload: alicePkh, throwErrors: true }).address;
 export const aliceTokenAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkhWithTokens', payload: alicePkh, throwErrors: true }).address;
 export const aliceTemplate = new SignatureTemplate(alicePriv);
+
+// Derive Bob's private key, public key, public key hash and address
+const bobNode = deriveHdPath(rootNode, `${baseDerivationPath}/1`);
+
+export const bobPub = secp256k1.derivePublicKeyCompressed(bobNode.privateKey);
+export const bobPriv = bobNode.privateKey;
+// @ts-ignore
+export const bobPkh = hash160(bobPub);
+export const bobAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkh', payload: bobPkh, throwErrors: true }).address;
+export const bobTokenAddress = encodeCashAddress({ prefix: 'bchtest', type: 'p2pkhWithTokens', payload: bobPkh, throwErrors: true }).address;
+export const bobTemplate = new SignatureTemplate(bobPriv);

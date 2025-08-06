@@ -330,7 +330,7 @@ describe('ConflictResolver', () =>
 		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: invalid auction locking bytecode does not match registry input\'s locking bytecode");');
 	});
 
-	it('should fail due to invalid valid auction category', async () =>
+	it('should fail due to invalid auction category', async () =>
 	{
 		// Create valid auctionNFT with invalid category
 		const customValidAuctionNFTUTXO: Utxo = {

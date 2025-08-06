@@ -1,9 +1,6 @@
 pragma cashscript 0.11.3;
 
-/**
- * @param minStartingBid The minimum starting bid for the auction.
- */
-contract Auction(int minStartingBid) {
+contract Auction() {
   /**
    * Starts a new name registration auction.
    * @param name The name being registered.
@@ -63,6 +60,7 @@ contract Auction(int minStartingBid) {
     // To facilitate higher precisions and since decimals do not exist in VM, we multiply
     // it by 1e6 (1000000) and name the values as points.
 
+    int constant minStartingBid = 10000;
     // 1. Decay points (0.0003% per step)
     int decayPoints = minStartingBid * nextRegistrationId * 3;
     // 2. Get auction price points
