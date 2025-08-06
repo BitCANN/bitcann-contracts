@@ -40,7 +40,7 @@ contract Factory(
     // This contract can only be used at input1 and it should return to itself.
     require(this.activeInputIndex == 1, "Input 1: factory contract UTXO must be at this index");
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
-    // Ensure that the nameCategory in not minted here.
+    // Ensure that no tokenCategory is minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
     // Strict value checks to ensure the platform and miner get fee.
     require(tx.inputs[this.activeInputIndex].value == tx.outputs[this.activeInputIndex].value, "Input 1: satoshi value must match output 1");

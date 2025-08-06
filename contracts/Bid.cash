@@ -35,7 +35,7 @@ contract Bid() {
     // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1, "Input 1: bid contract UTXO must be at this index");
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
-    // Ensure that the nameCategory in not minted here.
+    // Ensure that no tokenCategory is minted here.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
@@ -54,10 +54,9 @@ contract Bid() {
     // Enforcing the structure of the pair results in predictable behavior.
     bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);
     require(auctionCategory == registryInputCategory, "Output 2: auction NFT token category prefix must match registry");
-    require(auctionCapability == 0x01, "Output 2: auction NFT capability must be mutable (0x01)"); // Mutable
+    require(auctionCapability == 0x01, "Output 2: auction NFT capability must be mutable (0x01)");
 
-    // Ensure that the funding happens from a P2PKH UTXO because there will be no way to know the locking bytecode as 
-    // name can be of any length.
+    // Ensure that the funding happens from a P2PKH UTXO, need to do a payout to present bidder and the information is stored in commitment.
     require(tx.inputs[3].lockingBytecode.length == 25, "Input 3: locking bytecode must be 25 bytes (P2PKH)");
     bytes pkhLockingBytecodeHead, bytes pkhLockingBytecodeBody = tx.inputs[3].lockingBytecode.split(3);
     // OP_DUP OP_HASH160 Push 20-byte
@@ -81,6 +80,8 @@ contract Bid() {
     require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH), "Output 3: previous bidder locking bytecode must match previous PKH");
     // The amount being sent back to the previous bidder.
     require(tx.outputs[3].value == tx.inputs[2].value, "Output 3: previous bidder refund amount must match previous bid amount");
+    // Funding UTXO/ Bid UTXO
+    require(tx.inputs[3].tokenCategory == 0x, "Input 3: funding UTXO must be pure BCH");
 
     if (tx.outputs.length == 5) {
       // If any change, then it must be pure BCH.

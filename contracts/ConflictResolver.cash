@@ -30,6 +30,8 @@ contract ConflictResolver() {
     // This contract can only be used at input1 and it should return the input1 back to itself.
     require(this.activeInputIndex == 1, "Input 1: conflict resolver contract UTXO must be at this index");
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
+    // Ensure that no tokenCategory is minted here.
+    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
