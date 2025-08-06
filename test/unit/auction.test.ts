@@ -611,7 +611,7 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Output 2: counter NFT token amount must decrease by registration ID');
+		await expect(txPromise).rejects.toThrow('Output 2: counter NFT token amount must decrease by currentRegistrationId');
 	});
 
 	it('should fail due to incorrect token amount in auctionNFT', async () =>
@@ -666,7 +666,7 @@ describe('Auction', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Output 3: auction NFT token amount must equal registration ID');
+		await expect(txPromise).rejects.toThrow('Output 3: auction NFT token amount must equal currentRegistrationId');
 	});
 
 	it('should fail due to invalid auction amount, value less than minimum', async () =>

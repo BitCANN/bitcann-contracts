@@ -48,21 +48,22 @@ contract Auction() {
 
     // Registration ID increases by 1 with each transaction.
     int prevRegistrationId = int(tx.inputs[2].nftCommitment);
-    int nextRegistrationId = int(tx.outputs[2].nftCommitment);
-    require(nextRegistrationId == prevRegistrationId + 1, "Output 2: registration ID must increase by 1");
+    int currentRegistrationId = int(tx.outputs[2].nftCommitment);
+    require(currentRegistrationId == prevRegistrationId + 1, "Output 2: registration ID must increase by 1");
 
     // Reduce the tokenAmount in the counterNFT as some amount is going to auctionNFT
-    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId, "Output 2: counter NFT token amount must decrease by registration ID");
+    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - currentRegistrationId, "Output 2: counter NFT token amount must decrease by currentRegistrationId");
     // tokenAmount in the auctionNFT is the registrationId.
-    require(tx.outputs[3].tokenAmount == nextRegistrationId, "Output 3: auction NFT token amount must equal registration ID");
+    require(tx.outputs[3].tokenAmount == currentRegistrationId, "Output 3: auction NFT token amount must equal currentRegistrationId");
 
     // Dual Decay mechanism, auction price decays linearly with the step.
     // To facilitate higher precisions and since decimals do not exist in VM, we multiply
-    // it by 1e6 (1000000) and name the values as points.
+    // it by 1e6 (1000000) and call the units as points.
 
+    // TODO: make this 1000000 (0.01 BCH)
     int constant minStartingBid = 10000;
     // 1. Decay points (0.0003% per step)
-    int decayPoints = minStartingBid * nextRegistrationId * 3;
+    int decayPoints = minStartingBid * currentRegistrationId * 3;
     // 2. Get auction price points
     int currentPricePoints = minStartingBid * 1e6;
     // 3. Subtract price points by decay points to get the current auction price.
