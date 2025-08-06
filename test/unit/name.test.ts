@@ -10,7 +10,7 @@ describe('Name', () =>
 	const name = 'test';
 	const nameHex = Buffer.from(name).toString('hex');
 
-	const nameContract = new Contract(BitCANNArtifacts.Name, [ BigInt(mockOptions.inactivityExpiryTime), nameHex, mockOptions.tld, reversedNameTokenCategory ], { provider });
+	const nameContract = new Contract(BitCANNArtifacts.Name, [ nameHex, mockOptions.tld, reversedNameTokenCategory ], { provider });
 	const testContract = new Contract(artifacts, [], { provider });
 
 	let externalAuthNFTUTXO: Utxo;

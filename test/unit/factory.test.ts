@@ -20,8 +20,8 @@ describe('Factory', () =>
 		addressType: 'p2sh32',
 	});
 
-	const factoryContract = new Contract(BitCANNArtifacts.Factory, [ domainPartialBytecode, BigInt(mockOptions.minWaitTime), alicePkh, mockOptions.tld ], { provider });
-	const nameContract = new Contract(BitCANNArtifacts.Name, [ BigInt(mockOptions.inactivityExpiryTime), nameHex, mockOptions.tld, reversedNameTokenCategory ], { provider });
+	const factoryContract = new Contract(BitCANNArtifacts.Factory, [ domainPartialBytecode, alicePkh ], { provider });
+	const nameContract = new Contract(BitCANNArtifacts.Name, [ nameHex, mockOptions.tld, reversedNameTokenCategory ], { provider });
 
 	let threadNFTUTXO: Utxo;
 	let factoryUTXO: Utxo;

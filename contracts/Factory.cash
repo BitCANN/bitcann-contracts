@@ -2,15 +2,11 @@ pragma cashscript 0.11.3;
 
 /**
  * @param nameContractBytecode - Partial bytecode of the name contract
- * @param minWaitTime - Minimum wait time to consider an auction ended
  * @param creatorIncentivePKH - PKH of the creator incentive
- * @param tld - TLD of the name
  */
 contract Factory(
   bytes nameContractBytecode,
-  int minWaitTime,
   bytes20 creatorIncentivePKH,
-  bytes tld
 ) {
   /**
    * This function finalizes a name registration auction by:
@@ -89,9 +85,12 @@ contract Factory(
     // Strict value check
     require(tx.outputs[2].value == tx.inputs[2].value, "Output 2: name minting NFT satoshi value must match input 2");
 
-    // Enforcing the relative timelock, the auctionNFT must be atleast `minWaitTime` old
+    // Enforcing the relative timelock, the auctionNFT must be atleast 4194306 old
     // to be considered ended.
-    require(tx.inputs[3].sequenceNumber == minWaitTime, "Input 3: auction NFT sequence number must equal minimum wait time");
+    // 4194306 is sequence number in time, 2*512 seconds
+
+    // TODO: Make this 3 hours
+    require(tx.inputs[3].sequenceNumber == 4194306, "Input 3: auction NFT sequence number must equal 4194306");
 
     // Extract the PKH and name from the auctionNFT
     bytes20 bidderPKH, bytes name = tx.inputs[3].nftCommitment.split(20);
@@ -100,6 +99,7 @@ contract Factory(
     int nameLength = name.length;
     // category + name + bytecode.
     // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
+    bytes constant tld = bytes('.bch');
     bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength + tld.length) + name + tld + nameContractBytecode;
     bytes32 scriptHash = hash256(nameBytecode);
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);

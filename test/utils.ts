@@ -6,7 +6,7 @@ import { cashAddressToLockingBytecode,
 	binToHex,
 	numberToBinUint16BE } from '@bitauth/libauth';
 import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
-import { BitCANNArtifacts } from '../lib';
+import { BitCANNArtifacts } from '../lib/index.js';
 import { mockOptions } from './common.js';
 
 export interface LibauthTokenDetails
@@ -249,7 +249,7 @@ export const getDomainPartialBytecode = (category: string, options: { provider: 
 		.join('');
 
 	// Construct a placeholder name contract to extract partial bytecode.
-	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ BigInt(1), placeholderNameHex, mockOptions.tld, reversedCategory ], options);
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, mockOptions.tld, reversedCategory ], options);
 	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
 	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
 

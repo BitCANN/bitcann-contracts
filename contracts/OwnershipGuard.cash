@@ -2,9 +2,8 @@ pragma cashscript 0.11.3;
 
 /**
  * @param nameContractBytecode The the partial bytecode of the name contract that has an Owner.
- * @param tld - TLD of the name
  */
-contract OwnershipGuard(bytes nameContractBytecode, bytes tld) {
+contract OwnershipGuard(bytes nameContractBytecode) {
   /**
    * If the name being auctioned already has an `externalAuthNFT` with the same category, then the auction is invalid.
    * Because it means that an owner still exists. If it is known that the name has been abandoned for > `inactivityExpiryTime`
@@ -61,6 +60,7 @@ contract OwnershipGuard(bytes nameContractBytecode, bytes tld) {
     int nameLength = name.length;
     // category + name + bytecode.
     // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
+    bytes constant tld = bytes('.bch');
     bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength + tld.length) + name + tld + nameContractBytecode;
     bytes32 scriptHash = hash256(nameBytecode);
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);

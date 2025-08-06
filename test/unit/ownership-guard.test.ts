@@ -1,7 +1,7 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, mockOptions } from '../common.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory } from '../common.js';
 import { getDomainPartialBytecode } from '../utils.js';
 import artifacts from '../artifacts.js';
 
@@ -16,7 +16,7 @@ describe('OwnershipGuard', () =>
 		addressType: 'p2sh32',
 	});
 
-	const ownershipGuardContract = new Contract(BitCANNArtifacts.OwnershipGuard, [ domainPartialBytecode, mockOptions.tld ], { provider });
+	const ownershipGuardContract = new Contract(BitCANNArtifacts.OwnershipGuard, [ domainPartialBytecode ], { provider });
 	const testContract = new Contract(artifacts, [], { provider });
 
 	const name = 'test';
