@@ -1,4 +1,4 @@
-pragma cashscript 0.11.3;
+pragma cashscript 0.11.4;
 
 contract Accumulator() {
   /**

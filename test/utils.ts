@@ -7,7 +7,6 @@ import { cashAddressToLockingBytecode,
 	numberToBinUint16BE } from '@bitauth/libauth';
 import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
 import { BitCANNArtifacts } from '../lib/index.js';
-import { mockOptions } from './common.js';
 
 export interface LibauthTokenDetails
 {
@@ -111,8 +110,6 @@ export const lockScriptToAddress = (lockScript: string): string =>
 	// Convert the lock script to a cashaddress (with bitcoincash: prefix).
 	const result = lockingBytecodeToCashAddress({ bytecode: hexToBin(lockScript), prefix: 'bitcoincash' });
 	// A successful conversion will result in a string, unsuccessful will return AddressContents
-
-	console.log('result: ', result);
 
 	// @ts-ignore
 	if(typeof result.address !== 'string')
@@ -248,9 +245,14 @@ export const getDomainPartialBytecode = (category: string, options: { provider: 
 		.padStart(2, '0'))
 		.join('');
 
+	const placeTLD = '.bch';
+	const placeTLDHex = Array.from(placeTLD).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+
 	// Construct a placeholder name contract to extract partial bytecode.
-	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, mockOptions.tld, reversedCategory ], options);
-	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], options);
+	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2 + 2 + placeTLD.length * 2;
 	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
 
 	return namePartialBytecode;

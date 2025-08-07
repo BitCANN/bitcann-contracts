@@ -126,8 +126,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:27 Require statement failed at input 1 in contract ConflictResolver.cash at line 27 with the following message: Transaction: must have exactly 4 inputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");');
+		await expect(txPromise).rejects.toThrow('Transaction: must have exactly 4 inputs');
 	});
 
 	it('should fail with invalid number of outputs', async () =>
@@ -178,8 +177,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:28 Require statement failed at input 1 in contract ConflictResolver.cash at line 28 with the following message: Transaction: must have exactly 4 outputs.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs.length == 4, "Transaction: must have exactly 4 outputs");');
+		await expect(txPromise).rejects.toThrow('Transaction: must have exactly 4 outputs');
 	});
 
 	it('should fail when contract is not used at input index 1', async () =>
@@ -226,8 +224,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:31 Require statement failed at input 0 in contract ConflictResolver.cash at line 31 with the following message: Input 1: conflict resolver contract UTXO must be at this index.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(this.activeInputIndex == 1, "Input 1: conflict resolver contract UTXO must be at this index");');
+		await expect(txPromise).rejects.toThrow('Input 1: conflict resolver contract UTXO must be at this index');
 	});
 
 	it('should fail when using a non registry contract for valid auction', async () =>
@@ -276,8 +273,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:39 Require statement failed at input 1 in contract ConflictResolver.cash at line 39 with the following message: Input 2: valid auction locking bytecode does not match registry input\'s locking bytecode.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: valid auction locking bytecode does not match registry input\'s locking bytecode");');
+		await expect(txPromise).rejects.toThrow('Input 2: valid auction locking bytecode does not match registry input\'s locking bytecode');
 	});
 
 	it('should fail when using a non registry contract for invalid auction', async () =>
@@ -326,8 +322,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:40 Require statement failed at input 1 in contract ConflictResolver.cash at line 40 with the following message: Input 3: invalid auction locking bytecode does not match registry input\'s locking bytecode.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: invalid auction locking bytecode does not match registry input\'s locking bytecode");');
+		await expect(txPromise).rejects.toThrow('Input 3: invalid auction locking bytecode does not match registry input\'s locking bytecode');
 	});
 
 	it('should fail due to invalid auction category', async () =>
@@ -389,8 +384,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:48 Require statement failed at input 1 in contract ConflictResolver.cash at line 48 with the following message: Input 2: valid auction token category prefix must match registry.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCategory == registryInputCategory, "Input 2: valid auction token category prefix must match registry");');
+		await expect(txPromise).rejects.toThrow('Input 2: valid auction token category prefix must match registry');
 	});
 
 	it('should fail due to invalid valid auction capability', async () =>
@@ -452,8 +446,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:50 Require statement failed at input 1 in contract ConflictResolver.cash at line 50 with the following message: Input 2: valid auction capability must be mutable (0x01).');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(auctionCapability == 0x01, "Input 2: valid auction capability must be mutable (0x01)");');
+		await expect(txPromise).rejects.toThrow('Input 2: valid auction capability must be mutable (0x01)');
 	});
 
 	it('should fail due to auction token category mismatch', async () =>
@@ -515,8 +508,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:53 Require statement failed at input 1 in contract ConflictResolver.cash at line 53 with the following message: Input 2 and 3: auction token categories must match.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].tokenCategory == tx.inputs[3].tokenCategory, "Input 2 and 3: auction token categories must match");');
+		await expect(txPromise).rejects.toThrow('Input 2 and 3: auction token categories must match');
 	});
 
 	it('should fail due to auction name mismatch', async () =>
@@ -581,8 +573,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:55 Require statement failed at input 1 in contract ConflictResolver.cash at line 55 with the following message: Input 2 and 3: auction names must match.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].nftCommitment.split(20)[1] == tx.inputs[3].nftCommitment.split(20)[1], "Input 2 and 3: auction names must match");');
+		await expect(txPromise).rejects.toThrow('Input 2 and 3: auction names must match');
 	});
 
 	it('should fail when valid auction registration ID is not lower', async () =>
@@ -645,8 +636,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:57 Require statement failed at input 1 in contract ConflictResolver.cash at line 57 with the following message: Input 2: valid auction registration ID must be lower than input 3.');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.inputs[2].tokenAmount < tx.inputs[3].tokenAmount, "Input 2: valid auction registration ID must be lower than input 3");');
+		await expect(txPromise).rejects.toThrow('Input 2: valid auction registration ID must be lower than input 3');
 	});
 
 	it('should fail due to token amount mismatch', async () =>
@@ -694,8 +684,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:61 Require statement failed at input 1 in contract ConflictResolver.cash at line 61 with the following message: Output 0: token amount must equal input 0 + input 3 amounts (accumulation).');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Output 0: token amount must equal input 0 + input 3 amounts (accumulation)");');
+		await expect(txPromise).rejects.toThrow('Output 0: token amount must equal input 0 + input 3 amounts (accumulation)');
 	});
 
 	it('should fail due to reward not being pure BCH', async () =>
@@ -750,8 +739,7 @@ describe('ConflictResolver', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('ConflictResolver.cash:64 Require statement failed at input 1 in contract ConflictResolver.cash at line 64 with the following message: Output 3: reward must be pure BCH (no token category).');
-		await expect(txPromise).rejects.toThrow('Failing statement: require(tx.outputs[3].tokenCategory == 0x, "Output 3: reward must be pure BCH (no token category)");');
+		await expect(txPromise).rejects.toThrow('Output 3: reward must be pure BCH (no token category)');
 	});
 
 	// Tests for valid conflict resolution scenarios

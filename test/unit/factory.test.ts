@@ -1,7 +1,7 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, mockOptions, invalidNameTokenCategory, bobPkh, bobAddress } from '../common.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory } from '../common.js';
 import { getDomainPartialBytecode } from '../utils.js';
 import artifacts from '../artifacts.js';
 
@@ -21,7 +21,6 @@ describe('Factory', () =>
 	});
 
 	const factoryContract = new Contract(BitCANNArtifacts.Factory, [ domainPartialBytecode, alicePkh ], { provider });
-	const nameContract = new Contract(BitCANNArtifacts.Name, [ nameHex, mockOptions.tld, reversedNameTokenCategory ], { provider });
 
 	let threadNFTUTXO: Utxo;
 	let factoryUTXO: Utxo;
