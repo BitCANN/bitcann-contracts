@@ -351,7 +351,7 @@ describe('Name', () =>
 					to: aliceTokenAddress,
 					amount: ownershipNFTUTXO.satoshis,
 					token: {
-						category: ownershipNFTUTXO.token!.category,
+						category: internalAuthNFTUTXOCloneWithDIfferentCategory.token!.category,
 						amount: ownershipNFTUTXO.token!.amount,
 						nft: {
 							capability: ownershipNFTUTXO.token!.nft!.capability,
@@ -637,9 +637,21 @@ describe('Name', () =>
 	{
 		it('should fail with invalid number of inputs', async () =>
 		{
+			// Create internal auth NFT with actual name for penaliseInvalidName tests
+			const internalAuthNFTWithName: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
 			transaction = new TransactionBuilder({ provider })
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
-				.addInput(internalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(internalAuthNFTWithName, nameContract.unlock.penaliseInvalidName(BigInt(1)))
 				.addInput(pureBCHUTXO, testContract.unlock.call())
 				.addInput(pureBCHUTXO, testContract.unlock.call())
 				.addOutput({
@@ -648,16 +660,27 @@ describe('Name', () =>
 				});
 
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
 			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 3 inputs');
 		});
 
 		it('should fail with invalid number of outputs', async () =>
 		{
+			// Create internal auth NFT with actual name for penaliseInvalidName tests
+			const internalAuthNFTWithName: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
 			transaction = new TransactionBuilder({ provider })
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
-				.addInput(internalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(internalAuthNFTWithName, nameContract.unlock.penaliseInvalidName(BigInt(1)))
 				.addInput(pureBCHUTXO, testContract.unlock.call())
 				.addOutput({
 					to: aliceAddress,
@@ -669,9 +692,376 @@ describe('Name', () =>
 				});
 
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
 			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 1 output');
+		});
+
+		it('should fail if input 0 locking bytecode does not match contract', async () =>
+		{
+			const specialName = 'test_ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(testContract.address, internalAuthNFTUTXOWithSpecial);
+
+			transaction = new TransactionBuilder({ provider })
+				.addInput(internalAuthNFTUTXOWithSpecial, testContract.unlock.call())
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT locking bytecode must match name contract');
+		});
+
+		it('should fail if input 1 locking bytecode does not match contract', async () =>
+		{
+			const specialName = 'test_ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(testContract.address, internalAuthNFTUTXOWithSpecial);
+
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, testContract.unlock.call())
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 1: internal auth NFT locking bytecode must match name contract');
+		});
+
+		it('should fail if input 0 token category does not match name category', async () =>
+		{
+			const wrongCategoryUTXO: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: invalidNameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(aliceAddress, wrongCategoryUTXO);
+			const internalAuthNFTUTXOWithName: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(nameContract.address, internalAuthNFTUTXOWithName);
+			transaction = new TransactionBuilder({ provider })
+				.addInput(wrongCategoryUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(internalAuthNFTUTXOWithName, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({
+					to: aliceAddress,
+					amount: wrongCategoryUTXO.satoshis + internalAuthNFTUTXOWithName.satoshis + pureBCHUTXO.satoshis,
+				});
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT token category must match name category');
+		});
+
+		it('should fail if input 1 token category does not match name category', async () =>
+		{
+			const wrongCategoryUTXO: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					category: invalidNameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(aliceAddress, wrongCategoryUTXO);
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(wrongCategoryUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({
+					to: aliceAddress,
+					amount: externalAuthNFTUTXO.satoshis + wrongCategoryUTXO.satoshis + pureBCHUTXO.satoshis,
+				});
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 1: internal auth NFT token category must match name category');
+		});
+
+		it('should fail if input 0 external auth NFT does not have empty commitment', async () =>
+		{
+			const wrongCommitmentUTXO: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: 'abcd',
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(aliceAddress, wrongCommitmentUTXO);
+			const internalAuthNFTUTXOWithName: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			provider.addUtxo(nameContract.address, internalAuthNFTUTXOWithName);
+			transaction = new TransactionBuilder({ provider })
+				.addInput(wrongCommitmentUTXO, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(internalAuthNFTUTXOWithName, nameContract.unlock.penaliseInvalidName(BigInt(1)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({
+					to: aliceAddress,
+					amount: wrongCommitmentUTXO.satoshis + internalAuthNFTUTXOWithName.satoshis + pureBCHUTXO.satoshis,
+				});
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT must have empty commitment');
+		});
+
+		it('should fail when character is a hyphen', async () =>
+		{
+			const hyphenName = 'test-name';
+			const hyphenNameHex = Buffer.from(hyphenName).toString('hex');
+			const internalAuthNFTUTXOWithHyphen: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + hyphenNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithHyphen, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).rejects.toThrow(FailedRequireError);
+		});
+
+		it('should fail when character is lowercase', async () =>
+		{
+			const lowerName = 'testname';
+			const lowerNameHex = Buffer.from(lowerName).toString('hex');
+			const internalAuthNFTUTXOWithLower: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + lowerNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithLower, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).rejects.toThrow(FailedRequireError);
+		});
+
+		it('should fail when character is uppercase', async () =>
+		{
+			const upperName = 'testName';
+			const upperNameHex = Buffer.from(upperName).toString('hex');
+			const internalAuthNFTUTXOWithUpper: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + upperNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithUpper, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).rejects.toThrow(FailedRequireError);
+		});
+
+		it('should fail when character is a digit', async () =>
+		{
+			const digitName = 'test1ame';
+			const digitNameHex = Buffer.from(digitName).toString('hex');
+			const internalAuthNFTUTXOWithDigit: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + digitNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithDigit, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).rejects.toThrow(FailedRequireError);
+		});
+
+		it('should pass for special character @', async () =>
+		{
+			const specialName = 'test@ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).resolves.not.toThrow();
+		});
+
+		it('should pass for special character _', async () =>
+		{
+			const specialName = 'test_ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).resolves.not.toThrow();
+		});
+
+		it('should pass for special character .', async () =>
+		{
+			const specialName = 'test.ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).resolves.not.toThrow();
+		});
+
+		it('should pass for special character !', async () =>
+		{
+			const specialName = 'test!ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).resolves.not.toThrow();
+		});
+
+		it('should pass for special character $', async () =>
+		{
+			const specialName = 'test$ame';
+			const specialNameHex = Buffer.from(specialName).toString('hex');
+			const internalAuthNFTUTXOWithSpecial: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					...internalAuthNFTUTXO.token!,
+					nft: {
+						...internalAuthNFTUTXO.token!.nft!,
+						commitment: padVmNumber(BigInt(1), 8) + specialNameHex + tldHex,
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(internalAuthNFTUTXOWithSpecial, nameContract.unlock.penaliseInvalidName(BigInt(5)))
+				.addInput(pureBCHUTXO, testContract.unlock.call())
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
+			await expect(transaction.send()).resolves.not.toThrow();
 		});
 	});
 

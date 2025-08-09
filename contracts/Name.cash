@@ -90,8 +90,8 @@ contract Name(
 
     // Internal Auth NFT
     // First 8 bytes are the registrationID and the rest is the name.
-    bytes fullName = tx.inputs[1].nftCommitment.split(8)[1];
-    bytes nameFromNFT = fullName.split(tld.length)[0];
+    int sliceEndIndex = tx.inputs[1].nftCommitment.length - tld.length;
+    bytes nameFromNFT = tx.inputs[1].nftCommitment.slice(8, sliceEndIndex);
 
     bytes characterSplitBytes = nameFromNFT.split(characterNumber)[0];
     characterNumber = characterNumber - 1;
