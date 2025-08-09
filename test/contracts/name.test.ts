@@ -2,6 +2,7 @@ import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utx
 import { BitCANNArtifacts } from '../../lib/index.js';
 import { aliceAddress, nameTokenCategory, reversedNameTokenCategory, mockOptions } from '../common.js';
 import artifacts from '../artifacts.js';
+import { padVmNumber } from '../utils.js';
 
 describe('Name', () =>
 {
@@ -46,7 +47,7 @@ describe('Name', () =>
 				category: nameTokenCategory,
 				amount: BigInt(1),
 				nft: {
-					commitment: '0000000000000001' + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
+					commitment: padVmNumber(BigInt(1), 8) + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
 					capability: 'none' as const,
 				},
 			},
@@ -77,7 +78,7 @@ describe('Name', () =>
 				category: nameTokenCategory,
 				amount: BigInt(1),
 				nft: {
-					commitment: '0000000000000001' + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
+					commitment: padVmNumber(BigInt(1), 8) + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
 					capability: 'none' as const,
 				},
 			},
@@ -103,7 +104,7 @@ describe('Name', () =>
 				category: nameTokenCategory,
 				amount: BigInt(1),
 				nft: {
-					commitment: '0000000000000002' + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
+					commitment: padVmNumber(BigInt(2), 8) + nameHex + Buffer.from(mockOptions.tld).toString('hex'),
 					capability: 'none' as const,
 				},
 			},

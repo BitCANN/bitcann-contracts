@@ -29,10 +29,6 @@ describe('OwnershipGuard', () =>
 	// Use the same TLD that OwnershipGuard expects (".bch") so the locking bytecode matches
 	const nameContract = new Contract(BitCANNArtifacts.Name, [ nameHex, tldHex, reversedNameTokenCategory ], { provider });
 
-	const lockingBytecode = cashAddressToLockingBytecode(nameContract.address);
-	// @ts-ignore
-	console.log('lockingBytecode: ', binToHex(lockingBytecode.bytecode));
-
 	let threadNFTUTXO: Utxo;
 	let ownershipGuardUTXO: Utxo;
 	let externalAuthNFTUTXO: Utxo;
