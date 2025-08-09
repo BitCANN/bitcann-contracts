@@ -16,15 +16,13 @@ export const reversedNameTokenCategory = binToHex(hexToBin(nameTokenCategory).re
 export const invalidNameTokenCategory = randomNFT().category;
 export const reversedInvalidNameTokenCategory = binToHex(hexToBin(invalidNameTokenCategory).reverse());
 
+
 export const mockOptions =
 {
 	category: nameTokenCategory,
 	minStartingBid: 10000,
-	// minStartingBid: 1000000,
 	minBidIncreasePercentage: 5,
-	inactivityExpiryTime: 1,
-	minWaitTime: 1,
-	maxPlatformFeePercentage: 50,
+	minWaitTime: 4194306,
 	tld: '.bch',
 };
 // @ts-ignore

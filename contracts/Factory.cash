@@ -100,7 +100,7 @@ contract Factory(
     // category + name + bytecode.
     // Note: `inactivityExpiryTime` in the name is already added to the nameContractBytecode in the constructor.
     bytes constant tld = bytes('.bch');
-    bytes nameBytecode = 0x20 + registryInputCategory + bytes(nameLength + tld.length) + name + tld + nameContractBytecode;
+    bytes nameBytecode = 0x20 + registryInputCategory + bytes(tld.length) + tld + bytes(nameLength) + name + nameContractBytecode;
     bytes32 scriptHash = hash256(nameBytecode);
     bytes35 nameLockingBytecode = new LockingBytecodeP2SH32(scriptHash);
     
@@ -116,13 +116,13 @@ contract Factory(
 
     // InternalAuthNFT has registrationID as the commitment so it can be used to authenticate
     // along with the ownershipNFT
-    bytes8 registrationId = bytes8(tx.inputs[3].tokenAmount);
-    require(tx.outputs[4].nftCommitment == registrationId, "Output 4: internal auth NFT commitment must match registration ID");
+    int registrationId = int(tx.outputs[4].nftCommitment);
+    require(tx.inputs[3].tokenAmount == registrationId, "Output 4: internal auth NFT commitment must match registration ID");
     // Strict value check
     require(tx.outputs[4].value == 1000, "Output 4: internal auth NFT satoshi value must be 1000");
 
     // Send the name ownership NFT to the bidder
-    require(tx.outputs[5].nftCommitment == registrationId + name, "Output 5: name ownership NFT commitment must match registration ID + name");
+    require(tx.outputs[5].nftCommitment == tx.outputs[4].nftCommitment + name, "Output 5: name ownership NFT commitment must match registration ID + name");
     require(tx.outputs[5].lockingBytecode == new LockingBytecodeP2PKH(bidderPKH), "Output 5: name ownership NFT locking bytecode must match bidder PKH");
     require(tx.outputs[5].value == 1000, "Output 5: name ownership NFT satoshi value must be 1000");
 
@@ -131,12 +131,10 @@ contract Factory(
     require(tx.outputs[0].tokenAmount == tx.inputs[0].tokenAmount + tx.inputs[3].tokenAmount, "Output 0: token amount must equal input 0 + input 3 amounts (accumulation)");
 
     // Dual Decay mechanism, creator incentive decays linearly with the step.
-    // 1. Decay points (0.001% per step)
-    int decayPoints = tx.inputs[3].tokenAmount;
-    // 2. Get creator incentive points
-    int creatorIncentivePoints = tx.inputs[3].tokenAmount * 1e5;
-    // 3. Subtract creator incentive points by decay points to get the current creator incentive.
-    int creatorIncentive = (creatorIncentivePoints - decayPoints) / 1e5;
+
+    // Initial minimal fee is 5000; 1000 * 3 (nft outputs) + 2000 Miner Fee
+    int minimalDeduction = tx.inputs[3].value - 5000;
+    int creatorIncentive = (minimalDeduction * (1e5 - tx.inputs[3].tokenAmount) / 1e5);
 
     // If incentive is > 20000 satoshis, then it goes to the creator, else it goes to the miners.
     if(creatorIncentive > 20000) {

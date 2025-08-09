@@ -1,8 +1,8 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory } from '../common.js';
-import { getDomainPartialBytecode } from '../utils.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory, mockOptions, bobAddress, bobPkh, bobTokenAddress } from '../common.js';
+import { getCreatorIncentive, getDomainPartialBytecode, padVmNumber } from '../utils.js';
 import artifacts from '../artifacts.js';
 
 describe('Factory', () =>
@@ -21,6 +21,9 @@ describe('Factory', () =>
 	});
 
 	const factoryContract = new Contract(BitCANNArtifacts.Factory, [ domainPartialBytecode, alicePkh ], { provider });
+
+	const tldHex = Buffer.from(mockOptions.tld).toString('hex');
+	const nameContract = new Contract(BitCANNArtifacts.Name, [ nameHex, tldHex, reversedNameTokenCategory ], { provider });
 
 	let threadNFTUTXO: Utxo;
 	let factoryUTXO: Utxo;
@@ -74,7 +77,7 @@ describe('Factory', () =>
 
 		// Create auction NFT UTXO
 		auctionNFTUTXO = {
-			...randomUtxo({ satoshis: BigInt(2000000) }),
+			...randomUtxo({ satoshis: BigInt(1000000) }),
 			token: {
 				category: nameTokenCategory,
 				amount: BigInt(registrationId),
@@ -148,7 +151,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -160,7 +163,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -227,7 +230,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -239,7 +242,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -314,7 +317,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -326,7 +329,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -400,7 +403,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -412,7 +415,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -478,7 +481,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -490,7 +493,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -571,7 +574,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -583,7 +586,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -664,7 +667,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -676,7 +679,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -742,7 +745,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -754,7 +757,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -820,7 +823,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -832,7 +835,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -898,7 +901,7 @@ describe('Factory', () =>
 					category: invalidNameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -910,7 +913,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -976,7 +979,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -988,7 +991,7 @@ describe('Factory', () =>
 					category: invalidNameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1069,7 +1072,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1081,7 +1084,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1163,7 +1166,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1175,7 +1178,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1241,7 +1244,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1253,7 +1256,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1334,7 +1337,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1346,7 +1349,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1428,7 +1431,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1440,7 +1443,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1506,7 +1509,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1518,7 +1521,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1584,7 +1587,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001',
+						commitment: padVmNumber(BigInt(1), 8),
 						capability: 'none',
 					},
 				},
@@ -1596,7 +1599,7 @@ describe('Factory', () =>
 					category: nameTokenCategory,
 					amount: BigInt(1),
 					nft: {
-						commitment: '0000000000000001' + nameHex,
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
 						capability: 'none',
 					},
 				},
@@ -1608,1589 +1611,1584 @@ describe('Factory', () =>
 		await expect(txPromise).rejects.toThrow('Output 2: name minting NFT must have empty commitment');
 	});
 
-	// it('should fail when name minting NFT output token amount does not match input', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				// different from input
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 2: name minting NFT token amount must match input 2');
-	// });
-
-	// it('should fail when name minting NFT output token amount is not zero', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 2: name minting NFT token amount must be 0');
-	// });
-
-	// it('should fail when name minting NFT output value does not match input', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis + 1000n,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 2: name minting NFT satoshi value must match input 2');
-	// });
-
-	// it('should fail when auction NFT sequence number does not equal minimum wait time', async () =>
-	// {
-	// 	// Create auction NFT with wrong sequence number
-	// 	const wrongSequenceAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(2000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(registrationId),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	// Set wrong sequence number - we'll test this differently since sequenceNumber is not available on Utxo type
-	// 	// Instead, we'll test with a valid sequence number but the contract will still validate it
-
-	// 	provider.addUtxo(registryContract.address, wrongSequenceAuctionNFTUTXO);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(wrongSequenceAuctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + wrongSequenceAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Input 3: auction NFT sequence number must equal minimum wait time');
-	// });
-
-	// it('should fail when thread NFT output token amount does not accumulate correctly', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount - 1n,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 0: token amount must equal input 0 + input 3 amounts (accumulation)');
-	// });
-
-	// it('should fail when external auth NFT has non-empty commitment', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: 'notempty',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 3: external auth NFT must have empty commitment');
-	// });
-
-	// it('should fail when external auth NFT value is not 1000', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(2000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 3: external auth NFT satoshi value must be 1000');
-	// });
-
-	// it('should fail when internal auth NFT commitment does not match registration ID', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000002',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT commitment must match registration ID');
-	// });
-
-	// it('should fail when internal auth NFT value is not 1000', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(2000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT satoshi value must be 1000');
-	// });
-
-	// it('should fail when name ownership NFT commitment does not match registration ID + name', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: invalidNameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT commitment must match registration ID + name');
-	// });
-
-	// it('should fail when name ownership NFT value is not 1000', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(2000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT satoshi value must be 1000');
-	// });
-
-	// it('should fail when external auth NFT locking bytecode does not match name contract', async () =>
-	// {
-	// 	// Create a different name contract address
-	// 	const differentNameContract = new Contract(artifacts, [], { provider });
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: differentNameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 3: external auth NFT locking bytecode must match name contract');
-	// });
-
-	// it('should fail when internal auth NFT locking bytecode does not match name contract', async () =>
-	// {
-	// 	// Create a different name contract address
-	// 	const differentNameContract = new Contract(artifacts, [], { provider });
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: differentNameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT locking bytecode must match name contract');
-	// });
-
-	// it('should fail when name ownership NFT locking bytecode does not match bidder PKH', async () =>
-	// {
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(auctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: '',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: '',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: bobAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: binToHex(bobPkh) + nameHex,
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT locking bytecode must match bidder PKH');
-	// });
-
-	// it('should fail when creator incentive is provided but token category is not pure BCH', async () =>
-	// {
-	// 	// Create auction NFT with high token amount to trigger creator incentive
-	// 	const highValueAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(2000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(100000),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(50000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 6: creator incentive must be pure BCH (no token category)');
-	// });
-
-	// it('should fail when creator incentive value does not match calculated incentive', async () =>
-	// {
-	// 	// Create auction NFT with high token amount to trigger creator incentive
-	// 	const highValueAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(2000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(100000),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(40000),
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 6: creator incentive satoshi value must match calculated incentive');
-	// });
-
-	// it('should fail when creator incentive locking bytecode does not match creator PKH', async () =>
-	// {
-	// 	// Create auction NFT with high token amount (triggers creator incentive)
-	// 	const highValueAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(100000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(registrationId),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: '',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: '',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(0),
-	// 				nft: {
-	// 					capability: 'none',
-	// 					commitment: binToHex(alicePkh) + nameHex,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: bobAddress,
-	// 			amount: BigInt(50000),
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	await expect(txPromise).rejects.toThrow(FailedRequireError);
-	// 	await expect(txPromise).rejects.toThrow('Output 6: creator incentive locking bytecode must match creator PKH');
-	// });
-
-	// it('should successfully finalize auction when all conditions are met', async () =>
-	// {
-	// 	// Create auction NFT with moderate token amount (no creator incentive)
-	// 	const moderateValueAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(2000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(registrationId),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	provider.addUtxo(registryContract.address, moderateValueAuctionNFTUTXO);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(moderateValueAuctionNFTUTXO, registryContract.unlock.call())
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + moderateValueAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	// This should succeed
-	// 	await expect(txPromise).resolves.toBeDefined();
-	// });
-
-	// it('should successfully finalize auction with creator incentive when conditions are met', async () =>
-	// {
-	// 	// Create auction NFT with high token amount to trigger creator incentive
-	// 	const highValueAuctionNFTUTXO: Utxo = {
-	// 		...randomUtxo({ satoshis: BigInt(2000000) }),
-	// 		token: {
-	// 			category: nameTokenCategory,
-	// 			amount: BigInt(100000),
-	// 			nft: {
-	// 				commitment: binToHex(alicePkh) + nameHex,
-	// 				capability: 'mutable',
-	// 			},
-	// 		},
-	// 	};
-
-	// 	provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
-
-	// 	// Calculate expected creator incentive
-	// 	// creatorIncentive = (100000 * 1e5 - 100000) / 1e5 = 99999
-	// 	const expectedCreatorIncentive = BigInt(99999);
-
-	// 	transaction = new TransactionBuilder({ provider })
-	// 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(factoryUTXO, factoryContract.unlock.call())
-	// 		.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
-	// 		.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: threadNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: threadNFTUTXO.token!.category,
-	// 				amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: threadNFTUTXO.token!.nft!.capability,
-	// 					commitment: threadNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: factoryContract.tokenAddress,
-	// 			amount: factoryUTXO.satoshis,
-	// 		})
-	// 		.addOutput({
-	// 			to: registryContract.tokenAddress,
-	// 			amount: nameMintingNFTUTXO.satoshis,
-	// 			token: {
-	// 				category: nameMintingNFTUTXO.token!.category,
-	// 				amount: nameMintingNFTUTXO.token!.amount,
-	// 				nft: {
-	// 					capability: nameMintingNFTUTXO.token!.nft!.capability,
-	// 					commitment: nameMintingNFTUTXO.token!.nft!.commitment,
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: nameContract.tokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001',
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceTokenAddress,
-	// 			amount: BigInt(1000),
-	// 			token: {
-	// 				category: nameTokenCategory,
-	// 				amount: BigInt(1),
-	// 				nft: {
-	// 					commitment: '0000000000000001' + nameHex,
-	// 					capability: 'none',
-	// 				},
-	// 			},
-	// 		})
-	// 		.addOutput({
-	// 			to: aliceAddress,
-	// 			amount: expectedCreatorIncentive,
-	// 		});
-
-	// 	const txPromise = transaction.send();
-
-	// 	// This should succeed
-	// 	await expect(txPromise).resolves.toBeDefined();
-	// });
+	it('should fail when name minting NFT output token amount does not match input', async () =>
+	{
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call())
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					// different from input
+					amount: BigInt(1),
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(1),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(1),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(1),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 2: name minting NFT token amount must match input 2');
+	});
+
+	it('should fail when name minting NFT output token amount is not zero', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount + 1n,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 2: name minting NFT token amount must match input 2');
+	});
+
+	it('should fail when name minting NFT output value does not match input', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount - 1n,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis - 1n,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 2: name minting NFT satoshi value must match input 2');
+	});
+
+	it('should fail when thread NFT output token amount does not accumulate correctly', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount - 1n,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 0: token amount must equal input 0 + input 3 amounts (accumulation)');
+	});
+
+	it('should fail when external auth NFT has non-empty commitment', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 3: external auth NFT must have empty commitment');
+	});
+
+	it('should fail when external auth NFT value is not 1000', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1100),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 3: external auth NFT satoshi value must be 1000');
+	});
+
+	it('should fail when internal auth NFT commitment does not match registration ID', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(2), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT commitment must match registration ID');
+	});
+
+	it('should fail when internal auth NFT value is not 1000', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1100),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT satoshi value must be 1000');
+	});
+
+	it('should fail when name ownership NFT commitment does not match registration ID + name', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(2), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT commitment must match registration ID + name');
+	});
+
+	it('should fail when name ownership NFT value is not 1000', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1100),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT satoshi value must be 1000');
+	});
+
+	it('should fail when external auth NFT locking bytecode does not match name contract', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: testContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: bobTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 3: external auth NFT locking bytecode must match name contract');
+	});
+
+	it('should fail when internal auth NFT locking bytecode does not match name contract', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: testContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: bobTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 4: internal auth NFT locking bytecode must match name contract');
+	});
+
+	it('should fail when name ownership NFT locking bytecode does not match bidder PKH', async () =>
+	{
+
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: bobTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 5: name ownership NFT locking bytecode must match bidder PKH');
+	});
+
+	it('should fail when creator incentive is provided but token category is not pure BCH', async () =>
+	{
+		// Create auction NFT with high token amount to trigger creator incentive
+		const highValueAuctionNFTUTXO: Utxo = {
+			...randomUtxo({ satoshis: BigInt(2000000) }),
+			token: {
+				category: nameTokenCategory,
+				amount: BigInt(1),
+				nft: {
+					commitment: binToHex(alicePkh) + nameHex,
+					capability: 'mutable',
+				},
+			},
+		};
+
+		provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
+		const expectedCreatorIncentive = getCreatorIncentive(highValueAuctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: expectedCreatorIncentive,
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 6: creator incentive must be pure BCH (no token category)');
+	});
+
+	it('should fail when creator incentive value does not match calculated incentive', async () =>
+	{
+		// Create auction NFT with high token amount to trigger creator incentive
+		const highValueAuctionNFTUTXO: Utxo = {
+			...randomUtxo({ satoshis: BigInt(2000000) }),
+			token: {
+				category: nameTokenCategory,
+				amount: BigInt(1),
+				nft: {
+					commitment: binToHex(alicePkh) + nameHex,
+					capability: 'mutable',
+				},
+			},
+		};
+
+		provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
+		const expectedCreatorIncentive = getCreatorIncentive(highValueAuctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive - BigInt(5),
+			});
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 6: creator incentive satoshi value must match calculated incentive');
+	});
+
+	it('should fail when creator incentive locking bytecode does not match creator PKH', async () =>
+	{
+		// Create auction NFT with high token amount (triggers creator incentive)
+		const highValueAuctionNFTUTXO: Utxo = {
+			...randomUtxo({ satoshis: BigInt(100000000) }),
+			token: {
+				category: nameTokenCategory,
+				amount: BigInt(registrationId),
+				nft: {
+					commitment: binToHex(alicePkh) + nameHex,
+					capability: 'mutable',
+				},
+			},
+		};
+
+		provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
+		const expectedCreatorIncentive = getCreatorIncentive(highValueAuctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: bobAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		await expect(txPromise).rejects.toThrow(FailedRequireError);
+		await expect(txPromise).rejects.toThrow('Output 6: creator incentive locking bytecode must match creator PKH');
+	});
+
+	it('should successfully finalize auction when all conditions are met', async () =>
+	{
+		const expectedCreatorIncentive = getCreatorIncentive(auctionNFTUTXO.satoshis, BigInt(registrationId));
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(auctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + auctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.address,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(BigInt(1), 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+
+		const txPromise = transaction.send();
+
+		// This should succeed
+		await expect(txPromise).resolves.toBeDefined();
+	});
+
+	it('should successfully finalize auction with creator incentive when conditions are met', async () =>
+	{
+		let auctionPrice = BigInt(700000);
+		const rID = BigInt(196858);
+		// Create auction NFT with high token amount to trigger creator incentive
+		const highValueAuctionNFTUTXO: Utxo = {
+			...randomUtxo({ satoshis: auctionPrice }),
+			token: {
+				category: nameTokenCategory,
+				amount: rID,
+				nft: {
+					commitment: binToHex(alicePkh) + nameHex,
+					capability: 'mutable',
+				},
+			},
+		};
+
+		provider.addUtxo(registryContract.address, highValueAuctionNFTUTXO);
+		const expectedCreatorIncentive = getCreatorIncentive(auctionPrice, rID);
+
+		transaction = new TransactionBuilder({ provider })
+			.addInput(threadNFTUTXO, registryContract.unlock.call())
+			.addInput(factoryUTXO, factoryContract.unlock.call())
+			.addInput(nameMintingNFTUTXO, registryContract.unlock.call())
+			.addInput(highValueAuctionNFTUTXO, registryContract.unlock.call(), { sequence: mockOptions.minWaitTime })
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token!.category,
+					amount: threadNFTUTXO.token!.amount + highValueAuctionNFTUTXO.token!.amount,
+					nft: {
+						capability: threadNFTUTXO.token!.nft!.capability,
+						commitment: threadNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: factoryContract.tokenAddress,
+				amount: factoryUTXO.satoshis,
+			})
+			.addOutput({
+				to: registryContract.tokenAddress,
+				amount: nameMintingNFTUTXO.satoshis,
+				token: {
+					category: nameMintingNFTUTXO.token!.category,
+					amount: nameMintingNFTUTXO.token!.amount,
+					nft: {
+						capability: nameMintingNFTUTXO.token!.nft!.capability,
+						commitment: nameMintingNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: nameContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(rID, 8),
+						capability: 'none',
+					},
+				},
+			})
+			.addOutput({
+				to: aliceTokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: padVmNumber(rID, 8) + nameHex,
+						capability: 'none',
+					},
+				},
+			});
+
+		if(expectedCreatorIncentive > BigInt(20000))
+		{
+			transaction.addOutput({
+				to: aliceAddress,
+				amount: expectedCreatorIncentive,
+			});
+		}
+
+
+		const txPromise = transaction.send();
+
+		// This should succeed
+		await expect(txPromise).resolves.toBeDefined();
+	});
 });

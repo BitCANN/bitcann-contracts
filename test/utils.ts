@@ -4,6 +4,8 @@ import { cashAddressToLockingBytecode,
 	hash256,
 	hexToBin,
 	binToHex,
+	bigIntToVmNumber,
+	padMinimallyEncodedVmNumber,
 	numberToBinUint16BE } from '@bitauth/libauth';
 import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
 import { BitCANNArtifacts } from '../lib/index.js';
@@ -25,6 +27,18 @@ export interface LibauthOutput
 	token?: LibauthTokenDetails;
 }
 
+export const padVmNumber = (num: bigint, length: number): string =>
+{
+	return binToHex(padMinimallyEncodedVmNumber(bigIntToVmNumber(num), length).slice(0, length));
+};
+
+export const getCreatorIncentive = (auctionPrice: bigint, registrationId: bigint): bigint =>
+{
+	const minimalDeduction = auctionPrice - BigInt(5000);
+	const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
+
+	return creatorIncentive;
+};
 
 export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint): bigint =>
 {
