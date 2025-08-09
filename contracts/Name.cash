@@ -20,7 +20,7 @@ contract Name(
    * - This function can be used to add records and invalidate multiple records in a single transaction.
    *
    * Records are created using OP_RETURN outputs. To add a record, include the record data directly in the OP_RETURN output.
-   * To invalidate a record, prefix "RMV" followed by the hash of the record content in the OP_RETURN output. This will signal
+   * To invalidate a record, include the hash of the record content in the OP_RETURN output. This will signal
    * the library/indexers to exclude the record from the valid records.
    * 
    * @inputs
@@ -34,25 +34,30 @@ contract Name(
    */
   function useAuth(int authID) {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2, "Name: transaction version must be 2 (relative timelocks required)");
+    require(tx.version == 2, "Transaction: Version must be 2 (relative timelocks required)");
 
     // The activeInputIndex can be anything as long as the utxo properties are preserved and comes back to the
     // contract without alteration.
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Active input: locking bytecode must match active output");
-    require(tx.inputs[this.activeInputIndex].tokenCategory == nameCategory, "Active input: token category must match name category");
-    require(tx.outputs[this.activeInputIndex].tokenCategory == nameCategory, "Active output: token category must match name category");
-    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment, "Active input: NFT commitment must match active output");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Auth input: locking bytecode must match active output");
+    require(tx.inputs[this.activeInputIndex].tokenCategory == nameCategory, "Auth input: token category must match name category");
+    require(tx.outputs[this.activeInputIndex].tokenCategory == nameCategory, "Auth output: token category must match name category");
+    require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment, "Auth input: NFT commitment must match active output");
 
     if(authID == 1) {
       // The next input from the InternalAuthNFT must be the ownershipNFT.
-      require(tx.inputs[this.activeInputIndex + 1].tokenCategory == nameCategory, "Next input: ownership NFT token category must match name category");
+      require(tx.inputs[this.activeInputIndex + 1].tokenCategory == nameCategory, "Ownership input: ownership NFT token category must match name category");
+      require(tx.outputs[this.activeInputIndex + 1].tokenCategory == tx.inputs[this.activeInputIndex + 1].tokenCategory, "Ownership output: token category must match active input");
+
       bytes registrationId, bytes nameFromOwnerNFT = tx.inputs[this.activeInputIndex + 1].nftCommitment.split(8);
-      require(nameFromOwnerNFT == name + tld, "Next input: ownership NFT name must match contract name + TLD");
-      require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId, "Active input: internal auth NFT commitment must match ownership NFT registration ID");
+      require(nameFromOwnerNFT == name + tld, "Ownership input: ownership NFT name must match contract name + TLD");
+      require(tx.inputs[this.activeInputIndex].nftCommitment == registrationId, "Auth input: internal auth NFT commitment must match ownership NFT registration ID");
+      require(tx.outputs[this.activeInputIndex + 1].nftCommitment == tx.inputs[this.activeInputIndex + 1].nftCommitment, "Ownership output: NFT commitment must match active input");
+
+      // Note only the commitment and category are enforced on the next output index and not the locking bytecode.
     } else {
-      // One known use of ExternalAuthNFT in the `NameOwnershipGuard` contract. ExternalAuthNFT is
+      // One known use of ExternalAuthNFT in the `OwnershipGuard` contract. ExternalAuthNFT is
       // used to prove that an owner exists.
-      require(tx.inputs[this.activeInputIndex].nftCommitment == 0x, "Active input: external auth NFT must have empty commitment");
+      require(tx.inputs[this.activeInputIndex].nftCommitment == 0x, "Auth input: external auth NFT must have empty commitment");
     }
   }
 
@@ -68,7 +73,7 @@ contract Name(
    */
   function penaliseInvalidName(int characterNumber) {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2, "Name: transaction version must be 2 (relative timelocks required)");
+    require(tx.version == 2, "Transaction: Version must be 2 (relative timelocks required)");
 
     require(tx.inputs.length == 3, "Transaction: must have exactly 3 inputs");
     require(tx.outputs.length == 1, "Transaction: must have exactly 1 output");
@@ -107,7 +112,7 @@ contract Name(
   }
 
   /**
-   * If the incentive system fails, i.e `NameOwnershipGuard` or `AuctionConflictResolver` fails to prevent a
+   * If the incentive system fails, i.e `OwnershipGuard` or `AuctionConflictResolver` fails to prevent a
    * a owner conflict. When this happens there will be > 1 owner for this name.
    * The owner with the lowest registrationID must be the only owner for this name.
    * To help enforce this rule, this function will allow anyone to burn both the Auth NFTs of the NEW owner.
@@ -126,7 +131,7 @@ contract Name(
    */
   function resolveOwnerConflict(){
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
-    require(tx.version == 2, "Name: transaction version must be 2 (relative timelocks required)");
+    require(tx.version == 2, "Transaction: Version must be 2 (relative timelocks required)");
 
     require(tx.inputs.length == 5, "Transaction: must have exactly 5 inputs");
     require(tx.outputs.length == 3, "Transaction: must have exactly 3 outputs");
@@ -184,7 +189,7 @@ contract Name(
   function burn() {
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
     // Need version 2 enforcement for relative timelocks.
-    require(tx.version == 2, "Name: transaction version must be 2 (relative timelocks required)");
+    require(tx.version == 2, "Transaction: Version must be 2 (relative timelocks required)");
 
     require(tx.inputs.length == 3, "Transaction: must have exactly 3 inputs");
     require(tx.outputs.length == 1, "Transaction: must have exactly 1 output");

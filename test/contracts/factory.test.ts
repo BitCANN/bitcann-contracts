@@ -1,7 +1,7 @@
 import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utxo, FailedRequireError } from 'cashscript';
 import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
-import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory, mockOptions, bobAddress, bobPkh, bobTokenAddress } from '../common.js';
+import { aliceAddress, alicePkh, aliceTokenAddress, nameTokenCategory, reversedNameTokenCategory, invalidNameTokenCategory, mockOptions, bobAddress, bobTokenAddress } from '../common.js';
 import { getCreatorIncentive, getDomainPartialBytecode, padVmNumber } from '../utils.js';
 import artifacts from '../artifacts.js';
 
