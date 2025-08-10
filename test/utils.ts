@@ -1,12 +1,4 @@
-import { cashAddressToLockingBytecode,
-	encodeLockingBytecodeP2sh32,
-	lockingBytecodeToCashAddress,
-	hash256,
-	hexToBin,
-	binToHex,
-	bigIntToVmNumber,
-	padMinimallyEncodedVmNumber,
-	numberToBinUint16BE } from '@bitauth/libauth';
+import { lockingBytecodeToCashAddress, hexToBin, binToHex, bigIntToVmNumber, padMinimallyEncodedVmNumber } from '@bitauth/libauth';
 import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
 import { BitCANNArtifacts } from '../lib/index.js';
 

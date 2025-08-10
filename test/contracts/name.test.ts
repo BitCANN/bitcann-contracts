@@ -1955,20 +1955,14 @@ describe('Name', () =>
 	// Tests for burn function
 	describe('burn', () =>
 	{
+
 		it('should fail with invalid number of inputs', async () =>
 		{
 			transaction = new TransactionBuilder({ provider })
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
 				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
-				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addOutput({
-					to: aliceAddress,
-					amount: externalAuthNFTUTXO.satoshis + internalAuthNFTUTXO.satoshis + pureBCHUTXO.satoshis,
-				});
-
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
 			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 3 inputs');
 		});
@@ -1979,61 +1973,228 @@ describe('Name', () =>
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
 				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
 				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addOutput({
-					to: aliceAddress,
-					amount: externalAuthNFTUTXO.satoshis + internalAuthNFTUTXO.satoshis + pureBCHUTXO.satoshis,
-				})
-				.addOutput({
-					to: aliceAddress,
-					amount: BigInt(1000),
-				});
-
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis })
+				.addOutput({ to: aliceAddress, amount: BigInt(1000) });
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
 			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 1 output');
 		});
-	});
 
-	describe('Add Records', () =>
-	{
-		it('should fail with invalid number of inputs', async () =>
+		it('should fail if sequence number is wrong for pure BCH', async () =>
 		{
 			transaction = new TransactionBuilder({ provider })
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
-				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn(), { sequence: 419405 })
 				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addOutput({
-					to: aliceAddress,
-					amount: externalAuthNFTUTXO.satoshis + internalAuthNFTUTXO.satoshis + pureBCHUTXO.satoshis,
-				});
-
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
-			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 3 inputs');
+			await expect(txPromise).rejects.toThrow('Input 1: internal auth NFT sequence number must equal inactivity expiry time');
 		});
 
-		it('should fail with invalid number of outputs', async () =>
+		it('should fail if input 2 token category is not nameCategory (owner burn)', async () =>
 		{
+			const ownershipWithDifferentCategory: Utxo = {
+				...ownershipNFTUTXO,
+				token: {
+					category: invalidNameTokenCategory,
+					amount: ownershipNFTUTXO.token!.amount,
+					nft: {
+						capability: ownershipNFTUTXO.token!.nft!.capability,
+						commitment: ownershipNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			};
+			provider.addUtxo(aliceAddress, ownershipWithDifferentCategory);
+
 			transaction = new TransactionBuilder({ provider })
 				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
 				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
-				.addInput(pureBCHUTXO, testContract.unlock.call())
-				.addOutput({
-					to: aliceAddress,
-					amount: externalAuthNFTUTXO.satoshis + internalAuthNFTUTXO.satoshis + pureBCHUTXO.satoshis,
-				})
-				.addOutput({
-					to: aliceAddress,
-					amount: BigInt(1000),
-				});
-
+				.addInput(ownershipWithDifferentCategory, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
 			const txPromise = transaction.send();
-
 			await expect(txPromise).rejects.toThrow(FailedRequireError);
-			await expect(txPromise).rejects.toThrow('Transaction: must have exactly 1 output');
+			await expect(txPromise).rejects.toThrow('Input 2: name ownership NFT token category must match name category');
+		});
+
+		it('should fail if input 2 registration ID does not match input 0 (owner burn)', async () =>
+		{
+			const utxoWithDifferentRegId: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: externalAuthNFTUTXO.token!.category,
+					amount: externalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: externalAuthNFTUTXO.token!.nft!.capability,
+						commitment: padVmNumber(BigInt(11), 8),
+					},
+				},
+			};
+			provider.addUtxo(nameContract.address, utxoWithDifferentRegId);
+
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(utxoWithDifferentRegId, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 2: name ownership NFT registration ID must match input 1 commitment');
+		});
+
+		it('should fail if input 0 locking bytecode does not match contract', async () =>
+		{
+			const utxoFromOtherContract: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: externalAuthNFTUTXO.token!.category,
+					amount: externalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: externalAuthNFTUTXO.token!.nft!.capability,
+						commitment: externalAuthNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			};
+			provider.addUtxo(testContract.address, utxoFromOtherContract);
+
+			transaction = new TransactionBuilder({ provider })
+				.addInput(utxoFromOtherContract, testContract.unlock.call())
+				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT locking bytecode must match name contract');
+		});
+
+		it('should fail if input 1 locking bytecode does not match contract', async () =>
+		{
+			const utxoFromOtherContract: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					category: internalAuthNFTUTXO.token!.category,
+					amount: internalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: internalAuthNFTUTXO.token!.nft!.capability,
+						commitment: internalAuthNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			};
+			provider.addUtxo(testContract.address, utxoFromOtherContract);
+
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(utxoFromOtherContract, testContract.unlock.call())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 1: internal auth NFT locking bytecode must match name contract');
+		});
+
+		it('should fail if input 0 external auth NFT does not have empty commitment', async () =>
+		{
+			const wrongCommitment: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: externalAuthNFTUTXO.token!.category,
+					amount: externalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: externalAuthNFTUTXO.token!.nft!.capability,
+						commitment: padVmNumber(BigInt(1), 8),
+					},
+				},
+			};
+			provider.addUtxo(nameContract.address, wrongCommitment);
+			transaction = new TransactionBuilder({ provider })
+				.addInput(wrongCommitment, nameContract.unlock.burn())
+				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT must have empty commitment');
+		});
+
+		it('should fail if input 0 token category does not match name category', async () =>
+		{
+			const wrongCategory: Utxo = {
+				...externalAuthNFTUTXO,
+				token: {
+					category: invalidNameTokenCategory,
+					amount: externalAuthNFTUTXO.token!.amount,
+					nft: {
+						commitment: externalAuthNFTUTXO.token!.nft!.commitment,
+						capability: externalAuthNFTUTXO.token!.nft!.capability,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(wrongCategory, nameContract.unlock.burn())
+				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 0: external auth NFT token category must match name category');
+		});
+
+		it('should fail if input 1 token category does not match name category', async () =>
+		{
+			const wrongCategory: Utxo = {
+				...internalAuthNFTUTXO,
+				token: {
+					category: invalidNameTokenCategory,
+					amount: internalAuthNFTUTXO.token!.amount,
+					nft: {
+						commitment: internalAuthNFTUTXO.token!.nft!.commitment,
+						capability: internalAuthNFTUTXO.token!.nft!.capability,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(wrongCategory, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({ to: aliceAddress, amount: pureBCHUTXO.satoshis });
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Input 1: internal auth NFT token category must match name category');
+		});
+
+		it('should fail if output 0 is not pure BCH', async () =>
+		{
+			const fakeBchUtxo: Utxo = {
+				...pureBCHUTXO,
+				token: {
+					category: nameTokenCategory,
+					amount: BigInt(0),
+					nft: {
+						commitment: '',
+						capability: 'none' as const,
+					},
+				},
+			};
+			transaction = new TransactionBuilder({ provider })
+				.addInput(externalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(internalAuthNFTUTXO, nameContract.unlock.burn())
+				.addInput(ownershipNFTUTXO, aliceTemplate.unlockP2PKH())
+				.addOutput({
+					to: aliceTokenAddress,
+					amount: fakeBchUtxo.satoshis,
+					token: {
+						category: fakeBchUtxo.token!.category,
+						amount: fakeBchUtxo.token!.amount,
+						nft: {
+							capability: fakeBchUtxo.token!.nft!.capability,
+							commitment: fakeBchUtxo.token!.nft!.commitment,
+						},
+					},
+				});
+			const txPromise = transaction.send();
+			await expect(txPromise).rejects.toThrow(FailedRequireError);
+			await expect(txPromise).rejects.toThrow('Output 0: change must be pure BCH (no token category)');
 		});
 	});
+
 });

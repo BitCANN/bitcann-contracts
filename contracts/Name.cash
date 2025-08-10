@@ -207,7 +207,7 @@ contract Name(
       // If name ownership NFT input, then allow the owner to burn anytime.
       require(tx.inputs[2].tokenCategory == nameCategory, "Input 2: name ownership NFT token category must match name category");
       // Make sure that the registrationID in the nameOwnershipNFT and the internalAuthNFT are the same.
-      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[0].nftCommitment, "Input 2: name ownership NFT registration ID must match input 0 commitment");
+      require(tx.inputs[2].nftCommitment.split(8)[0] == tx.inputs[1].nftCommitment, "Input 2: name ownership NFT registration ID must match input 1 commitment");
     }
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
@@ -216,8 +216,6 @@ contract Name(
 
     // ExternalAuthNFT
     require(tx.inputs[0].nftCommitment == 0x, "Input 0: external auth NFT must have empty commitment");
-    // Both InternalAuthNFT and externalAuthNFT are immutable and have the same tokenCategory
-    require(tx.inputs[0].tokenCategory == tx.inputs[1].tokenCategory, "Input 0: external auth NFT token category must match input 1");
     require(tx.inputs[0].tokenCategory == nameCategory, "Input 0: external auth NFT token category must match name category");
     require(tx.inputs[1].tokenCategory == nameCategory, "Input 1: internal auth NFT token category must match name category");
 
