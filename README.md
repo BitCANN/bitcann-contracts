@@ -11,7 +11,7 @@ Bitcoin Cash for Assigned Names and Numbers (BitCANN) Smart Contracts
   <a href="https://www.npmjs.com/package/@bitcann/contracts"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/contracts"></a>
 </p>
 
-> ⚠️ Important Notice: The contracts have not undergone extensive auditing by third parties. Users should be aware of potential risks, including the possibility of losing name ownership or funds during auctions. Exercise caution and consider these risks before use.**
+> ⚠️ Important Notice: The contracts are going through extensive auditing under Bitcoin Cash Audit Framework (BCAF) (To be released soon)**
 
 
 ## Installation
@@ -68,7 +68,7 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
 3. [TLDs](#tlds)
 4. [Genesis](#genesis)
 5. [Dual Decay Mechanism](#dual-decay-mechanism)
-6. [FAQs](#faqs)
+6. [QnAs](#qnas)
    - [How are names allocated or sold?](#how-are-names-allocated-or-sold)
    - [Can a bid be cancelled?](#can-a-bid-be-cancelled)
    - [How is any TLD assigned?](#how-is-any-tld-assigned)
@@ -121,12 +121,7 @@ Transaction Structure:
 #### Auction
 
 The Auction contract lets anyone start a new auction.
-Each auction requires:
-   - A minimum starting bid of at least `minStartingBid` BCH.
-   - It runs for at least `minWaitTime`(check [Factory](#factory) contract). The timer resets with a new bid.
-
-Constructor:
-- `minStartingBid`: The minimum starting bid of the auction.
+Each auction requires a minimum starting bid of at least set to `0.01 BCH` and reduces by `0.0003%` with each new name auctioned as part of the [Dual Decay Mechanism](#dual-decay-mechanism) and a minimum wait time for auction to complete of `~3 hrs` (check [Factory](#factory) contract) and the timer resets with a new bid.
 
 Transaction Structure:
 
@@ -144,10 +139,7 @@ Parameters:
 
 #### Bid
 
-The Bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the `satoshisValue` and the `pkh` in the `nftCommitment`. The only condition is that the new Bid amount must be at least `minBidIncreasePercentage` higher. Even if the auction is passed the `minWaitTime` and the winning bid has not claimed the name's ownership, it's still possible to continue bidding which will reset the timer to atleast `minWaitTime`.
-
-Constructor:
-- `minBidIncreasePercentage`: The minimum percentage increase in the new bid amount.
+The Bid contract allows anyone to bid on an active auction by allowing restricted manipulation of auctionNFT. It updates the `satoshisValue` and the `pkh` in the `nftCommitment`. A condition is that the new Bid amount must be at least `5%` higher. Even if the auction is passed the 3hr waiting time and the winning bid has not claimed the name's ownership, it's still possible to continue bidding which will reset the timer to atleast `3 hrs`.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -161,13 +153,11 @@ Transaction Structure:
 
 #### Factory
 
-The Factory burns the auctionNFT and issues 3 new NFTs [NameNFTs](#namenfts). It verifies that the actionNFT input is at least `minWaitTime` old. It also attaches the tokenAmount from auctionNFT to the authorized contract's thread.
+The Factory burns the auctionNFT and issues 3 new NFTs [NameNFTs](#namenfts). It verifies that the actionNFT input is at least `3 hrs` old. It also attaches the tokenAmount from auctionNFT to the authorized contract's thread.
 
 Constructor:
 - `nameContractBytecode`: The partial bytecode of the name contract.
-- `minWaitTime`: The minimum wait time after which the name can be claimed by the bidder.
-- `maxPlatformFeePercentage`: The maximum fee percentage that can be charged by the platform.
-- `tld`: The TLD of the name.
+- `creatorIncentivePKH`: The PKH of the creator incentive.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -217,7 +207,6 @@ This prevents registrations for names that have already been registered and have
 
 Constructor:
 - `nameContractBytecode`: The partial bytecode of the name contract.
-- `tld`: The TLD of the name.
 
 Transaction Structure:
 | # | Inputs | Outputs |
@@ -250,11 +239,11 @@ Transaction Structure:
 The Name contract allows the owner to perform a few operations after [NameNFTs](#namenfts) are issued from [Factory](#factory). There exists a unique name contract for each unique name.
 
 Constructor:
-- `inactivityExpiryTime`: The time after which the name is considered abandoned.
-- `fullName`: The full name. (This includes the TLD)
+- `name`: The name.
+- `tld`: The TLD of the name. [TLDs](#tlds)
 - `nameCategory`: The category of the name.
 
-There are 3 functions in each Name Contract:
+There are 4 functions in each Name Contract:
 
 - **useAuth**: This can be used to perform a variety of actions.
 For example:
@@ -270,14 +259,19 @@ Transaction Structure:
 | x+1 (optional) | [OwnershipNFT](#namenfts) from owner | [OwnershipNFT](#namenfts) as output |
 | x+2 | | OP_RETURN containing record data or removal hash |
 
-- **burn**: This allows the owner of the name to renounce ownership OR if the name has been inactive for > `inactivityExpiryTime` then anyone can burn the name allowing for a new auction.
+- **penaliseInvalidName**: Ideally, this function will never be triggered as no one would want to keep the free money on the table by not triggering the transaction that earns them money.  Having said that, it's important to have a safeguard for such an unforceable future where these incentive system are unable to catch a invalid name registration. This function allows anyone to penalize an invalid name by burning the Auth NFTs in the contract, rendering the ownershipNFT useless.
+
+Parameters:
+- `characterNumber`: The index of the character in the name that is invalid (starting from 1)
 
 Transaction Structure:
+
 | # | Inputs | Outputs |
 |---|--------|---------|
-| 0 | [NameNFTs](#namenfts) Internal Auth NFT | BCH change output |
-| 1 | [NameNFTs](#namenfts) External Auth NFT | |
-| 2 | Pure BCH or [NameNFTs](#namenfts) Name ownership NFT from owner | |
+| 0 | [NameNFTs](#namenfts) External Auth NFT | BCH change output |
+| 1 | [NameNFTs](#namenfts) Internal Auth NFT | |
+| 2 | Pure BCH | |
+
 
 - **resolveOwnerConflict**: Ideally, this function will never be triggered as no one would want to keep the free money on the table by not triggering the transaction that earns them money. Having said that, it's important to have a safeguard for such an unforceable future where these incentive system are unable to catch a registration conflict or burn two competing auctionNFTs for the same name at the same time period resulting in more than 1 owner for a name. The owner with the lowest registrationID must be the only owner for a name. To help enforce this rule, this function will allow anyone to burn both the Auth NFTs of the NEW invalid owner.
 
@@ -290,6 +284,14 @@ Transaction Structure:
 | 3 | Invalid Internal Auth [NameNFT](#namenfts) | |
 | 4 | BCH input from anyone | |
 
+- **burn**: This allows the owner of the name to renounce ownership OR if the name has been inactive for > `inactivityExpiryTime` then anyone can burn the name allowing for a new auction.
+
+Transaction Structure:
+| # | Inputs | Outputs |
+|---|--------|---------|
+| 0 | [NameNFTs](#namenfts) Internal Auth NFT | BCH change output |
+| 1 | [NameNFTs](#namenfts) External Auth NFT | |
+| 2 | Pure BCH or [NameNFTs](#namenfts) Name ownership NFT from owner | |
 
 ### Accumulator
 
@@ -369,7 +371,7 @@ If the name has been inactive for > `inactivityExpiryTime` then the name is cons
 
 ## TLDs
 
-Top Level Domains (TLDs) like `.bch` and `.sat` exist in the contracts as constructor parameters, adding them to the authchain is not required.
+Top Level Domains (TLDs) like `.bch` and `.sat` exist in the contracts, adding them to the authchain is not required.
 
 ## Genesis
 
@@ -380,12 +382,9 @@ To ensure the system operates as expected, the following steps must be followed 
 - Using the `tokenCategory` i.e nameCategory, create the locking bytecode for `Registry.cash`.
 - Mint a mintingNFT i.e `NameMintingNFT` and send it to the `Registry.cash`
 - Determine the following parameters and generate the locking bytecode of all the other authorized contracts:
-   - `inactivityExpiryTime`
-   - `minWaitTime`
-   - `maxPlatformFeePercentage`
-   - `minBidIncreasePercentage`
-   - `minStartingBid`
+   - `nameCategory`
    - `nameContractBytecode`
+   - `creatorIncentivePKH`
    - `tld`
 - Create multiple threadNFTs for each authorized contract, commitment of each threadNFT must be the lockingbytecode of the authorized contract and the capability must be immutable.
 - Send the threadNFTs to the `Registry.cash`
@@ -447,86 +446,6 @@ Global Domain Registration Statistics
 ---
 
 
-## FAQs
+## QnAs
 
-#### How are names allocated or sold?
-Names are allocated via an auction system, which is initialized with a starting bid and a duration.
-Once the auction ends, the highest bidder is eligible to claim the name.
-
-Important: The auction remains open until the highest bidder claims the name after the minimum duration has elapsed.
-
-If a new bid is submitted, the timer resets, requiring the highest bidder to wait for the minimum duration again before claiming the name.
-
-Even if the minimum duration has passed without the highest bidder claiming the name, the auction remains active, allowing new bids to be placed.
-
-[Auction](#auction) Contract: Technical details
-
-#### Can a bid be cancelled?
-No.
-
-#### How is any TLD assigned?
-Top Level Domains (TLDs) such as .bch and/or .sat exist in the contracts as constructor parameters.
-
-This implies that while anyone can claim any TLD, the community will naturally gravitate towards and adopt the most popular and widely used ones.
-
-#### Who earns from the auction sales?
-
-Since this is an open protocol, the platform facilitating the interaction can attach their own address to get a percentage of the fee. The percentage of the fee is set in the contract parameters of the [Factory](#factory) contract. They can choose to get any percentage less than `maxPlatformFeePercentage`. Remaining funds are sent to the miners.
-
-#### Can anyone renounce ownership of a name?
-Yes, The owner must call the `burn` function of their respective Name contract. The function will burn the Internal Auth NFT and the External Auth NFT allowing anyone to initiate a new auction for the name. This action will allow anyone to initiate a new auction for the name and claim for themselves.
-
-#### What occurs during a ownership renouncement event?
-Each name contract has an inbuilt function that allows the owner to renounce ownership by burning the internalAuthNFT and externalAuthNFT along with the ownershipNFT.
-
-This action will allow anyone to initiate a new auction for the name and claim for themselves.
-
-#### How does ownership transfer work? 
-Ownership transfer is simply transferring the ownershipNameNFT to the new owner.
-
-#### How to records managed?
-Record management is done by following [SORTS](https://github.com/BitCANN/sorts) standard 
-
-#### No Renewal or Expiry?
-The protocol uses an activity-based maintenance system to ensure name upkeep:
-
-Owners are required to engage in at least one activity within a specified timeframe, known as `inactivityExpiryTime`, which is determined during the genesis process.
-
-These activities, such as adding or invalidating records, reset the inactivity timer.
-
-Note: The expiration of the timer alone does not permit the initiation of a new auction. The owner must utilize the built-in function to burn the internal and external Auth NFTs, demonstrating that the inactivity condition has been satisfied. Failing to do so before starting a new auction allows others to invalidate the new registration attempt.
-
-#### Why use text-based ownership instead of hash-based ownership?
-Text-based ownership makes the auction process transparent, allowing interested parties to view and participate in active auctions, thus providing equal opportunities for all.
-
-In a hash-based system, reliance on external indexers to prevent auction conflicts can increase the risk of losing funds due to synchronization issues.
-
-Marketplaces would need to depend on indexers to display names accurately.
-
-Creating a registry of hashes is relatively easy, which undermines the perceived privacy of a hash-based system.
-
-#### How do I know I or someone else owns a name?
-Upon the conclusion of the auction and the successful claiming of the name, three distinct NFTs are generated, each serving a unique purpose. Let us explore their roles in more detail.
-
-**Ownership NFT:**
-
-The Ownership NFT, along with the Internal Auth NFT, serves as definitive proof of name ownership. The ownershipNFT is minted to the highest bidder's address and contains both the name and registrationID as part of its commitment.
-
-**Internal Auth NFT:**
-
-The Internal Auth NFT, along with the Ownership NFT, is used to prove ownership to the name contract. The internalAuthNFT is minted to the name contract that is responsible to control the name and contains the same registrationID as the ownershipNFT.
-To interact with the name contract, one must provide ownershipNFT and use the internalAuthNFT that have the same registrationID.
-
-**External Auth NFT:**
-
-The External Auth NFT is used to prove that a name contract is already owner by someone. It is minted to the name contract that is responsible to control the name and does not contain anything in its commitment.
-
-#### What if the incentive system is not 100% effective?
-
-In rare instances, a name may be claimed by two different bidders in separate auctions. The legitimate owner will be the bidder with the lower registrationID. Each name contract includes a built-in function that allows anyone to present two competing pairs of internal and external auth NFTs and burn the one with the higher registrationID.
-
-As mentioned earlier, it will become impossible for the party with the mismatched registrationID in their ownershipNFT and internalAuthNFT to use the name, rendering the ownershipNFT issued to the party with the higher registrationID ineffective.
-
-#### What if an invalid name is registered?
-
-It is extremely unlikely for an invalid name to be registered due to the robust incentive system in place. However, in the rare event that the incentives fail, the protocol does not provide a remedy for such a case.
+Detailed QnAs are available at https://bitcann.org/faq
