@@ -127,18 +127,20 @@ contract Name(
    * @outputs  
    * - Output0: Valid External Auth NFT back to self
    * - Output1: Valid Internal Auth NFT back to self
-   * - Output3: BCH change output
+   * - Output2: BCH change output
    */
   function resolveOwnerConflict(){
     // Need transaction version 2 to prevent any vulnerabilities caused due to future versions.
     require(tx.version == 2, "Transaction: Version must be 2 (relative timelocks required)");
 
     require(tx.inputs.length == 5, "Transaction: must have exactly 5 inputs");
-    require(tx.outputs.length == 3, "Transaction: must have exactly 3 outputs");
+    require(tx.outputs.length <= 3, "Transaction: must have at most 3 outputs");
 
     // Pure BCH input and output to fund the transaction
     require(tx.inputs[4].tokenCategory == 0x, "Input 4: funding input must be pure BCH (no token category)");
-    require(tx.outputs[2].tokenCategory == 0x, "Output 2: change must be pure BCH (no token category)");
+    if (tx.outputs.length == 3) {
+      require(tx.outputs[2].tokenCategory == 0x, "Output 2: change must be pure BCH (no token category)");
+    }
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
     require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Input 0: valid external auth NFT locking bytecode must match name contract");
