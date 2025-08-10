@@ -1,18 +1,18 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.4;
 
 /**
-  * @param domainCategory - The category of the domain NFTs that are authorized to be registered. [In reverse order]
+  * @param nameCategory - The category of the name NFTs that are authorized to be registered. [In reverse order]
   *
   * The Registry has two minting NFTs:
   * 1. CounterMintingNFT, has tokenAmount and nftCommitment.
-  * 2. DomainMintingNFT, does not have any tokenAmount or nftCommitment.
+  * 2. NameMintingNFT, does not have any tokenAmount or nftCommitment.
  */
-contract Registry(bytes domainCategory) {
+contract Registry(bytes nameCategory) {
   /**
    * The Registry contract serves as both a source and storage for authorized NFTs.
    * It holds: RegistrationNFTs, AuctionNFTs, and AuthorizedThreadNFTs
    *
-   * AuthorizedThreadNFTs are NFTs with immutable capability that share the same category as domainCategory.
+   * AuthorizedThreadNFTs are NFTs with immutable capability that share the same category as nameCategory.
    * These NFTs contain the lockingBytecode of authorized contracts.
    * Multiple copies of these NFTs enable parallel processing through multiple threads.
    * 
@@ -24,15 +24,15 @@ contract Registry(bytes domainCategory) {
    * for a given action. To use the code in these authorized contracts, a random UTXO is used and
    * sent back to itself to be used again in future.
    *
-   * All the utxos, except for the DomainNFTs (InternalAuth, ExternalAuth and DomainOwnershipNFT),
+   * All the utxos, except for the NameNFTs (InternalAuth, ExternalAuth and NameOwnershipNFT),
    * stay with the Registry contract.
    * 
    * @note Authorized contracts and their thread counts:
    * - Auction:                       [1 thread] (Single-threaded registration)
    * - Bid:                           [~x threads]
-   * - DomainFactory:                 [~x threads]
+   * - NameFactory:                 [~x threads]
    * - AuctionNameEnforcer:           [~x threads]
-   * - DomainOwnershipGuard:          [~x threads]
+   * - NameOwnershipGuard:          [~x threads]
    * - AuctionConflictResolver:       [~x threads]
    * - Accumulator:                   [~x threads]
    * 
@@ -48,30 +48,32 @@ contract Registry(bytes domainCategory) {
     // 1. Since the registry contract is static, version check is required to prevent from any vulnerabilities
     // caused due to future versions.
     // 2. BitCANN uses relative timelocks, need to enforce version 2.
-    require(tx.version == 2);
+    require(tx.version == 2, "Registry: transaction version must be 2 (relative timelocks required)");
 
     // Registry Contract
 
     bytes selfLockingBytecode = tx.inputs[this.activeInputIndex].lockingBytecode;
     // authorizedThreadNFT must stay with the Registry Contract.
-    require(tx.inputs[0].lockingBytecode == selfLockingBytecode);
-    require(tx.outputs[0].lockingBytecode == selfLockingBytecode);
+    require(tx.inputs[0].lockingBytecode == selfLockingBytecode, "Input 0: locking bytecode must match registry contract");
+    require(tx.outputs[0].lockingBytecode == selfLockingBytecode, "Output 0: locking bytecode must match registry contract");
 
-    // Immutable NFTs of domainCategory in Registry Contract will always be authorizedThreadNFTs
-    // Mutable NFTs of domainCategory in Registry Contract will always be auctionNFTs
-    // Minting NFTs of domainCategory in Registry Contract will always be counterMintingNFT or DomainMintingNFT
-    require(tx.inputs[0].tokenCategory == domainCategory);
-    require(tx.outputs[0].tokenCategory == domainCategory);
+    // Immutable NFTs of nameCategory in Registry Contract will always be authorizedThreadNFTs
+    // Mutable NFTs of nameCategory in Registry Contract will always be auctionNFTs
+    // Minting NFTs of nameCategory in Registry Contract will always be counterMintingNFT or NameMintingNFT
+    require(tx.inputs[0].tokenCategory == nameCategory, "Input 0: token category must match name category");
+    require(tx.outputs[0].tokenCategory == nameCategory, "Output 0: token category must match name category");
     // Keeping the value same to not influence any satoshi movement in authorized contracts
-    require(tx.outputs[0].value == tx.inputs[0].value);
+    require(tx.outputs[0].value == tx.inputs[0].value, "Output 0: satoshi value must match input 0");
     // The commitment that has the lockingbytecode of the authorized contract should never change.
-    require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment);
+    // It is possible that in other contracts a minting NFT of the nameCategory is used, in that case
+    // it becomes possible to change the nft commitment of 0th output.
+    require(tx.outputs[0].nftCommitment == tx.inputs[0].nftCommitment, "Output 0: NFT commitment must match input 0");
     // Not checking the tokenAmount as it changes.
 
     // Authorized Contract
 
     // Expect the NFT commitment that contains the lockingBytecode of the authorized contract.
-    require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment);
+    require(tx.inputs[1].lockingBytecode == tx.inputs[0].nftCommitment, "Input 1: locking bytecode must match authorized contract from input 0 NFT commitment");
     // With these prerequisites met, we just need to make sure that all the contracts that are deployed are written
     // and initialized properly, and they expect this structure and handle the inputs and outputs as expected.
   }

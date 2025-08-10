@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { BitCANNArtifacts } from '../../lib/index.js';
+import { BitCANNArtifacts } from '../lib/index.js';
 
 interface ContractArtifact
 {
@@ -20,11 +20,11 @@ describe('imports', () =>
 			'Registry',
 			'Auction',
 			'Bid',
-			'Domain',
-			'DomainFactory',
-			'AuctionConflictResolver',
-			'AuctionNameEnforcer',
-			'DomainOwnershipGuard',
+			'Name',
+			'Factory',
+			'NameEnforcer',
+			'OwnershipGuard',
+			'ConflictResolver',
 			'Accumulator',
 		] as const;
 

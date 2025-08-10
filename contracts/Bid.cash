@@ -1,14 +1,12 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.4;
 
-/**
- * @param minBidIncreasePercentage The minimum percentage increase required for a new bid over the previous bid.
- */
-contract Bid(int minBidIncreasePercentage) {
+
+contract Bid() {
   /**
-   * Places a new bid on an active domain registration auction.
+   * Places a new bid on an active name registration auction.
    * 
    * The function allows placing a new bid with:
-   * - A minimum `minBidIncreasePercentage` increase over the previous bid.
+   * - A minimum 5% increase over the previous bid.
    * - The previous bidder receives their bid amount back in the same transaction.
    * - A successful bid updates the auctionNFT by updating the PKH in the nftCommitment and satoshiValue.
    *   capability:   Mutable
@@ -31,56 +29,63 @@ contract Bid(int minBidIncreasePercentage) {
    * - Output4: Optional change in BCH to the new bidder.
    */
   function call() {
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length <= 5);
+    require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
+    require(tx.outputs.length <= 5, "Transaction: must have at most 5 outputs");
     
     // This contract can only be used at input1 and it should return the input1 back to itself.
-    require(this.activeInputIndex == 1);
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
+    require(this.activeInputIndex == 1, "Input 1: bid contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
+    // Ensure that no tokenCategory is minted here.
+    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
-    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);    
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: auction NFT locking bytecode does not match registry input's locking bytecode");
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Output 2: auction NFT locking bytecode does not match registry input's locking bytecode");    
 
     // AuctionNFT should keep the same category and capability.
-    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory);
+    require(tx.inputs[2].tokenCategory == tx.outputs[2].tokenCategory, "Output 2: auction NFT token category must match input 2");
 
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
     // The second part of the pair changes with each new bid, hence it's marked as mutable.
     // Enforcing the structure of the pair results in predictable behavior.
     bytes auctionCategory, bytes auctionCapability = tx.outputs[2].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    require(auctionCategory == registryInputCategory, "Output 2: auction NFT token category prefix must match registry");
+    require(auctionCapability == 0x01, "Output 2: auction NFT capability must be mutable (0x01)");
 
-    // Ensure that the funding happens from a P2PKH UTXO.
-    require(tx.inputs[3].lockingBytecode.length == 25);
+    // Ensure that the funding happens from a P2PKH UTXO, need to do a payout to present bidder and the information is stored in commitment.
+    require(tx.inputs[3].lockingBytecode.length == 25, "Input 3: locking bytecode must be 25 bytes (P2PKH)");
+    bytes pkhLockingBytecodeHead, bytes pkhLockingBytecodeBody = tx.inputs[3].lockingBytecode.split(3);
+    // OP_DUP OP_HASH160 Push 20-byte
+    require(pkhLockingBytecodeHead == 0x76a914, "Input 3: locking bytecode must start with OP_DUP OP_HASH160 (0x76a914)");
+    bytes pkh, bytes pkhLockingBytecodeTail = pkhLockingBytecodeBody.split(20);
+    // OP_EQUALVERIFY OP_CHECKSIG
+    require(pkhLockingBytecodeTail == 0x88ac, "Input 3: locking bytecode must end with OP_EQUALVERIFY OP_CHECKSIG (0x88ac)");
 
     bytes20 previousPKH, bytes name = tx.inputs[2].nftCommitment.split(20);
-    // Extract the PKH from the lockingBytecode of the Funding UTXO.
-    // <pkh> + name > 20 bytes
-    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
-    
+
     // AuctionNFT should have updated PKH in it's commitment.
-    require(tx.outputs[2].nftCommitment == pkh + name);
+    require(tx.outputs[2].nftCommitment == pkh + name, "Output 2: auction NFT commitment must match new bidder PKH + name");
 
     // Since tokenAmount is registrationID, make sure that it's not changing.
-    require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount);
+    require(tx.inputs[2].tokenAmount == tx.outputs[2].tokenAmount, "Output 2: auction NFT token amount must match input 2");
 
-    // Ensure that the bid amount is greater than or equal to the previous bid amount + minBidIncreasePercentage.
-    require(tx.outputs[2].value * 100 >= tx.inputs[2].value * (100 + minBidIncreasePercentage));
+    // Ensure that the bid amount is greater than or equal to the previous bid amount + 5%.
+    require(tx.outputs[2].value * 100 >= tx.inputs[2].value * 105, "Output 2: bid amount must be at least 5 percentage higher");
 
     // Locking bytecode of the previous bidder.
-    require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH));
+    require(tx.outputs[3].lockingBytecode == new LockingBytecodeP2PKH(previousPKH), "Output 3: previous bidder locking bytecode must match previous PKH");
     // The amount being sent back to the previous bidder.
-    require(tx.outputs[3].value == tx.inputs[2].value);
+    require(tx.outputs[3].value == tx.inputs[2].value, "Output 3: previous bidder refund amount must match previous bid amount");
+    // Funding UTXO/ Bid UTXO
+    require(tx.inputs[3].tokenCategory == 0x, "Input 3: funding UTXO must be pure BCH");
 
     if (tx.outputs.length == 5) {
       // If any change, then it must be pure BCH.
-      require(tx.outputs[4].tokenCategory == 0x);
+      require(tx.outputs[4].tokenCategory == 0x, "Output 4: change must be pure BCH (no token category)");
     }
   }
 }

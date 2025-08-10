@@ -1,11 +1,6 @@
-import { cashAddressToLockingBytecode,
-	encodeLockingBytecodeP2sh32,
-	lockingBytecodeToCashAddress,
-	hash256,
-	hexToBin,
-	binToHex,
-	numberToBinUint16BE } from '@bitauth/libauth';
-import { type Output, Network, Transaction } from 'cashscript';
+import { lockingBytecodeToCashAddress, hexToBin, binToHex, bigIntToVmNumber, padMinimallyEncodedVmNumber } from '@bitauth/libauth';
+import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
+import { BitCANNArtifacts } from '../lib/index.js';
 
 export interface LibauthTokenDetails
 {
@@ -24,120 +19,26 @@ export interface LibauthOutput
 	token?: LibauthTokenDetails;
 }
 
-export const intToBytesToHex = ({ value, length }: { value: number; length: number }): string =>
+export const padVmNumber = (num: bigint, length: number): string =>
 {
-	const bin = numberToBinUint16BE(value);
-	const bytes = new Uint8Array(bin.buffer, bin.byteOffset, bin.byteLength);
-	if(bytes.length > length)
-	{
-		throw new Error(`Value ${value} exceeds the specified length of ${length} bytes`);
-	}
-	const result = new Uint8Array(length);
-	result.set(bytes, length - bytes.length);
-
-	return binToHex(result);
+	return binToHex(padMinimallyEncodedVmNumber(bigIntToVmNumber(num), length).slice(0, length));
 };
 
-export const hexToInt = (hex: string): number =>
+export const getCreatorIncentive = (auctionPrice: bigint, registrationId: bigint): bigint =>
 {
-	const bytes = hexToBin(hex);
-	let intValue = 0;
-	for(let i = 0; i < bytes.length; i++)
-	{
-		intValue = (intValue << 8) | bytes[i];
-	}
+	const minimalDeduction = auctionPrice - BigInt(5000);
+	const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
 
-	return intValue;
+	return creatorIncentive;
 };
 
-export const pushDataHex = (data: string): string =>
+export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint): bigint =>
 {
-	const hexData = Buffer.from(data, 'utf8').toString('hex');
-	const length = hexData.length / 2;
+	const decayPoints = BigInt(minStartingBid) * registrationId * 3n;
+	const currentPricePoints = minStartingBid * 1000000n;
+	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1000000n;
 
-	if(length <= 75)
-	{
-		return length.toString(16).padStart(2, '0') + hexData;
-	}
-	else if(length <= 255)
-	{
-		return '4c' + length.toString(16).padStart(2, '0') + hexData;
-	}
-	else if(length <= 65535)
-	{
-		return '4d' + length.toString(16).padStart(4, '0') + hexData;
-	}
-	else
-	{
-		return '4e' + length.toString(16).padStart(8, '0') + hexData;
-	}
-};
-
-export const findOwnershipNFTUTXO = (utxos: any[], category: string): any =>
-{
-	const utxo = utxos.find((u: any) =>
-		u.token?.nft?.capability === 'none' && u.token?.category === category,
-	);
-	if(!utxo) throw new Error('Could not find ownership NFT UTXO');
-
-	return utxo;
-};
-
-export const findPureUTXO = (utxos: any[]): any =>
-{
-	const utxo = utxos.reduce((max: any, u: any) =>
-		(!u.token && u.satoshis > (max?.satoshis || 0)) ? u : max,
-	null,
-	);
-	if(!utxo) throw new Error('Could not find user UTXO without token');
-
-	return utxo;
-};
-
-export const lockScriptToAddress = (lockScript: string): string =>
-{
-	// Convert the lock script to a cashaddress (with bitcoincash: prefix).
-	const result = lockingBytecodeToCashAddress({ bytecode: hexToBin(lockScript), prefix: 'bitcoincash' });
-	// A successful conversion will result in a string, unsuccessful will return AddressContents
-
-	console.log('result: ', result);
-
-	// @ts-ignore
-	if(typeof result.address !== 'string')
-	{
-		throw(new Error(`Provided lock script ${lockScript} cannot be converted to address ${JSON.stringify(result)}`));
-	}
-
-	// @ts-ignore
-	return result.address;
-};
-
-export const buildLockScriptP2SH32 = (scriptBytecodeHex: string): string =>
-{
-	// Hash the lockscript for p2sh32 (using hash256)
-	const scriptHashBin = hash256(hexToBin(scriptBytecodeHex));
-
-	// Get the lockscript
-	const lockScriptBin = encodeLockingBytecodeP2sh32(scriptHashBin);
-
-	// Convert back to the library's convention of hex
-	const lockScriptHex = binToHex(lockScriptBin);
-
-	return lockScriptHex;
-};
-
-
-export const addressToLockScript = (address: string): string =>
-{
-	const result = cashAddressToLockingBytecode(address);
-
-	// The `cashAddressToLockingBytecode()` call returns an error string OR the correct bytecode
-	// so we check if it errors, in which case we throw the error, otherwise return the result
-	if(typeof result === 'string') throw(new Error(result));
-
-	const lockScript = binToHex(result.bytecode);
-
-	return lockScript;
+	return BigInt(Math.max(Number(currentAuctionPrice), 20000));
 };
 
 export const libauthOutputToCashScriptOutput = (output: LibauthOutput): Output =>
@@ -201,4 +102,50 @@ export const getTxOutputs = (tx: Transaction, network: Network = Network.MOCKNET
 			token: cashscriptOutput.token,
 		};
 	});
+};
+
+export const getRegistrationIdCommitment = (newRegistrationId: bigint): string =>
+{
+	const regIdHex = newRegistrationId.toString(16).padStart(16, '0');
+	const regIdBytes = [];
+	for(let i = 0; i < regIdHex.length; i += 2)
+	{
+		regIdBytes.push(regIdHex.slice(i, i + 2));
+	}
+	const newRegistrationIdCommitment = regIdBytes.reverse().join('');
+
+	return newRegistrationIdCommitment;
+};
+
+/**
+ * Retrieves the partial bytecode of the Name contract.
+ *
+ * @param {string} category - The category identifier for the name.
+ * @param {Object} options - The options for constructing the Name contract.
+ * @param {NetworkProvider} options.provider - The network provider.
+ * @param {AddressType} options.addressType - The address type.
+ * @returns {string} The partial bytecode of the Name contract.
+ */
+export const getDomainPartialBytecode = (category: string, options: { provider: NetworkProvider; addressType: AddressType }): string =>
+{
+	// Reverse the category bytes for use in contract parameters.
+	const reversedCategory = binToHex(hexToBin(category).reverse());
+
+	// Placeholder name used for constructing a partial domain contract bytecode.
+	const placeholderName = 'test';
+	const placeholderNameHex = Array.from(placeholderName).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+
+	const placeTLD = '.bch';
+	const placeTLDHex = Array.from(placeTLD).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+
+	// Construct a placeholder name contract to extract partial bytecode.
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], options);
+	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2 + 2 + placeTLD.length * 2;
+	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
+
+	return namePartialBytecode;
 };

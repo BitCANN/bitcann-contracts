@@ -1,11 +1,8 @@
-pragma cashscript 0.11.2;
+pragma cashscript 0.11.4;
 
-/**
- * @param minStartingBid The minimum starting bid for the auction.
- */
-contract Auction(int minStartingBid) {
+contract Auction() {
   /**
-   * Starts a new domain registration auction.
+   * Starts a new name registration auction.
    * @param name The name being registered.
    * 
    * The function creates a new auction with:
@@ -28,73 +25,95 @@ contract Auction(int minStartingBid) {
    * - Output1: Input1 back to this contract without any change.
    * - Output2: Minting CounterNFT going back to the Registry contract.
    * - Output3: auctionNFT to the Registry contract.
-   * - Output4: OP_RETURN output containing the name.
-   * - Output5: Optional change in BCH.
+   * - Output4: Optional change in BCH.
    */
   function call(bytes name) {
-    require(tx.inputs.length == 4);
-    require(tx.outputs.length <= 6);
+    require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
+    require(tx.outputs.length <= 5, "Transaction: must have at most 5 outputs");
 
     // This contract can only be used at input1 and it should return the input1 back to itself.
-    require(this.activeInputIndex == 1);
-    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode);
-    // Ensure that the domainCategory in not minted here.
-    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
+    require(this.activeInputIndex == 1, "Input 1: auction contract UTXO must be at this index");
+    require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
+    // Ensure that no tokenCategory is minted here.
+    require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
     // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
     // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
     // be manipulating their own utxos.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode);
-    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode);
-    require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode);
+    require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: locking bytecode does not match registry input's locking bytecode");
+    require(tx.outputs[2].lockingBytecode == registryInputLockingBytecode, "Output 2: locking bytecode does not match registry input's locking bytecode");
+    require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode, "Output 3: locking bytecode does not match registry input's locking bytecode");
 
     // Registration ID increases by 1 with each transaction.
-    int prevRegistrationId = int(tx.inputs[2].nftCommitment.reverse());
-    int nextRegistrationId = int(tx.outputs[2].nftCommitment.reverse());
-    require(nextRegistrationId == prevRegistrationId + 1);
+    int prevRegistrationId = int(tx.inputs[2].nftCommitment);
+    int currentRegistrationId = int(tx.outputs[2].nftCommitment);
+    require(currentRegistrationId == prevRegistrationId + 1, "Output 2: registration ID must increase by 1");
 
     // Reduce the tokenAmount in the counterNFT as some amount is going to auctionNFT
-    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - nextRegistrationId);
+    require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - currentRegistrationId, "Output 2: counter NFT token amount must decrease by currentRegistrationId");
     // tokenAmount in the auctionNFT is the registrationId.
-    require(tx.outputs[3].tokenAmount == nextRegistrationId);
+    require(tx.outputs[3].tokenAmount == currentRegistrationId, "Output 3: auction NFT token amount must equal currentRegistrationId");
 
-    // Every auction begins with a min base value of at least minStartingBid satoshis.
-    require(tx.outputs[3].value >= minStartingBid);
+    // Dual Decay mechanism, auction price decays linearly with the step.
+    // To facilitate higher precisions and since decimals do not exist in VM, we multiply
+    // it by 1e6 (1000000) and call the units as points.
+
+    // TODO: make this 1000000 (0.01 BCH)
+    int constant minStartingBid = 10000;
+    // 1. Decay points (0.0003% per step)
+    int decayPoints = minStartingBid * currentRegistrationId * 3;
+    // 2. Get auction price points
+    int currentPricePoints = minStartingBid * 1e6;
+    // 3. Subtract price points by decay points to get the current auction price.
+    int currentAuctionPrice = (currentPricePoints - decayPoints) / 1e6;
+
+    // Set the minimum auction price to 20000 satoshis.
+    currentAuctionPrice = max(currentAuctionPrice, 20000);
+
+    // Every auction begins with a min base value of at least currentAuctionPrice satoshis.
+    require(tx.outputs[3].value >= currentAuctionPrice, "Output 3: auction price must be at least minimum calculated price");
     // Funding UTXO/ Bid UTXO
-    require(tx.inputs[3].tokenCategory == 0x);
+    require(tx.inputs[3].tokenCategory == 0x, "Input 3: funding UTXO must be pure BCH");
 
-    // Ensure that the funding happens from a P2PKH UTXO.
-    require(tx.inputs[3].lockingBytecode.length == 25);
+    // Ensure that the funding happens from a P2PKH UTXO because there will be no way to know the locking bytecode as 
+    // name can be of any length.
+    require(tx.inputs[3].lockingBytecode.length == 25, "Input 3: locking bytecode must be 25 bytes (P2PKH)");
 
-    // Extract the PKH from the lockingBytecode of the Funding UTXO.
-    // <pkh> + name > 20 bytes
-    bytes pkh = tx.inputs[3].lockingBytecode.split(3)[1].split(20)[0];
-    require(tx.outputs[3].nftCommitment == pkh + name);
+    bytes pkhLockingBytecodeHead, bytes pkhLockingBytecodeBody = tx.inputs[3].lockingBytecode.split(3);
+    // OP_DUP OP_HASH160 Push 20-byte
+    require(pkhLockingBytecodeHead == 0x76a914, "Input 3: locking bytecode must start with OP_DUP OP_HASH160 (0x76a914)");
+    bytes pkh, bytes pkhLockingBytecodeTail = pkhLockingBytecodeBody.split(20);
+    // OP_EQUALVERIFY OP_CHECKSIG
+    require(pkhLockingBytecodeTail == 0x88ac, "Input 3: locking bytecode must end with OP_EQUALVERIFY OP_CHECKSIG (0x88ac)");
+    require(tx.outputs[3].nftCommitment == pkh + name, "Output 3: NFT commitment must match bidder PKH + name");
+
+    // Ensure that the name is not too long, as of 2025 upgrade, the nftcommitment is 40 bytes.
+    // 20 bytes pkh + 16 bytes name + 4 bytes TLD
+    require(name.length <= 16, "Name: length must be at most 16 characters");
 
     // CounterNFT should keep the same category and capability.
-    require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory);
+    require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory, "Output 2: counter NFT token category must match input 2");
     
     // All the token categories in the transaction should be the same.
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
     
-    // CounterNFT should be minting and of the 'domainCategory' i.e registryInputCategory
+    // CounterNFT should be minting and of the 'nameCategory' i.e registryInputCategory
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
-    require(counterCategory == registryInputCategory);
-    require(counterCapability == 0x02); // Minting
+    require(counterCategory == registryInputCategory, "Output 2: counter NFT token category prefix must match registry");
+    // Minting
+    require(counterCapability == 0x02, "Output 2: counter NFT capability must be minting (0x02)");
 
-    // AuctionNFT should be mutable and of the 'domainCategory' i.e registryInputCategory
+    // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory
     bytes auctionCategory, bytes auctionCapability = tx.outputs[3].tokenCategory.split(32);
-    require(auctionCategory == registryInputCategory);
-    require(auctionCapability == 0x01); // Mutable
+    require(auctionCategory == registryInputCategory, "Output 3: auction NFT token category prefix must match registry");
+    // Mutable
+    require(auctionCapability == 0x01, "Output 3: auction NFT capability must be mutable (0x01)");
 
-    // Enforce an OP_RETURN output that contains the name.
-    require(tx.outputs[4].lockingBytecode == new LockingBytecodeNullData([name]));
-
-    if (tx.outputs.length == 6) {
+    if (tx.outputs.length == 5) {
       // If any change, then it must be pure BCH.
-      require(tx.outputs[5].tokenCategory == 0x);
+      require(tx.outputs[4].tokenCategory == 0x, "Output 4: change must be pure BCH (no token category)");
     }
   }
 }
