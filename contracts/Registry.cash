@@ -30,9 +30,9 @@ contract Registry(bytes nameCategory) {
    * @note Authorized contracts and their thread counts:
    * - Auction:                       [1 thread] (Single-threaded registration)
    * - Bid:                           [~x threads]
-   * - NameFactory:                 [~x threads]
+   * - NameFactory:                   [~x threads]
    * - AuctionNameEnforcer:           [~x threads]
-   * - NameOwnershipGuard:          [~x threads]
+   * - NameOwnershipGuard:            [~x threads]
    * - AuctionConflictResolver:       [~x threads]
    * - Accumulator:                   [~x threads]
    * 

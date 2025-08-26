@@ -2,25 +2,30 @@ pragma cashscript 0.11.4;
 
 contract Accumulator() {
   /**
-   * Once enough auctions have happened, there will come a time when the counterNFT's tokenAmount is not enough.
-   * Since the amount would be accumulating in the thread NFTs, this function can be used to transfer them back to the
+   * Once enough auctions have happened, counterNFT's tokenAmount will not be enough to create another auction as the
+   * amount would be accumulating in the thread NFTs. This function will be used to transfer them back to the
    * Counter NFT to keep the system functioning smoothly.
    * 
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
    * - Input1: Any input from this contract
    * - Input2: Minting CounterNFT + tokenAmount from Registry Contract
-   * - Input3: authorizedThreadNFT with tokenAmount from Registry Contract
-   * - Input4: Pure BCH
+   * - Input3: authorizedThreadNFT + tokenAmount from Registry Contract
+   * - Input4: Funding UTXO.
    * 
    * @outputs
-   * - Output0: Registry Contract's thread NFT back to the Registry contract.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
    * - Output1: Input1 back to this contract without any change.
-   * - Output2: Minting CounterNFT back to the Registry contract + tokenAmount
-   * - Output3: authorizedThreadNFT without tokenAmount back to the Registry contract
+   * - Output2: Minting CounterNFT + tokenAmount back to the Registry contract
+   * - Output3: authorizedThreadNFT back to the Registry contract (without tokenAmount)
    * - Output4: Change BCH
    */
   function call(){
+    // Info: Ignored checks:
+    // - No transaction version enforcement. The contract at 0th index, i.e the Registry Contract has enforced the transaction version,
+    // since all the main utxos live with the registry contract, there is no need to enforce it here as well.
+    // - No output value checks: Any unnecessary bch value in the utxos can be extracted by the change output.
+
     require(tx.inputs.length == 5, "Transaction: must have exactly 5 inputs");
     require(tx.outputs.length == 5, "Transaction: must have exactly 5 outputs");
 
@@ -28,15 +33,15 @@ contract Accumulator() {
     require(this.activeInputIndex == 1, "Input 1: accumulator contract UTXO must be at this index");
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
     // Restriction on output category is important as minting NFT is used in this transaction.
+    // No need to check input category as it will be automatically burned in this transaction.
+    // Not allowing any category leaks by restricting the output category to pure BCH.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
-    // This contract can only be used with the 'lockingbytecode' used in the 0th input.
-    // Note: This contract can be used with any contract that fulfills these conditions, and that is fine
-    // because those contracts will not be manipulating the utxos of the Registry contract. Instead, they will
-    // be manipulating their own utxos.
+    // This contract can be used with any contract that fulfills these conditions, this contract acts as a
+    // code injection mechanism for the Registry contract.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
     
-    // Enforce input 2 and 3 are from the registry
+    // Enforce input 2 and 3 to be from the registry
     require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: locking bytecode does not match registry input's locking bytecode");
     require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: locking bytecode does not match registry input's locking bytecode");
 
@@ -48,24 +53,26 @@ contract Accumulator() {
     require(tx.outputs[2].tokenCategory == tx.inputs[2].tokenCategory, "Output 2: token category does not match input 2");
     require(tx.outputs[3].tokenCategory == tx.inputs[3].tokenCategory, "Output 3: token category does not match input 3");
 
-    // authorizedThreadNFTs are immutable — must match registry input category
+    // Grab the tokenCategory from the Registry Contract's input
     bytes registryInputCategory = tx.inputs[0].tokenCategory;
-    require(tx.inputs[3].tokenCategory == registryInputCategory, "Input 3: token category does not match registry (immutable NFT check)");
-    
     // Split counter token category and capability
     bytes counterCategory, bytes counterCapability = tx.inputs[2].tokenCategory.split(32);
-    require(counterCategory == registryInputCategory, "Input 2: token category prefix does not match registry");
-     // Minting
     require(counterCapability == 0x02, "Input 2: counter capability must be minting capability (0x02)");
 
-    // Locking bytecode of the authorized contract is 35 bytes long.
-    require(tx.inputs[3].nftCommitment.length == 35, "Input 3: NFT commitment length must be 35 bytes (authorized contract locking bytecode)");
+    require(counterCategory == registryInputCategory, "Input 2: token category prefix does not match registry");
+    require(tx.inputs[3].tokenCategory == registryInputCategory, "Input 3: token category does not match registry");
 
-    // Since the nftCommitment of counterNFT is registrationID so it must not be null
-    // as the NameMintingNFT has no nftCommitment nor tokenAmount
-    require(tx.inputs[2].nftCommitment != 0x, "Input 2: counter NFT must have a non-empty commitment (registration ID)");
-    // Ensure that the counter minting NFT is used.
-    require(tx.inputs[2].tokenAmount > 0, "Input 2: counter NFT must have token amount greater than 0");
+    // nftCommitment of counter nft is registrationID so it must not be null
+    require(tx.inputs[2].nftCommitment != 0x, "Input 2: counter nft must have a non-empty commitment (registration ID)");
+    // nftCommitment of the authorized contract is 35 bytes long.
+    require(tx.inputs[3].nftCommitment.length == 35, "Input 3: nft commitment length must be 35 bytes (authorized contract locking bytecode)");
+
+    // Minting nft is used in the transaction, ensure that the nft commitment is preserved.
+    require(tx.outputs[2].nftCommitment == tx.inputs[2].nftCommitment, "Output 2: nft commitment does not match input 2");
+    require(tx.outputs[3].nftCommitment == tx.inputs[3].nftCommitment, "Output 3: nft commitment does not match input 3");
+
+    // Ensure that the counter minting nft is used.
+    require(tx.inputs[2].tokenAmount > 0, "Input 2: counter nft must have token amount greater than 0");
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount + tx.inputs[3].tokenAmount, "Output 2: token amount must equal input 2 + input 3 amounts (accumulation)");
 
     // Pure BCH input and output.
