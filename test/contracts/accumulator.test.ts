@@ -872,7 +872,7 @@ describe('Accumulator', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Input 3: token category does not match registry (immutable NFT check)');
+		await expect(txPromise).rejects.toThrow('Input 3: token category does not match registry');
 	});
 
 	it('should fail when counter NFT category prefix does not match registry', async () =>
@@ -1092,7 +1092,7 @@ describe('Accumulator', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Input 3: NFT commitment length must be 35 bytes (authorized contract locking bytecode)');
+		await expect(txPromise).rejects.toThrow('Input 3: nft commitment length must be 35 bytes (authorized contract locking bytecode)');
 	});
 
 	it('should fail when counter NFT has empty commitment', async () =>
@@ -1166,7 +1166,7 @@ describe('Accumulator', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Input 2: counter NFT must have a non-empty commitment (registration ID)');
+		await expect(txPromise).rejects.toThrow('Input 2: counter nft must have a non-empty commitment (registration ID)');
 	});
 
 	it('should fail when counter NFT has zero token amount', async () =>
@@ -1239,7 +1239,7 @@ describe('Accumulator', () =>
 		const txPromise = transaction.send();
 
 		await expect(txPromise).rejects.toThrow(FailedRequireError);
-		await expect(txPromise).rejects.toThrow('Input 2: counter NFT must have token amount greater than 0');
+		await expect(txPromise).rejects.toThrow('Input 2: counter nft must have token amount greater than 0');
 	});
 
 	it('should fail when output 2 token amount is not sum of input amounts', async () =>
