@@ -6,28 +6,33 @@ contract Auction() {
    * @param name The name being registered.
    * 
    * The function creates a new auction with:
-   * - Starting bid >= `minStartingBid` BCH.
+   * - Starting bid >= 1000000 satoshis.
    * - A successful registration initiation results in an auctionNFT representing the auction state:
-   *   - capability: (Mutable)
-   *   - category: registryInputCategory
-   *   - tokenAmount: (Represents the registrationId)
-   *   - satoshiValue: (Represents the bid amount)
-   *   - commitment: bidder's PKH (20 bytes) + name (bytes)
+   *   - capability: Mutable
+   *   - category: NameCategory
+   *   - tokenAmount: RegistrationID
+   *   - satoshiValue: BidAmount
+   *   - commitment: Bidder's PKH (20 bytes) + Name (16 bytes)
    * 
    * @inputs
    * - Input0: Registry Contract's authorizedThreadNFT i.e immutable NFT with commitment that has the lockingBytecode of this contract
-   * - Input1: Any input from this contract.
-   * - Input2: Minting CounterNFT from Registry contract (Increases the registrationId by 1 in the output).
-   * - Input3: Funding UTXO.
+   * - Input1: Any input from this contract
+   * - Input2: Minting CounterNFT from Registry contract (Increases the registrationId by 1 in the output)
+   * - Input3: Funding UTXO
    * 
    * @outputs
-   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
-   * - Output1: Input1 back to this contract without any change.
-   * - Output2: Minting CounterNFT going back to the Registry contract.
-   * - Output3: auctionNFT to the Registry contract.
-   * - Output4: Optional change in BCH.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract
+   * - Output1: Input1 back to this contract
+   * - Output2: Minting CounterNFT going back to the Registry contract
+   * - Output3: AuctionNFT to the Registry contract
+   * - Output4: Optional change in BCH
    */
   function call(bytes name) {
+    // Info: Ignored checks:
+    // - No transaction version enforcement. The contract at 0th index, i.e the Registry Contract has enforced the transaction version,
+    // since all the main utxos live with the registry contract, there is no need to enforce it here as well.
+    // - Min output value checks: Any unnecessary bch value in the utxos can be extracted by the change output.
+
     require(tx.inputs.length == 4, "Transaction: must have exactly 4 inputs");
     require(tx.outputs.length <= 5, "Transaction: must have at most 5 outputs");
 
@@ -35,6 +40,8 @@ contract Auction() {
     require(this.activeInputIndex == 1, "Input 1: auction contract UTXO must be at this index");
     require(tx.inputs[this.activeInputIndex].lockingBytecode == tx.outputs[this.activeInputIndex].lockingBytecode, "Input 1: locking bytecode must match output 1");
     // Ensure that no tokenCategory is minted here.
+    // No need to check input category as it will be automatically burned in this transaction.
+    // Not allowing any category leaks by restricting the output category to pure BCH.
     require(tx.outputs[this.activeInputIndex].tokenCategory == 0x, "Output 1: must not have any token category (pure BCH only)");
 
     // This contract can only be used with the 'lockingbytecode' used in the 0th input.
@@ -47,9 +54,9 @@ contract Auction() {
     require(tx.outputs[3].lockingBytecode == registryInputLockingBytecode, "Output 3: locking bytecode does not match registry input's locking bytecode");
 
     // Registration ID increases by 1 with each transaction.
-    int prevRegistrationId = int(tx.inputs[2].nftCommitment);
-    int currentRegistrationId = int(tx.outputs[2].nftCommitment);
-    require(currentRegistrationId == prevRegistrationId + 1, "Output 2: registration ID must increase by 1");
+    int currentRegistrationId = int(tx.inputs[2].nftCommitment);
+    int nextRegistrationId = int(tx.outputs[2].nftCommitment);
+    require(nextRegistrationId == currentRegistrationId + 1, "Output 2: registration ID must increase by 1");
 
     // Reduce the tokenAmount in the counterNFT as some amount is going to auctionNFT
     require(tx.outputs[2].tokenAmount == tx.inputs[2].tokenAmount - currentRegistrationId, "Output 2: counter NFT token amount must decrease by currentRegistrationId");
@@ -58,7 +65,7 @@ contract Auction() {
 
     // Dual Decay mechanism, auction price decays linearly with the step.
     // To facilitate higher precisions and since decimals do not exist in VM, we multiply
-    // it by 1e6 (1000000) and call the units as points.
+    // it by 1e6 (1000000) and call the units as 'points'.
 
     // TODO: make this 1000000 (0.01 BCH)
     int constant minStartingBid = 10000;
@@ -102,7 +109,6 @@ contract Auction() {
     // CounterNFT should be minting and of the 'nameCategory' i.e registryInputCategory
     bytes counterCategory, bytes counterCapability = tx.outputs[2].tokenCategory.split(32);
     require(counterCategory == registryInputCategory, "Output 2: counter NFT token category prefix must match registry");
-    // Minting
     require(counterCapability == 0x02, "Output 2: counter NFT capability must be minting (0x02)");
 
     // AuctionNFT should be mutable and of the 'nameCategory' i.e registryInputCategory

@@ -11,11 +11,11 @@ contract Accumulator() {
    * - Input1: Any input from this contract
    * - Input2: Minting CounterNFT + tokenAmount from Registry Contract
    * - Input3: authorizedThreadNFT + tokenAmount from Registry Contract
-   * - Input4: Funding UTXO.
+   * - Input4: Funding UTXO
    * 
    * @outputs
-   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract.
-   * - Output1: Input1 back to this contract without any change.
+   * - Output0: Registry Contract's authorizedThreadNFT back to the Registry contract
+   * - Output1: Input1 back to this contract
    * - Output2: Minting CounterNFT + tokenAmount back to the Registry contract
    * - Output3: authorizedThreadNFT back to the Registry contract (without tokenAmount)
    * - Output4: Change BCH
@@ -40,7 +40,7 @@ contract Accumulator() {
     // This contract can be used with any contract that fulfills these conditions, this contract acts as a
     // code injection mechanism for the Registry contract.
     bytes registryInputLockingBytecode = tx.inputs[0].lockingBytecode;
-    
+
     // Enforce input 2 and 3 to be from the registry
     require(tx.inputs[2].lockingBytecode == registryInputLockingBytecode, "Input 2: locking bytecode does not match registry input's locking bytecode");
     require(tx.inputs[3].lockingBytecode == registryInputLockingBytecode, "Input 3: locking bytecode does not match registry input's locking bytecode");

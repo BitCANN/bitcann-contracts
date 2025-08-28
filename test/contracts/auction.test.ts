@@ -27,8 +27,9 @@ describe('Auction', () =>
 	let userUTXOA: Utxo;
 	let transaction: TransactionBuilder;
 	let auctionAmount: bigint;
-	let newRegistrationId: number;
-	let newRegistrationIdCommitment: string;
+	let currentRegistrationId: number;
+	let nextRegistrationId: number;
+	let nextRegistrationIdCommitment: string;
 
 	beforeAll(() =>
 	{
@@ -91,10 +92,11 @@ describe('Auction', () =>
 
 		provider.addUtxo(registryContract.address, mintingNFTUTXO);
 
-		newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;
-		newRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(newRegistrationId));
+		currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
+		nextRegistrationId = currentRegistrationId + 1;
+		nextRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(nextRegistrationId));
 
-		auctionAmount = getAuctionPrice(BigInt(newRegistrationId), BigInt(mockOptions.minStartingBid));
+		auctionAmount = getAuctionPrice(BigInt(currentRegistrationId), BigInt(mockOptions.minStartingBid));
 	});
 
 	it('should fail with invalid number of inputs', async () =>
@@ -127,10 +129,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -139,7 +141,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -182,10 +184,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -194,7 +196,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -245,10 +247,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -257,7 +259,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -296,10 +298,10 @@ describe('Auction', () =>
 				amount: authorizedContractUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -308,10 +310,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -320,7 +322,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -365,10 +367,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -377,7 +379,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -421,10 +423,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -433,7 +435,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -476,10 +478,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -488,7 +490,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -504,7 +506,7 @@ describe('Auction', () =>
 
 	it('should fail due to incorrect new registration id', async () =>
 	{
-		const customRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(newRegistrationId) + 2n);
+		const customRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(currentRegistrationId) + 2n);
 
 		// Construct the transaction using the TransactionBuilder
 		transaction = new TransactionBuilder({ provider })
@@ -533,7 +535,7 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
 						commitment: customRegistrationIdCommitment,
@@ -545,7 +547,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -588,10 +590,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId + 1),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId + 1),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -600,7 +602,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -643,10 +645,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -655,7 +657,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId + 1),
+					amount: BigInt(currentRegistrationId + 1),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -698,10 +700,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -710,7 +712,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount - BigInt(1)),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -753,10 +755,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -765,7 +767,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount + BigInt(1)),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -839,7 +841,7 @@ describe('Auction', () =>
 				amount: tempRegistrationCounterUTXO.satoshis,
 				token: {
 					category: tempRegistrationCounterUTXO.token!.category,
-					amount: tempRegistrationCounterUTXO.token!.amount - (customRegistrationId + 1n),
+					amount: tempRegistrationCounterUTXO.token!.amount - (customRegistrationId),
 					nft: {
 						capability: tempRegistrationCounterUTXO.token!.nft!.capability,
 						commitment: customPlusOneRegistrationIdCommitment,
@@ -848,10 +850,10 @@ describe('Auction', () =>
 			})
 			.addOutput({
 				to: registryContract.tokenAddress,
-				amount: currentAuctionAmount + 1n,
+				amount: currentAuctionAmount,
 				token: {
 					category: tempRegistrationCounterUTXO.token!.category,
-					amount: customRegistrationId + 1n,
+					amount: customRegistrationId,
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -925,7 +927,7 @@ describe('Auction', () =>
 				amount: tempRegistrationCounterUTXO.satoshis,
 				token: {
 					category: tempRegistrationCounterUTXO.token!.category,
-					amount: tempRegistrationCounterUTXO.token!.amount - (customRegistrationId + 1n),
+					amount: tempRegistrationCounterUTXO.token!.amount - (customRegistrationId),
 					nft: {
 						capability: tempRegistrationCounterUTXO.token!.nft!.capability,
 						commitment: customPlusOneRegistrationIdCommitment,
@@ -937,7 +939,7 @@ describe('Auction', () =>
 				amount: currentAuctionAmount,
 				token: {
 					category: tempRegistrationCounterUTXO.token!.category,
-					amount: customRegistrationId + 1n,
+					amount: customRegistrationId,
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1073,10 +1075,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1085,7 +1087,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1132,10 +1134,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1144,7 +1146,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1191,10 +1193,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1203,7 +1205,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(longNameBin),
@@ -1261,10 +1263,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: 'none',
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1273,7 +1275,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1331,10 +1333,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: 'none',
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1343,7 +1345,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1401,10 +1403,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: 'none',
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1413,7 +1415,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1456,10 +1458,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1468,7 +1470,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'none',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1511,10 +1513,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1523,7 +1525,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1577,10 +1579,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1589,7 +1591,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
@@ -1632,10 +1634,10 @@ describe('Auction', () =>
 				amount: registrationCounterUTXO.satoshis,
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+					amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 					nft: {
 						capability: registrationCounterUTXO.token!.nft!.capability,
-						commitment: newRegistrationIdCommitment,
+						commitment: nextRegistrationIdCommitment,
 					},
 				},
 			})
@@ -1644,7 +1646,7 @@ describe('Auction', () =>
 				amount: BigInt(auctionAmount),
 				token: {
 					category: registrationCounterUTXO.token!.category,
-					amount: BigInt(newRegistrationId),
+					amount: BigInt(currentRegistrationId),
 					nft: {
 						capability: 'mutable',
 						commitment: binToHex(alicePkh) + binToHex(nameBin),
