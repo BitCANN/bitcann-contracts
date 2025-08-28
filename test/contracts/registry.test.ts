@@ -2,7 +2,7 @@ import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utx
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory } from '../common.js';
-import { getAuctionPrice, getRegistrationIdCommitment } from '../utils.js';
+import { getAuctionPrice, padVmNumber } from '../utils.js';
 import artifacts from '../artifacts.js';
 
 describe('Registry', () =>
@@ -110,7 +110,7 @@ describe('Registry', () =>
 		provider.addUtxo(registryContract.address, mintingNFTUTXO);
 
 		newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;
-		newRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(newRegistrationId));
+		newRegistrationIdCommitment = padVmNumber(BigInt(newRegistrationId), 8);
 
 		auctionAmount = getAuctionPrice(BigInt(newRegistrationId), BigInt(mockOptions.minStartingBid));
 	});

@@ -2,7 +2,7 @@ import { MockNetworkProvider, randomUtxo, TransactionBuilder, Contract, type Utx
 import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
 import { BitCANNArtifacts } from '../../lib/index.js';
 import { aliceAddress, alicePkh, aliceTemplate, nameTokenCategory, mockOptions, reversedNameTokenCategory, invalidNameTokenCategory, aliceTokenAddress } from '../common.js';
-import { getTxOutputs, getAuctionPrice, getRegistrationIdCommitment } from '../utils.js';
+import { getTxOutputs, getAuctionPrice, padVmNumber } from '../utils.js';
 import artifacts from '../artifacts.js';
 
 describe('Auction', () =>
@@ -94,7 +94,7 @@ describe('Auction', () =>
 
 		currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
 		nextRegistrationId = currentRegistrationId + 1;
-		nextRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(nextRegistrationId));
+		nextRegistrationIdCommitment = padVmNumber(BigInt(nextRegistrationId), 8);
 
 		auctionAmount = getAuctionPrice(BigInt(currentRegistrationId), BigInt(mockOptions.minStartingBid));
 	});
@@ -506,7 +506,7 @@ describe('Auction', () =>
 
 	it('should fail due to incorrect new registration id', async () =>
 	{
-		const customRegistrationIdCommitment = getRegistrationIdCommitment(BigInt(currentRegistrationId) + 2n);
+		const customRegistrationIdCommitment = padVmNumber(BigInt(currentRegistrationId) + 2n, 8);
 
 		// Construct the transaction using the TransactionBuilder
 		transaction = new TransactionBuilder({ provider })
@@ -792,9 +792,9 @@ describe('Auction', () =>
 	it('should pass for registrationID 120001', async () =>
 	{
 		const customRegistrationId = 120000n;
-		const customRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId);
+		const customRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId), 8);
 
-		const customPlusOneRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId + 1n);
+		const customPlusOneRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId) + 1n, 8);
 
 		const tempRegistrationCounterUTXO: Utxo = {
 			token: {
@@ -878,9 +878,9 @@ describe('Auction', () =>
 	it('should pass for registrationID 1000001', async () =>
 	{
 		const customRegistrationId = 1000000n;
-		const customRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId);
+		const customRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId), 8);
 
-		const customPlusOneRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId + 1n);
+		const customPlusOneRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId) + 1n, 8);
 
 		const tempRegistrationCounterUTXO: Utxo = {
 			token: {
@@ -964,9 +964,9 @@ describe('Auction', () =>
 	it('should fail for overflow registrationID 9223372036854775807n', async () =>
 	{
 		const customRegistrationId = 9223372036854775807n;
-		const customRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId);
+		const customRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId), 8);
 
-		const customPlusOneRegistrationIdCommitment = getRegistrationIdCommitment(customRegistrationId + 1n);
+		const customPlusOneRegistrationIdCommitment = padVmNumber(BigInt(customRegistrationId) + 1n, 8);
 
 		const tempRegistrationCounterUTXO: Utxo = {
 			token: {
