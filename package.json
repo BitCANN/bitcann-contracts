@@ -1,7 +1,7 @@
 {
   "name": "@bitcann/contracts",
   "author": "Kuldeep Singh",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bitcoin Cash for Assigned Names and Numbers",
   "homepage": "https://github.com/BitCANN/contracts",
   "repository": {
@@ -43,8 +43,8 @@
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "cashc": "^0.11.4",
-    "cashscript": "^0.11.4",
+    "cashc": "^0.11.5",
+    "cashscript": "^0.11.5",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.31.0",

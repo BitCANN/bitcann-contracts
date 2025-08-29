@@ -1,4 +1,4 @@
-pragma cashscript 0.11.4;
+pragma cashscript 0.11.5;
 
 /**
  * @param nameContractBytecode - Partial bytecode of the name contract
@@ -14,7 +14,7 @@ contract Factory(
    * - Issuing an immutable externalAuthNFT to the Name Contract
    * - Issuing an immutable internalAuthNFT to the Name Contract
    * - Issuing an immutable name NFT to the auction winner
-   * - Distributing auction fees between the platform and miners
+   * - Distributing auction fees between the creator and miners
    * - Burning the auctionNFT
    *
    * @inputs
@@ -30,7 +30,7 @@ contract Factory(
    * - Output3: External Auth NFT to the name contract
    * - Output4: Internal Auth NFT to the name contract
    * - Output5: Name NFT to the auction winner
-   * - Output6: Platform fee [Reduces and the not included]
+   * - Output6: Creator incentive
    *
    */
   function call(){

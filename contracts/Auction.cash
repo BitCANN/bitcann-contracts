@@ -1,4 +1,4 @@
-pragma cashscript 0.11.4;
+pragma cashscript 0.11.5;
 
 contract Auction() {
   /**
