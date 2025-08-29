@@ -136,8 +136,9 @@ contract Factory(
     int minimalDeduction = tx.inputs[3].value - 5000;
     int creatorIncentive = (minimalDeduction * (1e5 - tx.inputs[3].tokenAmount) / 1e5);
 
+    // TODO: Make this 20000
     // If incentive is > 20000 satoshis, then it goes to the creator, else it goes to the miners.
-    if(creatorIncentive > 20000) {
+    if(creatorIncentive > 1000) {
       require(tx.outputs[6].tokenCategory == 0x, "Output 6: creator incentive must be pure BCH (no token category)");
       // Enforce that the other piece of the fee goes to the miners.
       require(tx.outputs[6].value == creatorIncentive, "Output 6: creator incentive satoshi value must match calculated incentive");

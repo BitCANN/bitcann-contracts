@@ -67,7 +67,7 @@ contract Auction() {
     // To facilitate higher precisions and since decimals do not exist in VM, we multiply
     // it by 1e6 (1000000) and call the units as 'points'.
 
-    // TODO: make this 1000000 (0.01 BCH)
+    // TODO: Make this 1000000 (0.01 BCH)
     int constant minStartingBid = 10000;
     // 1. Decay points (0.0003% per step)
     int decayPoints = minStartingBid * currentRegistrationId * 3;
@@ -76,8 +76,9 @@ contract Auction() {
     // 3. Subtract price points by decay points to get the current auction price.
     int currentAuctionPrice = (currentPricePoints - decayPoints) / 1e6;
 
-    // Set the minimum auction price to 20000 satoshis.
-    currentAuctionPrice = max(currentAuctionPrice, 20000);
+    // TODO: Make this 20000
+    // Set the minimum auction price to 6000 satoshis.
+    currentAuctionPrice = max(currentAuctionPrice, 6000);
 
     // Every auction begins with a min base value of at least currentAuctionPrice satoshis.
     require(tx.outputs[3].value >= currentAuctionPrice, "Output 3: auction price must be at least minimum calculated price");
