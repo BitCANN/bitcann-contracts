@@ -1,6 +1,7 @@
 import { lockingBytecodeToCashAddress, hexToBin, binToHex, bigIntToVmNumber, padMinimallyEncodedVmNumber } from '@bitauth/libauth';
 import { type Output, type AddressType, type NetworkProvider, Contract, Network, Transaction } from 'cashscript';
 import { BitCANNArtifacts } from '../lib/index.js';
+import { minAuctionPrice, minFactoryFee } from './common.js';
 
 export interface LibauthTokenDetails
 {
@@ -26,7 +27,7 @@ export const padVmNumber = (num: bigint, length: number): string =>
 
 export const getCreatorIncentive = (auctionPrice: bigint, registrationId: bigint): bigint =>
 {
-	const minimalDeduction = auctionPrice - BigInt(5000);
+	const minimalDeduction = auctionPrice - BigInt(minFactoryFee);
 	const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
 
 	return creatorIncentive;
@@ -38,7 +39,7 @@ export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint):
 	const currentPricePoints = minStartingBid * 1000000n;
 	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1000000n;
 
-	return BigInt(Math.max(Number(currentAuctionPrice), 20000));
+	return BigInt(Math.max(Number(currentAuctionPrice), minAuctionPrice));
 };
 
 export const libauthOutputToCashScriptOutput = (output: LibauthOutput): Output =>

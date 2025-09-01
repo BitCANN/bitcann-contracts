@@ -812,7 +812,7 @@ describe('Auction', () =>
 		// @ts-ignore
 		provider.addUtxo(registryContract.address, tempRegistrationCounterUTXO);
 
-		const currentAuctionAmount = getAuctionPrice(customRegistrationId + 1n, BigInt(mockOptions.minStartingBid));
+		const currentAuctionAmount = getAuctionPrice(customRegistrationId, BigInt(mockOptions.minStartingBid));
 
 		// Construct the transaction using the TransactionBuilder
 		transaction = new TransactionBuilder({ provider })

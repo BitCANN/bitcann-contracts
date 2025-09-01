@@ -25,6 +25,10 @@ export const mockOptions =
 	minWaitTime: 4194306,
 	tld: '.bch',
 };
+
+export const minFactoryFee = 6500;
+export const minAuctionPrice = 6000;
+
 // @ts-ignore
 const seed = deriveSeedFromBip39Mnemonic('bitcann test seed');
 const rootNode = deriveHdPrivateNodeFromSeed(seed, { assumeValidity: true, throwErrors: true });
