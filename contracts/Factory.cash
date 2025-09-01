@@ -133,7 +133,7 @@ contract Factory(
     // Dual Decay mechanism, creator incentive decays linearly with the step.
 
     // Initial minimal fee is 6500; 1000 * 3 (nft outputs) + 3500 Miner Fee
-    int minimalDeduction = tx.inputs[3].value - 3500;
+    int minimalDeduction = tx.inputs[3].value - 6500;
     int creatorIncentive = (minimalDeduction * (1e5 - tx.inputs[3].tokenAmount) / 1e5);
 
     // TODO: Make this 20000
